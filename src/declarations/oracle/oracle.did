@@ -1,0 +1,135 @@
+type UpgradeArgs = 
+ record {
+   add_admins: opt vec principal;
+   add_tokens: opt vec text;
+   remove_admins: opt vec principal;
+   remove_tokens: opt vec text;
+   reset_topup_backoff: opt bool;
+   set_cycles_threshold: opt nat;
+   set_treasury_principal: opt principal;
+ };
+type SystemState = 
+ variant {
+   degraded;
+   halted;
+   normal;
+ };
+type PriceEntry = 
+ record {
+   price_e12: nat;
+   timestamp: nat64;
+ };
+type PriceArchiveResponse = 
+ record {
+   data: vec CachedPrice;
+   total_count: nat;
+ };
+type PatchPricesArgs = 
+ record {
+   entries: vec PriceEntry;
+   symbol: text;
+ };
+type LogLevel = 
+ variant {
+   Critical;
+   Debug;
+   Error;
+   Info;
+   Warn;
+ };
+type LogEntry = 
+ record {
+   context: vec record {
+                  text;
+                  text;
+                };
+   event: text;
+   id: nat64;
+   level: LogLevel;
+   message: text;
+   "principal": opt principal;
+   timestamp: nat64;
+ };
+type FrozenControl = 
+ record {
+   admin_principals: vec principal;
+   cycles_threshold: nat;
+   live_tokens: vec text;
+   system_state: SystemState;
+   this_principal: principal;
+   treasury_principal: opt principal;
+ };
+type EventLogPage = 
+ record {
+   data: vec LogEntry;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type ErrorCategory = 
+ variant {
+   admin;
+   authorization;
+   external;
+   other;
+   rate_limit;
+   resource;
+   state;
+   validation;
+ };
+type CachedPrice = 
+ record {
+   price_e12: nat;
+   timestamp: nat64;
+ };
+type ApiResult_1 = 
+ variant {
+   err: ApiError;
+   ok: EventLogPage;
+ };
+type ApiResult = 
+ variant {
+   err: ApiError;
+   ok;
+ };
+type ApiError = 
+ record {
+   category: ErrorCategory;
+   code: text;
+   message: text;
+   metadata: opt vec record {
+                       text;
+                       text;
+                     };
+ };
+service : {
+  /// Clear all cached price data (admin only).
+  admin_clear_cache: () -> (ApiResult);
+  /// Get event log entries with cursor-based pagination (admin only).
+  admin_get_event_logs: (cursor: opt nat64, limit: nat32) ->
+   (ApiResult_1) query;
+  /// Patch price archives: correct mispriced entries or backfill gaps (admin only).
+  admin_patch_prices: (patches: vec PatchPricesArgs) -> (ApiResult);
+  /// Set system operational state (admin only).
+  admin_set_system_state: (new_state: SystemState) -> (ApiResult);
+  /// Start the heartbeat timer (admin only). No-op if already running.
+  admin_start_timer: () -> (ApiResult);
+  /// Stop the heartbeat timer (admin only).
+  admin_stop_timer: () -> (ApiResult);
+  /// Update oracle configuration (admin only).
+  admin_upgrade_config: (upgrade_args: UpgradeArgs) -> (ApiResult);
+  /// Get oracle configuration.
+  get_control: () -> (FrozenControl) query;
+  /// Get most recent price for a token.
+  get_most_recent_price: (token_symbol: text) -> (opt CachedPrice) query;
+  /// Get the archive entry nearest to a timestamp.
+  get_nearest_price: (token_symbol: text, timestamp_ms: nat64) ->
+   (opt CachedPrice) query;
+  /// Query price archive for a token in a time range.
+  get_price_archive: (token_symbol: text, from_ms: nat64, to_ms: nat64,
+   step_ms: nat64) -> (opt PriceArchiveResponse) query;
+  /// Get list of tracked tokens.
+  get_tracked_tokens: () -> (vec text) query;
+  /// Get TWAP for a token over a configurable window.
+  /// window_ms: lookback duration in milliseconds (e.g., 600_000 for 10 min).
+  get_twap: (token_symbol: text, window_ms: nat64) -> (opt nat) query;
+}

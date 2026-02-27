@@ -1,0 +1,1376 @@
+type WriteCandlesResult = 
+ record {
+   backfilled: nat;
+   errors: nat;
+   overwritten: nat;
+ };
+type WithdrawResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      block_index: opt nat;
+      remaining: nat;
+      versions: PollVersions;
+      withdrawn: nat;
+    };
+ };
+type VenueId = 
+ variant {
+   book;
+   pool: nat32;
+ };
+type VenueBreakdown = 
+ record {
+   fee_amount: nat;
+   input_amount: nat;
+   output_amount: nat;
+   venue_id: VenueId;
+ };
+type UserDebug = 
+ record {
+   available_base: nat;
+   available_quote: nat;
+   fees_base: nat;
+   fees_quote: nat;
+   inv2_drift_base: int;
+   inv2_drift_quote: int;
+   locked_base: nat;
+   locked_quote: nat;
+   net_external_base: int;
+   net_external_quote: int;
+   net_lp_base: int;
+   net_lp_quote: int;
+   net_swap_base: int;
+   net_swap_quote: int;
+   orders: vec OrderDebugEntry;
+   pending_base: nat;
+   pending_quote: nat;
+   positions: vec PositionDebugEntry;
+   "principal": principal;
+   triggers: vec TriggerDebugEntry;
+ };
+type UserData = 
+ opt
+  record {
+    available: TokenPair;
+    cumulative_lp_fees: TokenPair;
+    fees: TokenPair;
+    locked: LockedBalances;
+    net_flows: NetFlows;
+    orders: vec OrderView;
+    positions: vec PositionViewEnhanced;
+    triggers: vec TriggerView;
+    versions: PollVersions;
+  };
+type UpgradeArgs = 
+ record {
+   add_admins: opt vec principal;
+   max_orders_per_user: opt nat;
+   max_positions_per_user: opt nat;
+   max_triggers_per_user: opt nat;
+   rate_limit_cleanup_tier01_ms: opt nat64;
+   rate_limit_cleanup_tier2_ms: opt nat64;
+   rate_limit_degrade_base_duration_ms: opt nat64;
+   rate_limit_degrade_delta: opt nat;
+   rate_limit_degrade_max_duration_ms: opt nat64;
+   rate_limit_degrade_threshold: opt nat;
+   rate_limit_hard_block_threshold: opt nat;
+   rate_limit_soft_block_cooldown_ms: opt nat64;
+   rate_limit_soft_block_threshold: opt nat;
+   remove_admins: opt vec principal;
+   reset_topup_backoff: opt bool;
+   set_cycles_threshold: opt nat;
+   set_instruction_budget: opt nat64;
+   set_maker_fee_pips: opt nat32;
+   set_maker_rebate_pips: opt nat32;
+   set_pool_protocol_fee_pips: opt nat;
+   set_taker_fee_pips: opt nat32;
+   set_treasury_principal: opt principal;
+ };
+type UpdateOrderResult = 
+ variant {
+   err: ApiError;
+   ok:
+    variant {
+      modified:
+       record {
+         available_base: nat;
+         available_quote: nat;
+         refunded: nat;
+         versions: PollVersions;
+       };
+      replaced:
+       record {
+         available_base: nat;
+         available_quote: nat;
+         order_id: OrderId;
+         versions: PollVersions;
+       };
+    };
+ };
+type TriggerView = 
+ record {
+   immediate_or_cancel: bool;
+   input_amount: nat;
+   limit_tick: Tick;
+   owner: principal;
+   quote_usd_rate_e12: nat;
+   side: Side;
+   status: TriggerStatus;
+   timestamp: TimestampMs;
+   trigger_id: TriggerId;
+   trigger_tick: Tick;
+   trigger_type: TriggerType;
+ };
+type TriggerType = 
+ variant {
+   above;
+   below;
+ };
+type TriggerStatus = 
+ variant {
+   activation_failed;
+   active;
+   cancelled;
+   triggered;
+ };
+type TriggerSpec = 
+ record {
+   immediate_or_cancel: bool;
+   input_amount: nat;
+   limit_tick: Tick;
+   reference_tick: Tick;
+   side: Side;
+   trigger_tick: Tick;
+ };
+type TriggerResultItem = 
+ record {
+   index: nat32;
+   result: ApiResult__1_2;
+ };
+type TriggerId = nat;
+type TriggerDebugEntry = 
+ record {
+   id: nat;
+   input_amount: nat;
+   side: Side;
+   status: TriggerStatus;
+   trigger_tick: int;
+ };
+type TriggerActivityDetails = 
+ record {
+   created_at_ms: nat64;
+   immediate_or_cancel: bool;
+   input_amount: nat;
+   limit_tick: int32;
+   resulting_order_id: opt nat64;
+   side: Side;
+   trigger_id: nat64;
+   trigger_tick: int32;
+   trigger_type: TriggerType;
+ };
+type TransferPositionResult = 
+ variant {
+   err: ApiError;
+   ok: record {
+         position_id: PositionId;
+         versions: PollVersions;
+       };
+ };
+type TransferActivityDetails = 
+ record {
+   amount: nat;
+   block_index: opt nat64;
+   direction: variant {
+                inbound;
+                outbound;
+              };
+   ledger_fee: nat;
+   ledger_principal: principal;
+   token: variant {
+            base;
+            quote;
+          };
+ };
+type TokenPairInt = 
+ record {
+   base: int;
+   quote: int;
+ };
+type TokenPair = 
+ record {
+   base: nat;
+   quote: nat;
+ };
+type TokenMetadata = 
+ record {
+   decimals: nat8;
+   fee: nat;
+   ledger: principal;
+ };
+type TimestampMs = nat64;
+type TickLiquidityData = 
+ record {
+   liquidity_gross: nat;
+   liquidity_net: int;
+   tick: Tick;
+ };
+type Tick = int32;
+type SystemState = 
+ variant {
+   degraded;
+   halted;
+   normal;
+ };
+type SwapResultItem = 
+ record {
+   index: nat32;
+   result: ApiResult__1;
+ };
+type SqrtPriceX96 = nat;
+type SpotTransactionResponse = 
+ record {
+   base_amount: nat;
+   id: nat64;
+   price_e12: nat64;
+   quote_amount: nat;
+   side: Side;
+   timestamp: nat64;
+   usd_value_e6: nat64;
+ };
+type SpotCandle = 
+ record {
+   nat64;
+   nat64;
+   nat64;
+   nat64;
+   nat64;
+   nat;
+ };
+type Spot = 
+ service {
+   /// Add liquidity to a new concentrated position.
+   /// First LP must supply initial_tick to set pool price; subsequent LPs add at current price.
+   add_liquidity: (fee_pips: nat32, t_lo: Tick, t_hi: Tick, amt_0: nat,
+    amt_1: nat, initial_tick: opt Tick, lock_until_ms: opt nat64) ->
+    (LiquidityResult);
+   /// Get event log entries with cursor-based pagination (newest first).
+   admin_get_event_logs: (cursor: opt nat64, limit: nat32) ->
+    (ApiResult_6) query;
+   /// User debug info for INV-2 verification (single user).
+   admin_get_user_debug: (user: principal) -> (ApiResult_5) query;
+   /// Nuclear cleanup: cancel all orders, triggers, and close all positions.
+   /// Requires system to be #halted. Use with extreme caution.
+   admin_kill_all: () -> (ApiResult_4);
+   /// Release a principal from rate limiting (admin override).
+   admin_release_rate_limit: (target: principal) -> (ApiResult);
+   /// Set system-wide lockdown (admin override for rate limiter).
+   admin_set_lockdown: (active: bool) -> (ApiResult__1_1);
+   /// Set system operational state. States: #normal (full op), #degraded (exit only), #halted (admin only).
+   admin_set_system_state: (new_state: SystemState) -> (ApiResult__1_1);
+   /// Start the heartbeat timer (admin only). No-op if already running.
+   admin_start_timer: () -> (ApiResult__1_1);
+   /// Stop the heartbeat timer (admin only).
+   admin_stop_timer: () -> (ApiResult__1_1);
+   /// Update runtime configuration (admin_principals, fee_tier).
+   admin_upgrade_config: (args: UpgradeArgs) -> (ApiResult__1_1);
+   /// Withdraw accumulated protocol fees to a recipient (Treasury sweep).
+   admin_withdraw_fees: (recipient: principal) -> (ApiResult_2);
+   /// Write candles to chart archive (backfill historical or overwrite existing).
+   /// Works with any interval; boundary sync is automatic and idempotent.
+   admin_write_candles: (interval: ChartInterval, candles: vec SpotCandle) ->
+    (ApiResult_1);
+   /// Cancel all orders for caller (parameterless kill switch). Works in degraded mode.
+   cancel_all_orders: () -> (CancelAllOrdersResult);
+   /// Cancel all triggers for caller (parameterless kill switch). Works in degraded mode.
+   cancel_all_triggers: () -> (CancelAllTriggersResult);
+   /// Batch cancel orders. Per-order cancellation — failures don't block other cancels.
+   cancel_orders: (order_ids: vec OrderId) -> (CancelOrdersResult);
+   /// Bulk cancel triggers by ID. Per-trigger cancellation — failures don't block others.
+   cancel_triggers: (trigger_ids: vec TriggerId) -> (CancelTriggersResult);
+   /// Close all positions for caller (parameterless kill switch).
+   /// Full withdrawal on every position with fees auto-collected. Works in degraded mode.
+   close_all_positions: () -> (CloseAllPositionsResult);
+   /// Collect accumulated fees and withdrawn tokens from a position into trading balance.
+   collect_fees: (id: PositionId) -> (CollectFeesResult);
+   /// Unified order creation: optional cancels + book orders + pool swaps.
+   /// Cancels execute first (freeing slots + balance), then pool swaps, then book orders.
+   /// Uses pre-deposited trading balance.
+   create_orders: (cancel_ids: vec OrderId, book_orders: vec BookOrderSpec,
+    pool_swaps: vec PoolSwapSpec) -> (CreateOrdersResult);
+   /// Unified trigger creation: optional cancels + batch create in a single call.
+   /// Cancels execute first (freeing slots + balance), then creates.
+   create_triggers: (cancel_ids: vec TriggerId, triggers: vec TriggerSpec) ->
+    (CreateTriggersResult);
+   /// Decrease liquidity from an existing position.
+   /// Full withdrawal auto-collects fees and deletes the position; partial stores tokens in tokensOwed.
+   decrease_liquidity: (id: PositionId, liquidity_delta: nat) ->
+    (DecreaseLiquidityResult);
+   /// Deposit tokens to trading balance via ICRC-2 transfer_from.
+   /// Pre-deposits so subsequent orders can skip async ICRC transfer (fully atomic).
+   deposit: (token: ClaimTokenId, amount: nat) -> (DepositResult);
+   /// Complete balance sheet with detailed breakdowns and invariant checks (sync, uses virtual custody).
+   /// Covers INV-1a (balance sheet), INV-2 (user fund conservation), INV-3 (pool consistency).
+   get_balance_sheet: () -> (BalanceSheet) query;
+   /// Chart data with pagination. before_ts fetches candles before that timestamp.
+   get_chart: (interval: ChartInterval, before_ts: opt nat64, limit:
+    nat32) ->
+    (record {
+       data: vec SpotCandle;
+       has_more: bool;
+       next_cursor: opt nat64;
+     }) query;
+   /// Get current control state.
+   get_control: () -> (FrozenControl) query;
+   /// Get all data for initial page load in a single atomic call.
+   /// Works for both logged-in and logged-out users.
+   get_hydration: (interval: ChartInterval, chart_limit: nat32, levels:
+    nat32, tick_bucket_size: nat32) -> (HydrateResponse) query;
+   /// Optimized endpoint for indexer canister providing aggregate token stats and per-pool breakdowns.
+   get_indexer_data: () -> (IndexerData) query;
+   /// Live candle for a specific chart interval.
+   /// Returns CandleData tuple (timestamp, open, high, low, close, volume).
+   get_live_candle: (interval: ChartInterval) -> (CandleData) query;
+   /// Liquidity lock schedule for investor transparency.
+   /// Shows locked vs unlocked TVL and upcoming unlock times.
+   get_lock_schedule: () -> (LiquidityLockSummary) query;
+   /// Market depth with separated order book and pool liquidity.
+   /// levels sets price levels per side; tick_bucket_size aggregates orders within N ticks (0 = finest).
+   get_market_depth: (levels: nat32, tick_bucket_size: nat32) ->
+    (MarketDepthResponse) query;
+   /// Historical market-level snapshots for TVL charts (explore page token/market detail).
+   /// Any interval_hours supported via step pattern over hourly append-only list.
+   get_market_snapshots: (before_timestamp: opt nat64, limit: nat32,
+    interval_hours: nat32) -> (MarketSnapshotsResponse) query;
+   /// Platform data (conditional fetch when platform_version changes).
+   /// Returns price, liquidity, live candle, and market depth for the given interval and depth params.
+   get_platform: (interval: ChartInterval, levels: nat32, tick_bucket_size:
+    nat32) -> (PlatformData) query;
+   /// Get essential state for a specific pool tier identified by fee_pips.
+   /// Returns null if no pool exists for the given fee tier.
+   get_pool: (fee_pips: nat32) -> (opt PoolState) query;
+   /// Historical fee snapshots for a specific pool (explore page charts).
+   /// Any interval_hours supported via step pattern over hourly append-only list.
+   get_pool_snapshots: (fee_pips: nat32, before_timestamp: opt nat64, limit:
+    nat32, interval_hours: nat32) -> (PoolSnapshotsResponse) query;
+   /// Overview of all pools with fee tier, position count, and TVL.
+   get_pools_overview: () -> (vec PoolOverview) query;
+   /// Get position details by ID.
+   get_position: (id: PositionId) -> (opt PositionView) query;
+   /// Returns current reference tick (null if market uninitialized).
+   get_reference_tick: () -> (opt Tick) query;
+   /// Atomic snapshot of complete routing state for external routers.
+   /// Single call provides token metadata, reference tick, pool state, and order book.
+   get_routing_state: () -> (RoutingState) query;
+   /// Recent market transactions with cursor-based pagination (newest first).
+   /// limit defaults to 20 (max 100); cursor is exclusive on tx_id.
+   get_transactions: (limit: opt nat32, cursor: opt nat64) ->
+    (record {
+       data: vec SpotTransactionResponse;
+       has_more: bool;
+       next_cursor: opt nat64;
+     }) query;
+   /// User account data (conditional fetch when user_version changes).
+   /// Returns complete breakdown: orders, positions, trading/locked balances, fees.
+   get_user: () -> (UserData) query;
+   /// Get unified activity history for current user (orders, triggers, LP events).
+   /// cursor resumes from previous page (null = newest); limit defaults to 20 (max 100).
+   get_user_activity: (cursor: opt ChainCursor, limit: opt nat32) ->
+    (GetUserActivityResult) query;
+   /// Get version counters (primary polling endpoint, ~500ms interval).
+   get_versions: () -> (PollVersions) query;
+   /// Increase liquidity in an existing position by position ID.
+   increase_liquidity: (id: PositionId, amt_0_desired: nat, amt_1_desired:
+    nat) -> (IncreaseLiquidityResult);
+   /// Lock a position until lock_until_ms (one-way ratchet: can only extend).
+   /// Blocks decrease_liquidity and close_all_positions while locked.
+   lock_position: (id: PositionId, lock_until_ms: nat64) ->
+    (LockPositionResult);
+   /// Execute a trade directly from wallet using ICRC-2 approval flow (pass-through).
+   /// Pulls input via transfer_from, settles output/refund to wallet. Always executes as market order.
+   pass_through_trade: (args: PassThroughTradeArgs) ->
+    (PassThroughTradeResult);
+   /// Quote order for UI preview. Does not modify state.
+   /// Returns pool_swaps for pass-through to create_orders or pass_through_trade.
+   quote_order: (side: Side, input_amount: nat, limit_tick: Tick,
+    slippage_bps: opt nat32) -> (QuoteOrderResult) query;
+   /// Pay to release a rate-limited principal. Costs 11x quote ledger fee via ICRC-2.
+   release_rate_limit: (target: principal) -> (ApiResult);
+   /// Transfer a position to another user. Ownership moves, position stays unchanged.
+   /// Locked positions are transferable. Accrued fees carry over to new owner.
+   transfer_position: (position_id: PositionId, recipient: principal) ->
+    (TransferPositionResult);
+   /// Update order tick and/or input amount. Closes old order and creates a new one.
+   /// Delta vs remaining_input is debited or refunded from trading balance.
+   update_order: (order_id: OrderId, new_tick: Tick, new_input_amount:
+    nat) -> (UpdateOrderResult);
+   /// Withdraw tokens from trading balance to wallet.
+   /// Deducts from trading balance before async transfer; credits back on failure.
+   withdraw: (token: ClaimTokenId, amount: nat) -> (WithdrawResult);
+ };
+type Side = 
+ variant {
+   buy;
+   sell;
+ };
+type RoutingTokenInfo = 
+ record {
+   decimals: nat8;
+   fee: nat;
+   ledger: principal;
+ };
+type RoutingState = 
+ record {
+   book: BookLevelsResponse;
+   last_book_tick: opt Tick;
+   last_trade_sqrt_price_x96: opt SqrtPriceX96;
+   last_trade_tick: opt Tick;
+   maker_fee_pips: nat32;
+   pools: vec RoutingPoolState;
+   reference_tick: opt Tick;
+   system_state: SystemState;
+   taker_fee_pips: nat32;
+   token0: RoutingTokenInfo;
+   token1: RoutingTokenInfo;
+ };
+type RoutingPoolState = 
+ record {
+   fee_pips: nat32;
+   initialized_ticks: vec TickLiquidityData;
+   liquidity: nat;
+   sqrt_price_x96: SqrtPriceX96;
+   tick: Tick;
+   tick_spacing: nat;
+   token0_reserve: nat;
+   token1_reserve: nat;
+ };
+type QuoteResult = 
+ record {
+   book_order: opt BookOrderSpec;
+   effective_tick: Tick;
+   input_amount: nat;
+   min_output: nat;
+   output_amount: nat;
+   pool_swaps: vec PoolSwapSpec;
+   price_impact_bps: nat;
+   reference_tick: Tick;
+   total_fees: nat;
+   venue_breakdown: vec VenueBreakdown;
+ };
+type QuoteOrderResult = 
+ variant {
+   err: ApiError;
+   ok: QuoteResult;
+ };
+type ProtocolEquitySummary = 
+ record {
+   available: record {
+                nat;
+                nat;
+              };
+   book_fees: record {
+                nat;
+                nat;
+              };
+   op_fees: record {
+              nat;
+              nat;
+            };
+   pool_fees: record {
+                nat;
+                nat;
+              };
+   withdrawn: record {
+                nat;
+                nat;
+              };
+ };
+type PositionViewEnhanced = 
+ record {
+   amount_base: nat;
+   amount_quote: nat;
+   apr_bps: nat;
+   fee_pips: nat32;
+   fees_base: nat;
+   fees_quote: nat;
+   fees_usd_value_e6: nat;
+   liquidity: Liquidity;
+   locked_until: opt nat64;
+   owner: principal;
+   position_id: PositionId;
+   tick_lower: Tick;
+   tick_upper: Tick;
+   usd_value_e6: nat;
+ };
+type PositionView = 
+ record {
+   fee_growth_inside_0_last_x128: nat;
+   fee_growth_inside_1_last_x128: nat;
+   fee_pips: nat32;
+   liquidity: Liquidity;
+   locked_until: opt nat64;
+   owner: principal;
+   position_id: PositionId;
+   tick_lower: Tick;
+   tick_upper: Tick;
+   uncollected_fees_base: nat;
+   uncollected_fees_quote: nat;
+ };
+type PositionTransferActivityDetails = 
+ record {
+   counterparty: principal;
+   direction: variant {
+                received;
+                sent;
+              };
+   fee_pips: nat32;
+   liquidity: nat;
+   position_id: nat64;
+   tick_lower: int32;
+   tick_upper: int32;
+ };
+type PositionId = nat64;
+type PositionDebugEntry = 
+ record {
+   fee_pips: nat32;
+   id: nat;
+   liquidity: nat;
+   tick_lower: int;
+   tick_upper: int;
+   tokens_owed_0: nat;
+   tokens_owed_1: nat;
+ };
+type PoolSwapSpec = 
+ record {
+   fee_pips: nat32;
+   input_amount: nat;
+   limit_tick: Tick;
+   side: Side;
+ };
+type PoolState = 
+ record {
+   apr_bps: nat;
+   fee_pips: nat32;
+   fees_24h_usd_e6: nat;
+   initialized_ticks: vec TickLiquidityData;
+   liquidity: nat;
+   sqrt_price_x96: SqrtPriceX96;
+   tick: Tick;
+   tick_spacing: nat;
+   token0_reserve: nat;
+   token1_reserve: nat;
+   tvl_usd_e6: nat;
+   volume_24h_usd_e6: nat;
+ };
+type PoolSnapshotsResponse = 
+ record {
+   data: vec PoolSnapshotView;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type PoolSnapshotView = 
+ record {
+   base_reserve: nat;
+   fees_usd_e6: nat;
+   quote_reserve: nat;
+   timestamp: nat64;
+   volume_quote: nat;
+   volume_usd_e6: nat;
+ };
+type PoolOverview = 
+ record {
+   apr_bps: nat;
+   base_usd_e6: nat;
+   fee_pips: nat32;
+   positions: nat;
+   quote_usd_e6: nat;
+   tick: Tick;
+   volume_24h_usd_e6: nat;
+ };
+type PoolInvariantStatus = 
+ record {
+   computed_liquidity: nat;
+   fee_pips: nat32;
+   inv3a_balanced: bool;
+   inv3b_balanced: bool;
+   inv3c_balanced: bool;
+   liquidity: nat;
+   liquidity_net_sum: int;
+ };
+type PoolDepthData = 
+ record {
+   current_tick: Tick;
+   fee_pips: nat32;
+   initialized_ticks: vec TickLiquidityData;
+   liquidity: nat;
+   sqrt_price_x96: SqrtPriceX96;
+   tick_spacing: nat;
+ };
+type PollVersions = 
+ record {
+   candle: nat;
+   orderbook: nat;
+   platform: nat;
+   user: nat;
+ };
+type PlatformData = 
+ record {
+   book_depth_base_usd_e6: nat;
+   book_depth_quote_usd_e6: nat;
+   candle: CandleData;
+   current_price_usd_e12: nat;
+   last_book_tick: opt Tick;
+   last_trade_sqrt_price_x96: opt SqrtPriceX96;
+   last_trade_tick: opt Tick;
+   liquidity: Liquidity;
+   maker_fee_pips: nat32;
+   maker_rebate_pips: nat32;
+   market_depth: MarketDepthResponse;
+   orders_live: nat;
+   pool_depth_base_usd_e6: nat;
+   pool_depth_quote_usd_e6: nat;
+   price_change_24h_bps: int;
+   reference_tick: opt Tick;
+   taker_fee_pips: nat32;
+   total_positions: nat;
+   total_transactions: nat64;
+   triggers_live: nat;
+   users: nat;
+   volume_24h_usd_e6: nat;
+ };
+type PenaltyActivityDetails = 
+ record {
+   bound_lower: int32;
+   bound_upper: int32;
+   order_id: nat64;
+   penalty_amount: nat;
+   pool_fee_pips: nat32;
+   tick_after: int32;
+   tick_before: int32;
+   token: variant {
+            base;
+            quote;
+          };
+ };
+type PassThroughTradeSuccess = 
+ record {
+   output: nat;
+   output_block_index: opt nat;
+   output_error: opt text;
+   refund: nat;
+   refund_block_index: opt nat;
+   refund_error: opt text;
+   swap_results: vec SwapResultItem;
+   versions: PollVersions;
+ };
+type PassThroughTradeResult = 
+ variant {
+   err: ApiError;
+   ok: PassThroughTradeSuccess;
+ };
+type PassThroughTradeArgs = 
+ record {
+   book_order: opt BookOrderSpec;
+   pool_swaps: vec PoolSwapSpec;
+   recipient: opt principal;
+ };
+type OrderView = 
+ record {
+   base_amount: nat;
+   base_filled: nat;
+   fee: int;
+   immediate_or_cancel: bool;
+   order_id: nat64;
+   quote_amount: nat;
+   quote_filled: nat;
+   quote_usd_rate_e12: nat;
+   side: Side;
+   status: OrderStatus;
+   tick: Tick;
+   timestamp: nat64;
+ };
+type OrderStatus = 
+ variant {
+   cancelled;
+   filled;
+   partial;
+   pending;
+ };
+type OrderResultItem = 
+ record {
+   index: nat32;
+   result: ApiResult__1_3;
+ };
+type OrderId = nat;
+type OrderDebugEntry = 
+ record {
+   id: nat;
+   locked_input: nat;
+   remaining_input: nat;
+   side: Side;
+   tick: int;
+ };
+type OrderActivityDetails = 
+ record {
+   created_at_ms: nat64;
+   fees_paid: int;
+   immediate_or_cancel: bool;
+   input_spent: nat;
+   locked_input: nat;
+   order_id: nat64;
+   output_received: nat;
+   side: Side;
+   tick: int32;
+ };
+type NetTracking = 
+ record {
+   net_external_base: int;
+   net_external_quote: int;
+   net_lp_base: int;
+   net_lp_quote: int;
+   net_swap_base: int;
+   net_swap_quote: int;
+   total_net_base: int;
+   total_net_quote: int;
+ };
+type NetFlows = 
+ record {
+   external: TokenPairInt;
+   lp: TokenPairInt;
+   swap: TokenPairInt;
+ };
+type MarketSnapshotsResponse = 
+ record {
+   data: vec MarketSnapshotView;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type MarketSnapshotView = 
+ record {
+   base_custody: nat;
+   book_fees_usd_e6: nat;
+   book_open_interest_base: nat;
+   book_open_interest_quote: nat;
+   book_volume_quote: nat;
+   book_volume_usd_e6: nat;
+   orders_live: nat;
+   pool_base_reserve: nat;
+   pool_fees_usd_e6: nat;
+   pool_quote_reserve: nat;
+   pool_volume_quote: nat;
+   pool_volume_usd_e6: nat;
+   quote_custody: nat;
+   reference_price_e12: nat;
+   timestamp: nat64;
+   total_positions: nat;
+   total_transactions: nat64;
+   trigger_locked_base: nat;
+   trigger_locked_quote: nat;
+   triggers_live: nat;
+   users: nat;
+ };
+type MarketDepthResponse = 
+ record {
+   book_asks: vec BookLevelAggregated;
+   book_bids: vec BookLevelAggregated;
+   last_trade_sqrt_price_x96: SqrtPriceX96;
+   pools: vec PoolDepthData;
+   version: nat;
+ };
+type LogLevel = 
+ variant {
+   Critical;
+   Debug;
+   Error;
+   Info;
+   Warn;
+ };
+type LockedBalances = 
+ record {
+   orders: TokenPair;
+   positions: TokenPair;
+   triggers: TokenPair;
+ };
+type LockScheduleEntry = 
+ record {
+   base_usd_e6: nat;
+   fee_pips: nat32;
+   liquidity: nat;
+   locked_until_ms: nat64;
+   position_id: PositionId;
+   quote_usd_e6: nat;
+ };
+type LockPositionResult = 
+ variant {
+   err: ApiError;
+   ok: record {versions: PollVersions;};
+ };
+type LiquidityResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      actual_amt0: nat;
+      actual_amt1: nat;
+      position_id: PositionId;
+      versions: PollVersions;
+    };
+ };
+type LiquidityLockSummary = 
+ record {
+   locked_position_count: nat;
+   schedule: vec LockScheduleEntry;
+   total_locked_base_usd_e6: nat;
+   total_locked_quote_usd_e6: nat;
+   total_position_count: nat;
+   total_unlocked_base_usd_e6: nat;
+   total_unlocked_quote_usd_e6: nat;
+ };
+type LiquidityActivityDetails = 
+ record {
+   amount_base: nat;
+   amount_quote: nat;
+   fee_pips: nat32;
+   liquidity_delta: nat;
+   position_id: nat64;
+   tick_at_event: int32;
+   tick_lower: int32;
+   tick_upper: int32;
+ };
+type Liquidity = nat;
+type LiabilitiesBreakdown = 
+ record {
+   available_base: nat;
+   available_quote: nat;
+   orders_base: nat;
+   orders_output_base: nat;
+   orders_output_quote: nat;
+   orders_quote: nat;
+   pending_base: nat;
+   pending_quote: nat;
+   pool_reserves_base: nat;
+   pool_reserves_quote: nat;
+   total: nat;
+   total_base: nat;
+   total_quote: nat;
+   triggers_base: nat;
+   triggers_quote: nat;
+ };
+type KillAllResult = 
+ record {
+   budget_hit: bool;
+   orders: nat;
+   positions: nat;
+   triggers: nat;
+ };
+type InitArgs = 
+ record {
+   admin_principals: vec principal;
+   indexer_principal: principal;
+   maker_fee_pips: opt nat32;
+   maker_rebate_pips: opt nat32;
+   oracle_principal: principal;
+   registry_principal: principal;
+   taker_fee_pips: opt nat32;
+   token0: TokenMetadata;
+   token1: TokenMetadata;
+   treasury_principal: opt principal;
+ };
+type IndexerTokenData = 
+ record {
+   current_price_usd_e12: nat;
+   price_change_bps: record {
+                       int;
+                       int;
+                       int;
+                       int;
+                       int;
+                     };
+   volume_24h_usd_e6: nat;
+   volume_30d_usd_e6: nat;
+   volume_7d_usd_e6: nat;
+   volume_cumulative_usd_e6: nat;
+ };
+type IndexerPoolData = 
+ record {
+   apr_bps: nat;
+   current_price_usd_e12: nat;
+   fee_pips: nat32;
+   fees_24h_usd_e6: nat;
+   quote_ledger: principal;
+   tvl_usd_e6: nat;
+   volume_24h_usd_e6: nat;
+   volume_30d_usd_e6: nat;
+   volume_7d_usd_e6: nat;
+   volume_cumulative_usd_e6: nat;
+ };
+type IndexerData = 
+ record {
+   base_tvl_usd_e6: nat;
+   book_fees_cumulative_usd_e6: nat;
+   book_open_interest_usd_e6: nat;
+   book_volume_cumulative_usd_e6: nat;
+   orders_live: nat32;
+   pool_data: vec IndexerPoolData;
+   pool_reserve_usd_e6: nat;
+   quote_tvl_usd_e6: nat;
+   token_data: IndexerTokenData;
+   total_positions: nat32;
+   total_transactions: nat64;
+   trigger_locked_usd_e6: nat;
+   triggers_live: nat32;
+ };
+type IncreaseLiquidityResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      actual_amt0: nat;
+      actual_amt1: nat;
+      liquidity_delta: nat;
+      versions: PollVersions;
+    };
+ };
+type HydrateResponse = 
+ record {
+   chart:
+    record {
+      data: vec SpotCandle;
+      has_more: bool;
+      next_cursor: opt nat64;
+    };
+   platform: PlatformData;
+   recent_trades:
+    record {
+      data: vec SpotTransactionResponse;
+      has_more: bool;
+      next_cursor: opt nat64;
+    };
+   user: UserData;
+   versions: PollVersions;
+ };
+type GetUserActivityResult = 
+ record {
+   data: vec ActivityView;
+   has_more: bool;
+   next_cursor: opt ChainCursor;
+ };
+type FrozenControl = 
+ record {
+   admin_principals: vec principal;
+   cycles_threshold: nat;
+   indexer_principal: principal;
+   instruction_budget: nat64;
+   maker_fee_pips: nat32;
+   maker_rebate_pips: nat32;
+   market_initialized: bool;
+   max_orders_per_user: nat;
+   max_positions_per_user: nat;
+   max_triggers_per_user: nat;
+   oracle_principal: principal;
+   orders_live: nat;
+   pool_protocol_fee_pips: nat;
+   pools: nat;
+   positions: nat;
+   registry_principal: principal;
+   system_state: SystemState;
+   taker_fee_pips: nat32;
+   this_principal: principal;
+   timer_running: bool;
+   token0: record {
+             decimals: nat8;
+             fee: nat;
+             ledger: principal;
+           };
+   token1: record {
+             decimals: nat8;
+             fee: nat;
+             ledger: principal;
+           };
+   treasury_principal: opt principal;
+   triggers_live: nat;
+   users: nat;
+ };
+type EventLogPage = 
+ record {
+   data: vec EventLogEntry;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type EventLogEntry = 
+ record {
+   context: vec record {
+                  text;
+                  text;
+                };
+   event: text;
+   id: nat64;
+   level: LogLevel;
+   message: text;
+   "principal": opt principal;
+   timestamp: nat64;
+ };
+type ErrorCategory = 
+ variant {
+   admin;
+   authorization;
+   external;
+   other;
+   rate_limit;
+   resource;
+   state;
+   validation;
+ };
+type EquityBreakdown = 
+ record {
+   available_base: nat;
+   available_quote: nat;
+   book_fees_base: nat;
+   book_fees_quote: nat;
+   op_fees_base: nat;
+   op_fees_quote: nat;
+   pool_fees_base: nat;
+   pool_fees_quote: nat;
+   total: nat;
+   total_base: nat;
+   total_quote: nat;
+   withdrawn_base: nat;
+   withdrawn_quote: nat;
+ };
+type DepositResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      block_index: nat;
+      credited: nat;
+      new_balance: nat;
+      versions: PollVersions;
+    };
+ };
+type DecreaseLiquidityResult = 
+ variant {
+   err: ApiError;
+   ok: record {
+         amount0: nat;
+         amount1: nat;
+         versions: PollVersions;
+       };
+ };
+type CreateTriggersResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      available_base: nat;
+      available_quote: nat;
+      cancel_results: vec CancelTriggerResultItem;
+      cancel_summary: BatchSummary;
+      results: vec TriggerResultItem;
+      summary: BatchSummary;
+      versions: PollVersions;
+    };
+ };
+type CreateOrdersResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      available_base: nat;
+      available_quote: nat;
+      cancel_results: vec CancelOrderResultItem;
+      cancel_summary: BatchSummary;
+      order_results: vec OrderResultItem;
+      order_summary: BatchSummary;
+      swap_results: vec SwapResultItem;
+      versions: PollVersions;
+    };
+ };
+type CollectFeesResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      collected_amt0: nat;
+      collected_amt1: nat;
+      versions: PollVersions;
+    };
+ };
+type CloseAllPositionsResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      amount0: nat;
+      amount1: nat;
+      closed: nat32;
+      versions: PollVersions;
+    };
+ };
+type ClaimTokenId = 
+ variant {
+   base;
+   quote;
+ };
+type ChartInterval = 
+ variant {
+   day1;
+   hour1;
+   hour4;
+   min1;
+   min15;
+ };
+type ChainCursor = 
+ record {
+   id: nat64;
+   offset: nat32;
+   partition: nat16;
+ };
+type CandleData = 
+ record {
+   nat64;
+   nat64;
+   nat64;
+   nat64;
+   nat64;
+   nat;
+ };
+type CancelTriggersResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      available_base: nat;
+      available_quote: nat;
+      results: vec CancelTriggerResultItem;
+      summary: BatchSummary;
+      versions: PollVersions;
+    };
+ };
+type CancelTriggerResultItem = 
+ record {
+   result: ApiResult__1_1;
+   trigger_id: TriggerId;
+ };
+type CancelOrdersResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      available_base: nat;
+      available_quote: nat;
+      results: vec CancelOrderResultItem;
+      summary: BatchSummary;
+      versions: PollVersions;
+    };
+ };
+type CancelOrderResultItem = 
+ record {
+   order_id: OrderId;
+   result: ApiResult__1_1;
+ };
+type CancelAllTriggersResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      available_base: nat;
+      available_quote: nat;
+      cancelled: nat32;
+      versions: PollVersions;
+    };
+ };
+type CancelAllOrdersResult = 
+ variant {
+   err: ApiError;
+   ok:
+    record {
+      available_base: nat;
+      available_quote: nat;
+      cancelled: nat32;
+      versions: PollVersions;
+    };
+ };
+type BookOrderSpec = 
+ record {
+   immediate_or_cancel: bool;
+   input_amount: nat;
+   limit_tick: Tick;
+   side: Side;
+ };
+type BookLevelsResponse = 
+ record {
+   asks: vec BookLevelRaw;
+   bids: vec BookLevelRaw;
+ };
+type BookLevelRaw = 
+ record {
+   tick: Tick;
+   total: nat;
+ };
+type BookLevelAggregated = 
+ record {
+   amount: nat;
+   order_count: nat;
+   tick: Tick;
+ };
+type BatchSummary = 
+ record {
+   failed: nat32;
+   succeeded: nat32;
+ };
+type BalanceSheet = 
+ record {
+   assets: AssetsBreakdown;
+   drift_base: int;
+   drift_quote: int;
+   equity: EquityBreakdown;
+   expected_base: nat;
+   expected_quote: nat;
+   is_balanced: bool;
+   liabilities: LiabilitiesBreakdown;
+   net_tracking: NetTracking;
+   pool_invariants:
+    record {
+      all_pools_healthy: bool;
+      pools: vec PoolInvariantStatus;
+      unhealthy_pools: vec nat32;
+    };
+   protocol_equity: ProtocolEquitySummary;
+   users_debug: AllUsersDebug;
+ };
+type AssetsBreakdown = 
+ record {
+   base_balance: nat;
+   quote_balance: nat;
+   total: nat;
+ };
+type ApiResult__1_3 = 
+ variant {
+   err: ApiError;
+   ok: record {order_id: OrderId;};
+ };
+type ApiResult__1_2 = 
+ variant {
+   err: ApiError;
+   ok: record {trigger_id: TriggerId;};
+ };
+type ApiResult__1_1 = 
+ variant {
+   err: ApiError;
+   ok;
+ };
+type ApiResult__1 = 
+ variant {
+   err: ApiError;
+   ok: record {
+         fee: nat;
+         input_amount: nat;
+         output_amount: nat;
+       };
+ };
+type ApiResult_6 = 
+ variant {
+   err: ApiError;
+   ok: EventLogPage;
+ };
+type ApiResult_5 = 
+ variant {
+   err: ApiError;
+   ok: opt UserDebug;
+ };
+type ApiResult_4 = 
+ variant {
+   err: ApiError;
+   ok: KillAllResult;
+ };
+type ApiResult_2 = 
+ variant {
+   err: ApiError;
+   ok: nat;
+ };
+type ApiResult_1 = 
+ variant {
+   err: ApiError;
+   ok: WriteCandlesResult;
+ };
+type ApiResult = 
+ variant {
+   err: ApiError;
+   ok: bool;
+ };
+type ApiError = 
+ record {
+   category: ErrorCategory;
+   code: text;
+   message: text;
+   metadata: opt vec record {
+                       text;
+                       text;
+                     };
+ };
+type AllUsersDebug = 
+ record {
+   inv2_balanced: bool;
+   total_available_base: nat;
+   total_available_quote: nat;
+   total_fees_base: nat;
+   total_fees_quote: nat;
+   total_inv2_drift_base: int;
+   total_inv2_drift_quote: int;
+   total_locked_base: nat;
+   total_locked_quote: nat;
+   total_net_external_base: int;
+   total_net_external_quote: int;
+   total_net_lp_base: int;
+   total_net_lp_quote: int;
+   total_net_swap_base: int;
+   total_net_swap_quote: int;
+   total_pending_base: nat;
+   total_pending_quote: nat;
+   user_count: nat;
+   users_with_drift: nat;
+ };
+type ActivityView = 
+ record {
+   activity_id: nat64;
+   activity_type: ActivityType;
+   details: ActivityDetails;
+   quote_usd_e12: nat64;
+   timestamp_ms: nat64;
+ };
+type ActivityType = 
+ variant {
+   circuit_breaker_penalty;
+   lp_closed;
+   lp_decreased;
+   lp_fees_collected;
+   lp_increased;
+   lp_locked;
+   lp_opened;
+   lp_transferred;
+   order_cancelled;
+   order_filled;
+   order_modified;
+   order_partial;
+   transfer_in;
+   transfer_in_failed;
+   transfer_out;
+   transfer_out_failed;
+   trigger_cancelled;
+   trigger_failed;
+   trigger_fired;
+ };
+type ActivityDetails = 
+ variant {
+   liquidity: LiquidityActivityDetails;
+   order: OrderActivityDetails;
+   penalty: PenaltyActivityDetails;
+   position_transfer: PositionTransferActivityDetails;
+   transfer: TransferActivityDetails;
+   trigger: TriggerActivityDetails;
+ };
+/// Spot trading canister with hybrid CLOB+AMM execution.
+/// Supports limit orders, triggers, concentrated liquidity, and direct ICRC trades.
+service : (init_args: InitArgs) -> Spot

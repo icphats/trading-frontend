@@ -1,0 +1,396 @@
+type UpgradeArgs = 
+ record {
+   add_admins: opt vec principal;
+   remove_admins: opt vec principal;
+   set_default_creation_subnet: opt principal;
+   set_icp_ckusdc_spot_principal: opt principal;
+   set_icp_ckusdt_spot_principal: opt principal;
+   set_max_allocation: opt nat;
+   set_max_slippage_bps: opt nat;
+   set_min_cycles_per_topup: opt nat;
+   set_min_icp_reserve: opt nat;
+   set_min_stablecoin_threshold_usd_e6: opt nat;
+   set_oracle_principal: opt principal;
+   set_party_icp_spot_principal: opt principal;
+   set_registry_principal: opt principal;
+   set_target_topup_cadence_days: opt nat;
+   set_treasury_cycles_floor: opt nat;
+ };
+type TransferCyclesSuccess = 
+ record {
+   cost_usd_e6: nat;
+   cycles_sent: nat;
+ };
+type TransferCyclesResult = 
+ variant {
+   err: ApiError;
+   ok: TransferCyclesSuccess;
+ };
+type TokenType = 
+ variant {
+   btc;
+   ckusdc;
+   ckusdt;
+   cycles;
+   eth;
+   icp;
+   none;
+   party;
+ };
+type SystemState = 
+ variant {
+   degraded;
+   halted;
+   normal;
+ };
+type SnapshotsResponse = 
+ record {
+   data: vec SnapshotView;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type SnapshotView = 
+ record {
+   buyback_usd_e6: nat;
+   ckusdc_balance: nat;
+   ckusdt_balance: nat;
+   cycles_balance: nat;
+   cycles_cost_basis_usd_e6: nat;
+   cycles_donation_usd_e6: nat;
+   cycles_expense_usd_e6: nat;
+   cycles_out: nat;
+   day_index: nat32;
+   fees_from_ckusdc_markets_usd_e6: nat;
+   fees_from_ckusdt_markets_usd_e6: nat;
+   fees_from_icp_markets_usd_e6: nat;
+   fees_icp: nat;
+   icp_balance: nat;
+   icp_cost_basis_usd_e6: nat;
+   icp_fair_value_usd_e6: nat;
+   icp_to_cycles: nat;
+   icp_usd_rate_e12: nat;
+   party_burned: nat;
+   realized_gain_loss_e6: int;
+   registered_canister_count: nat32;
+   timestamp: nat64;
+   unrealized_gain_loss_e6: int;
+ };
+type Snapshot = 
+ record {
+   ckusdc_balance: nat;
+   ckusdt_balance: nat;
+   cumulative_buyback_usd_e6: nat;
+   cumulative_cycles_donation_usd_e6: nat;
+   cumulative_cycles_expense_usd_e6: nat;
+   cumulative_cycles_out: nat;
+   cumulative_fees_icp: nat;
+   cumulative_icp_to_cycles: nat;
+   cumulative_party_burned: nat;
+   cumulative_realized_gain_loss_e6: int;
+   cycles_balance: nat;
+   cycles_cost_basis_usd_e6: nat;
+   day_index: nat32;
+   fees_from_ckusdc_markets_usd_e6: nat;
+   fees_from_ckusdt_markets_usd_e6: nat;
+   fees_from_icp_markets_usd_e6: nat;
+   icp_balance: nat;
+   icp_cost_basis_usd_e6: nat;
+   icp_fair_value_usd_e6: nat;
+   icp_usd_rate_e12: nat;
+   registered_canister_count: nat32;
+   timestamp: nat64;
+   unrealized_gain_loss_e6: int;
+ };
+type RetryBurnSuccess = record {party_burned: nat64;};
+type RetryBurnResult = 
+ variant {
+   err: ApiError;
+   ok: RetryBurnSuccess;
+ };
+type RegisteredCanistersResponse = 
+ record {
+   data: vec RegisteredCanisterInfo;
+   has_more: bool;
+   next_cursor: opt principal;
+ };
+type RegisteredCanisterInfo = 
+ record {
+   last_topup_at: opt nat64;
+   name: text;
+   "principal": principal;
+   registered_at: nat64;
+   role: CanisterRole;
+   topup_count: nat;
+   total_cycles_received: nat64;
+ };
+type ReconcileResult = 
+ record {
+   untracked_cycles: nat;
+   untracked_icp: nat64;
+ };
+type LogLevel = 
+ variant {
+   Critical;
+   Debug;
+   Error;
+   Info;
+   Warn;
+ };
+type LogEntry = 
+ record {
+   context: vec record {
+                  text;
+                  text;
+                };
+   event: text;
+   id: nat64;
+   level: LogLevel;
+   message: text;
+   "principal": opt principal;
+   timestamp: nat64;
+ };
+type JournalEntry = 
+ record {
+   amount_a: nat64;
+   amount_a_token: TokenType;
+   amount_b: nat64;
+   amount_b_token: TokenType;
+   cost_basis_usd_e6: nat64;
+   counterparty: opt principal;
+   event_type: EventType;
+   gain_loss_e6: int64;
+   icp_usd_rate_e12: nat64;
+   id: nat64;
+   memo: opt text;
+   timestamp: nat64;
+   usd_value_e6: nat64;
+ };
+type JournalEntriesResponse = 
+ record {
+   data: vec JournalEntry;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type FrozenControl = 
+ record {
+   admin_principals: vec principal;
+   cycles_balance: nat;
+   default_creation_subnet: opt principal;
+   icp_ckusdc_spot_principal: opt principal;
+   icp_ckusdt_spot_principal: opt principal;
+   max_allocation: nat;
+   max_slippage_bps: nat;
+   min_cycles_per_topup: nat;
+   min_icp_reserve: nat64;
+   min_stablecoin_threshold_usd_e6: nat64;
+   oracle_principal: opt principal;
+   party_icp_spot_principal: opt principal;
+   registered_canisters_count: nat;
+   registry_principal: opt principal;
+   system_state: SystemState;
+   target_topup_cadence_days: nat;
+   this_principal: principal;
+   timer_running: bool;
+   treasury_cycles_floor: nat;
+ };
+type EventType = 
+ variant {
+   aggregation;
+   burn;
+   buyback;
+   canister_creation;
+   collect;
+   convert;
+   distribute;
+   reconcile;
+   revalue;
+ };
+type EventLogPage = 
+ record {
+   data: vec LogEntry;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type ErrorCategory = 
+ variant {
+   admin;
+   authorization;
+   external;
+   other;
+   rate_limit;
+   resource;
+   state;
+   validation;
+ };
+type CreateCanisterSuccess = 
+ record {
+   block_id: nat;
+   canister_id: principal;
+   cost_basis_usd_e6: nat64;
+   cycles_spent: nat;
+ };
+type CreateCanisterResult = 
+ variant {
+   err: ApiError;
+   ok: CreateCanisterSuccess;
+ };
+type ConversionSuccess = 
+ record {
+   cycles_received: nat;
+   icp_cost_basis_usd_e6: nat64;
+   icp_fair_value_usd_e6: nat64;
+   icp_spent: nat64;
+   icp_usd_rate_e12: nat64;
+   realized_gain_loss_e6: int64;
+ };
+type ConversionResult = 
+ variant {
+   err: ApiError;
+   ok: ConversionSuccess;
+ };
+type CollectFeesResult = 
+ variant {
+   err: ApiError;
+   ok;
+ };
+type CanisterStatusInfo = 
+ record {
+   burn_last_topup_amount: nat;
+   burn_rate_cycles_per_day: nat;
+   last_fee_sweep_at: opt nat64;
+   last_topup_at: opt nat64;
+   name: text;
+   "principal": principal;
+   registered_at: nat64;
+   role: CanisterRole;
+   state: CanisterState;
+   topup_count: nat;
+   total_cycles_expense_usd_e6: nat64;
+   total_cycles_received: nat64;
+   total_fees_collected: nat64;
+   total_fees_collected_usd_e6: nat64;
+ };
+type CanisterState = 
+ variant {
+   active;
+   halted;
+ };
+type CanisterSettings = 
+ record {
+   compute_allocation: opt nat;
+   controllers: opt vec principal;
+   freezing_threshold: opt nat;
+   memory_allocation: opt nat;
+ };
+type CanisterRole = 
+ variant {
+   cycles_only;
+   fee_source: record {fee_token_ledger: principal;};
+   unmanaged;
+ };
+type ApiResult_5 = 
+ variant {
+   err: ApiError;
+   ok: vec text;
+ };
+type ApiResult_4 = 
+ variant {
+   err: ApiError;
+   ok: EventLogPage;
+ };
+type ApiResult_3 = 
+ variant {
+   err: ApiError;
+   ok: JournalEntriesResponse;
+ };
+type ApiResult_2 = 
+ variant {
+   err: ApiError;
+   ok: ReconcileResult;
+ };
+type ApiResult_1 = 
+ variant {
+   err: ApiError;
+   ok;
+ };
+type ApiResult = 
+ variant {
+   err: ApiError;
+   ok: CanisterStatusInfo;
+ };
+type ApiError = 
+ record {
+   category: ErrorCategory;
+   code: text;
+   message: text;
+   metadata: opt vec record {
+                       text;
+                       text;
+                     };
+ };
+service : {
+  /// Set up ICRC-2 approvals for all configured spot markets (admin only).
+  /// Must be called after setting spot principals via admin_upgrade_config.
+  /// Returns errors for any markets that failed (empty = all succeeded).
+  admin_approve_spot_markets: () -> (ApiResult_5);
+  /// Burn specified PARTY amount to the minting account (admin only).
+  /// Use after a buyback where the swap succeeded but the burn failed.
+  admin_burn_party: (amount: nat) -> (RetryBurnResult);
+  /// Convert ICP to cycles via CMC for reserve replenishment (admin only).
+  admin_convert_icp_to_cycles: (icp_amount: nat) -> (ConversionResult);
+  /// Get event log entries with cursor-based pagination (admin only).
+  admin_get_event_logs: (cursor: opt nat64, limit: nat32) ->
+   (ApiResult_4) query;
+  /// Get journal entries with cursor-based pagination (admin only).
+  admin_get_journal_entries: (before_id: opt nat64, limit: nat32) ->
+   (ApiResult_3) query;
+  /// Reconcile ICP and Cycles inventory with actual ledger balances (admin only).
+  /// Use after initial funding to bring untracked assets into inventory with $0 cost basis.
+  /// Creates a journal entry if any deviation is found.
+  admin_reconcile: () -> (ApiResult_2);
+  /// Register a canister for cycle management (admin only, idempotent).
+  admin_register_canister: (canister_id: principal, role: CanisterRole, name:
+   text) -> (ApiResult_1);
+  /// Remove a canister from management registry (admin only).
+  admin_remove_canister: (canister_id: principal) -> (ApiResult_1);
+  /// Set operational state for a registered canister (admin only).
+  admin_set_canister_state: (canister_id: principal, new_state:
+   CanisterState) -> (ApiResult_1);
+  /// Set system operational state (admin only).
+  admin_set_system_state: (new_state: SystemState) -> (ApiResult_1);
+  /// Start the heartbeat timer (admin only). No-op if already running.
+  admin_start_timer: () -> (ApiResult_1);
+  /// Stop the heartbeat timer (admin only).
+  admin_stop_timer: () -> (ApiResult_1);
+  /// Push-based topup to a specific registered canister (admin only).
+  /// Bypasses profitability checks — for emergencies or manual intervention.
+  admin_topup_canister: (canister_id: principal, amount: nat) ->
+   (TransferCyclesResult);
+  /// Update runtime configuration (admin_principals, target_runway, etc.).
+  admin_upgrade_config: (args: UpgradeArgs) -> (ApiResult_1);
+  /// Collect protocol fees from a registered canister (push-based).
+  /// Caller must pre-approve Treasury for ICRC-2 transfer_from.
+  /// Fee collection is independent from topup requests - self-calibrating threshold.
+  collect_protocol_fees: (amount: nat) -> (CollectFeesResult);
+  /// Create a canister shell via Cycles Ledger (registry inter-canister call).
+  /// Treasury handles cycles provisioning, cost tracking, and auto-registration.
+  /// Authorized callers: registry_principal OR admins.
+  create_canister_shell: (settings: opt CanisterSettings, name: text, role:
+   CanisterRole, cycles_amount: nat) -> (CreateCanisterResult);
+  /// Get comprehensive status for a registered canister.
+  get_canister_status: (canister_id: principal) -> (ApiResult) query;
+  /// Get current control plane state (public, transparent).
+  get_control: () -> (FrozenControl) query;
+  /// Get registered canisters with cycle metrics (paginated).
+  get_registered_canisters: (cursor: opt principal, limit: nat32) ->
+   (RegisteredCanistersResponse) query;
+  /// Get a specific snapshot by day_index (null = today's snapshot).
+  get_snapshot: (day_index: opt nat32) -> (opt Snapshot) query;
+  /// Daily snapshots with timestamp-based cursor pagination.
+  get_snapshots: (before_timestamp: opt nat64, limit: nat) ->
+   (SnapshotsResponse) query;
+  /// Transfer cycles to calling canister (pull-based topup).
+  /// Caller must be a registered canister. Inter-canister only.
+  /// See: md/canon/backend/_shared/08-CycleManagement.md
+  request_topup: () -> (TransferCyclesResult);
+}

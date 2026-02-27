@@ -1,0 +1,148 @@
+type UsernameResult = 
+ variant {
+   err: ApiError;
+   ok: text;
+ };
+type UpgradeArgs = 
+ record {
+   add_admins: opt vec principal;
+   remove_admins: opt vec principal;
+   reset_topup_backoff: opt bool;
+   set_cycles_threshold: opt nat;
+   set_treasury_principal: opt principal;
+ };
+type SystemState = 
+ variant {
+   degraded;
+   halted;
+   normal;
+ };
+type MessagesResponse = 
+ record {
+   data: vec MessageResponse;
+   has_more: bool;
+   next_cursor: opt MessageId;
+ };
+type MessageResult = 
+ variant {
+   err: ApiError;
+   ok: MessageResponse;
+ };
+type MessageResponse = 
+ record {
+   author: principal;
+   content: text;
+   created_at: nat64;
+   id: MessageId;
+   username: opt text;
+ };
+type MessageId = nat64;
+type LogLevel = 
+ variant {
+   Critical;
+   Debug;
+   Error;
+   Info;
+   Warn;
+ };
+type LogEntry = 
+ record {
+   context: vec record {
+                  text;
+                  text;
+                };
+   event: text;
+   id: nat64;
+   level: LogLevel;
+   message: text;
+   "principal": opt principal;
+   timestamp: nat64;
+ };
+type HydrateResponse = 
+ record {
+   messages: vec MessageResponse;
+   my_username: opt text;
+ };
+type FrozenControl = 
+ record {
+   admin_principals: vec principal;
+   cycles_threshold: nat;
+   system_state: SystemState;
+   this_principal: principal;
+   treasury_principal: opt principal;
+ };
+type EventLogPage = 
+ record {
+   data: vec LogEntry;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type ErrorCategory = 
+ variant {
+   admin;
+   authorization;
+   external;
+   other;
+   rate_limit;
+   resource;
+   state;
+   validation;
+ };
+type ApiResult_2 = 
+ variant {
+   err: ApiError;
+   ok: EventLogPage;
+ };
+type ApiResult_1 = 
+ variant {
+   err: ApiError;
+   ok: bool;
+ };
+type ApiResult = 
+ variant {
+   err: ApiError;
+   ok;
+ };
+type ApiError = 
+ record {
+   category: ErrorCategory;
+   code: text;
+   message: text;
+   metadata: opt vec record {
+                       text;
+                       text;
+                     };
+ };
+service : {
+  /// Get event log entries with cursor-based pagination (admin only).
+  admin_get_event_logs: (cursor: opt nat64, limit: nat32) ->
+   (ApiResult_2) query;
+  /// Release a rate-limited principal (admin only).
+  admin_release_rate_limit: (target: principal) -> (ApiResult_1);
+  /// Set system-wide lockdown (admin override for rate limiter).
+  admin_set_lockdown: (active: bool) -> (ApiResult);
+  /// Set system operational state (admin only).
+  admin_set_system_state: (new_state: SystemState) -> (ApiResult);
+  /// Start the heartbeat timer (admin only).
+  admin_start_timer: () -> (ApiResult);
+  /// Stop the heartbeat timer (admin only).
+  admin_stop_timer: () -> (ApiResult);
+  /// Update configuration (admin only).
+  admin_upgrade_config: (args: UpgradeArgs) -> (ApiResult);
+  /// Check if a username is available.
+  check_username_available: (username: text) -> (bool) query;
+  /// Get current configuration.
+  get_control: () -> (FrozenControl) query;
+  /// Hydrate all data needed for initial page load.
+  get_hydration: (message_limit: nat) -> (HydrateResponse) query;
+  /// Get messages with cursor-based pagination (newest first).
+  /// cursor: null = start from newest; ?id = messages before that id (exclusive).
+  get_messages: (cursor: opt MessageId, limit: nat) ->
+   (MessagesResponse) query;
+  /// Get username for a specific principal.
+  get_username: ("principal": principal) -> (opt text) query;
+  /// Send a new message.
+  send_message: (content: text) -> (MessageResult);
+  /// Set username for the caller (register or update).
+  set_username: (username: text) -> (UsernameResult);
+}

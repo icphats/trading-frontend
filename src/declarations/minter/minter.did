@@ -1,0 +1,46 @@
+type TransferType = 
+ variant {
+   burn;
+   mint;
+ };
+type MinterError = 
+ variant {
+   BadBurn: record {min_burn_amount: nat;};
+   BadFee: record {expected_fee: nat;};
+   CreatedInFuture: record {ledger_time: nat64;};
+   Duplicate: record {duplicate_of: nat;};
+   GenericError: record {
+                   error_code: nat;
+                   message: text;
+                 };
+   InsufficientFunds: record {balance: nat;};
+   TemporarilyUnavailable;
+   TooOld;
+ };
+type Minter = 
+ service {
+   /// Execute inter-canister transfer (mint or burn).
+   /// Supports deduplication via created_at_time passthrough.
+   inter_canister_transfer: (args: InterCanisterTransferArgs) ->
+    (InterCanisterTransferResult);
+   /// Mint tokens to a specified principal.
+   mint_to_self: (amount: nat, "principal": text) ->
+    (InterCanisterTransferResult);
+ };
+type InterCanisterTransferResult = 
+ variant {
+   err: MinterError;
+   ok: BlockIndex;
+ };
+type InterCanisterTransferArgs = 
+ record {
+   amount: nat;
+   canister_id: principal;
+   created_at_time: opt nat64;
+   transfer_type: TransferType;
+   user_id: principal;
+ };
+type BlockIndex = nat;
+/// Minter canister for inter-canister token transfers.
+/// Handles minting and burning operations for the party ledger.
+service : () -> Minter

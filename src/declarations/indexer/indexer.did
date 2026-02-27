@@ -1,0 +1,366 @@
+type VolumeCursor = 
+ record {
+   id: principal;
+   volume: nat;
+ };
+type UpgradeArgs = 
+ record {
+   add_admins: opt vec principal;
+   remove_admins: opt vec principal;
+   reset_topup_backoff: opt bool;
+   set_cycles_threshold: opt nat;
+   set_treasury_principal: opt principal;
+ };
+type TokenListResponse = 
+ record {
+   data: vec TokenListItem;
+   has_more: bool;
+   next_cursor: opt VolumeCursor;
+ };
+type TokenListItem = 
+ record {
+   base_markets: vec principal;
+   current_price_usd_e12: nat;
+   decimals: nat8;
+   name: text;
+   price_change_24h_bps: int;
+   price_change_30d_bps: int;
+   price_change_7d_bps: int;
+   quote_markets: vec principal;
+   symbol: text;
+   token_ledger: principal;
+   tvl_usd_e6: nat;
+   volume_24h_usd_e6: nat;
+   volume_30d_usd_e6: nat;
+   volume_7d_usd_e6: nat;
+ };
+type TokenInfo = 
+ record {
+   decimals: nat8;
+   ledger: principal;
+   name: text;
+   symbol: text;
+ };
+type TokenDataUpdate = 
+ record {
+   current_price_usd_e12: nat;
+   price_change_bps: record {
+                       int;
+                       int;
+                       int;
+                       int;
+                       int;
+                     };
+   volume_24h_usd_e6: nat;
+   volume_30d_usd_e6: nat;
+   volume_7d_usd_e6: nat;
+   volume_cumulative_usd_e6: nat;
+ };
+type TokenAggregate = 
+ record {
+   market_count: nat;
+   token_ledger: principal;
+   total_tvl_usd_e6: nat;
+   total_volume_24h_usd_e6: nat;
+   total_volume_30d_usd_e6: nat;
+   total_volume_7d_usd_e6: nat;
+ };
+type SystemState = 
+ variant {
+   degraded;
+   halted;
+   normal;
+ };
+type SearchResponse = 
+ record {
+   markets: vec MarketListItem;
+   tokens: vec TokenListItem;
+ };
+type SearchFilter = 
+ variant {
+   all;
+   markets;
+   tokens;
+ };
+type QuoteTokenSnapshotsResponse = 
+ record {
+   data: vec QuoteTokenSnapshotView;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type QuoteTokenSnapshotView = 
+ record {
+   fees_usd_e6: nat;
+   timestamp: nat64;
+   tvl_usd_e6: nat;
+   volume_usd_e6: nat;
+ };
+type PoolListResponse = 
+ record {
+   data: vec PoolListItem;
+   has_more: bool;
+   next_cursor: opt VolumeCursor;
+ };
+type PoolListItem = 
+ record {
+   apr_bps: nat;
+   base_ledger: principal;
+   current_price_usd_e12: nat;
+   fee_pips: nat32;
+   fees_24h_usd_e6: nat;
+   quote_ledger: principal;
+   spot_canister: principal;
+   symbol: text;
+   tvl_usd_e6: nat;
+   volume_24h_usd_e6: nat;
+ };
+type PoolDataUpdate = 
+ record {
+   apr_bps: nat;
+   current_price_usd_e12: nat;
+   fee_pips: nat32;
+   fees_24h_usd_e6: nat;
+   quote_ledger: principal;
+   tvl_usd_e6: nat;
+   volume_24h_usd_e6: nat;
+   volume_30d_usd_e6: nat;
+   volume_7d_usd_e6: nat;
+   volume_cumulative_usd_e6: nat;
+ };
+type PlatformSnapshotsResponse = 
+ record {
+   data: vec PlatformSnapshotView;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type PlatformSnapshotView = 
+ record {
+   book_fees_usd_e6: nat64;
+   book_open_interest_usd_e6: nat64;
+   orders_live: nat32;
+   pool_fees_usd_e6: nat64;
+   pool_reserve_usd_e6: nat64;
+   timestamp: nat64;
+   total_positions: nat32;
+   transactions: nat64;
+   trigger_locked_usd_e6: nat64;
+   triggers_live: nat32;
+   tvl_usd_e6: nat64;
+   volume_usd_e6: nat64;
+ };
+type MarketMetricsUpdate = 
+ record {
+   base_tvl_usd_e6: nat;
+   book_fees_cumulative_usd_e6: nat;
+   book_open_interest_usd_e6: nat;
+   book_volume_cumulative_usd_e6: nat;
+   orders_live: nat32;
+   pool_reserve_usd_e6: nat;
+   quote_tvl_usd_e6: nat;
+   total_positions: nat32;
+   total_transactions: nat64;
+   trigger_locked_usd_e6: nat;
+   triggers_live: nat32;
+ };
+type MarketListResponse = 
+ record {
+   data: vec MarketListItem;
+   has_more: bool;
+   next_cursor: opt VolumeCursor;
+ };
+type MarketListItem = 
+ record {
+   base_token: principal;
+   canister_id: principal;
+   last_price_usd_e12: nat;
+   price_change_24h_bps: int;
+   quote_token: principal;
+   symbol: text;
+   volume_24h_usd_e6: nat;
+ };
+type MarketDataUpdate = 
+ record {
+   market_metrics: MarketMetricsUpdate;
+   pool_data: vec PoolDataUpdate;
+   token_data: TokenDataUpdate;
+ };
+type LogLevel = 
+ variant {
+   Critical;
+   Debug;
+   Error;
+   Info;
+   Warn;
+ };
+type LogEntry = 
+ record {
+   context: vec record {
+                  text;
+                  text;
+                };
+   event: text;
+   id: nat64;
+   level: LogLevel;
+   message: text;
+   "principal": opt principal;
+   timestamp: nat64;
+ };
+type ListQuery = 
+ record {
+   cursor: opt VolumeCursor;
+   limit: nat;
+ };
+type IndexerStatus = 
+ record {
+   last_push_time: nat64;
+   market_count: nat;
+   pool_count: nat;
+   token_count: nat;
+ };
+type FrozenTokenEntry = 
+ record {
+   canister_id: principal;
+   decimals: nat8;
+   name: text;
+   symbol: text;
+ };
+type FrozenPlatformStats = 
+ record {
+   active_markets: nat32;
+   active_pools: nat32;
+   book_fees_24h_usd_e6: nat64;
+   book_fees_cumulative_usd_e6: nat64;
+   book_open_interest_usd_e6: nat64;
+   book_volume_cumulative_usd_e6: nat64;
+   last_updated: nat64;
+   orders_live: nat32;
+   pool_fees_24h_usd_e6: nat64;
+   pool_fees_cumulative_usd_e6: nat64;
+   pool_reserve_usd_e6: nat64;
+   pool_volume_cumulative_usd_e6: nat64;
+   snapshot_count: nat;
+   total_positions: nat32;
+   total_transactions: nat64;
+   total_tvl_usd_e6: nat64;
+   trigger_locked_usd_e6: nat64;
+   triggers_live: nat32;
+   tvl_change_24h_bps: int;
+   volume_24h_usd_e6: nat64;
+   volume_change_24h_bps: int;
+ };
+type FrozenControl = 
+ record {
+   admin_principals: vec principal;
+   cycles_threshold: nat;
+   system_state: SystemState;
+   this_principal: principal;
+   treasury_principal: opt principal;
+ };
+type EventLogPage = 
+ record {
+   data: vec LogEntry;
+   has_more: bool;
+   next_cursor: opt nat64;
+ };
+type ErrorCategory = 
+ variant {
+   admin;
+   authorization;
+   external;
+   other;
+   rate_limit;
+   resource;
+   state;
+   validation;
+ };
+type ApiResult_1 = 
+ variant {
+   err: ApiError;
+   ok: EventLogPage;
+ };
+type ApiResult = 
+ variant {
+   err: ApiError;
+   ok;
+ };
+type ApiError = 
+ record {
+   category: ErrorCategory;
+   code: text;
+   message: text;
+   metadata: opt vec record {
+                       text;
+                       text;
+                     };
+ };
+service : {
+  /// Get event log entries with cursor-based pagination (admin only).
+  admin_get_event_logs: (cursor: opt nat64, limit: nat32) ->
+   (ApiResult_1) query;
+  /// Set system operational state (admin only).
+  admin_set_system_state: (new_state: SystemState) -> (ApiResult);
+  /// Start the heartbeat timer (admin only). No-op if already running.
+  admin_start_timer: () -> (ApiResult);
+  /// Stop the heartbeat timer (admin only).
+  admin_stop_timer: () -> (ApiResult);
+  /// Update runtime configuration (admin_principals, etc).
+  admin_upgrade_config: (upgrade_args: UpgradeArgs) -> (ApiResult);
+  /// Untrack user from a market (called by spot canister on full withdrawal).
+  /// Caller must be a registered market canister.
+  deregister_user_from_market: (user: principal) -> (ApiResult);
+  /// Get current configuration.
+  get_control: () -> (FrozenControl) query;
+  /// Initial hydration data for frontend (all tokens with basic stats).
+  get_hydration: () -> (vec FrozenTokenEntry) query;
+  /// Get spot market canister for a base/quote token pair.
+  /// Returns null if no market exists for this pair.
+  /// Primary endpoint for swap widget market lookup.
+  get_market_by_pair: (base_token: principal, quote_token: principal) ->
+   (opt principal) query;
+  /// Get spot market canister by token symbols (e.g., "BOOM", "ICP").
+  /// Case-insensitive. Returns null if tokens or market not found.
+  /// Primary endpoint for URL-based market resolution (e.g., /trade/BOOM/ICP).
+  get_market_by_symbols: (base_symbol: text, quote_symbol: text) ->
+   (opt principal) query;
+  /// List markets with pagination and sorting.
+  get_markets: (params: ListQuery) -> (MarketListResponse) query;
+  /// Platform snapshots at any hourly interval.
+  /// interval_hours: 1 (1D), 24 (1M), 168 (1Y). All from hourly append-only list.
+  get_platform_snapshots: (before_timestamp: opt nat64, limit: nat,
+   interval_hours: nat) -> (PlatformSnapshotsResponse) query;
+  /// Platform-wide statistics (TVL, volume, fees, etc).
+  get_platform_stats: () -> (FrozenPlatformStats) query;
+  /// List pools with pagination and sorting.
+  get_pools: (params: ListQuery) -> (PoolListResponse) query;
+  /// Get snapshots for a quote token (aggregated across all markets).
+  /// interval_hours: 1 (1D), 6 (1W), 24 (1M), 168 (1Y). All from hourly append-only lists.
+  get_quote_token_snapshots: (token_ledger: principal, before_timestamp:
+   opt nat64, limit: nat, interval_hours: nat) ->
+   (QuoteTokenSnapshotsResponse) query;
+  /// Get indexer status (for debugging/transparency).
+  get_status: () -> (IndexerStatus) query;
+  /// Get aggregated TVL/volume for a token across all markets.
+  /// Returns null if token has no registered markets.
+  /// Computes on-demand by summing per-market data.
+  get_token_aggregate: (token_ledger: principal) ->
+   (opt TokenAggregate) query;
+  /// List tokens with pagination and sorting.
+  get_tokens: (params: ListQuery) -> (TokenListResponse) query;
+  /// Get all spot canisters where caller has any involvement (balances, orders, LP positions).
+  /// Used by frontend to know which markets to query for user's portfolio.
+  get_user_markets: () -> (vec principal) query;
+  /// Receive market data update from spot canister.
+  /// Only include sections that changed (token_data, pool_data, market_metrics).
+  push_market_data: (data: MarketDataUpdate) -> ();
+  /// Register new spot market for indexing.
+  /// Called by registry canister during market deployment.
+  /// Token metadata is passed through from the registry (avoids redundant ledger queries).
+  register_spot_market: (market_canister: principal, base_token: TokenInfo,
+   quote_token: TokenInfo, symbol: text) -> (ApiResult);
+  /// Track user involvement with a market (called by spot canister on trades/deposits).
+  /// Caller must be a registered market canister.
+  register_user_to_market: (user: principal) -> (ApiResult);
+  /// Search markets, pools, and tokens by symbol or name.
+  search: (search_term: text, limit: nat, filter: SearchFilter) ->
+   (SearchResponse) query;
+}

@@ -1,0 +1,395 @@
+@import "tailwindcss";
+
+:root {
+  --background: oklch(0.99 0 0);
+  --foreground: oklch(0.2500 0.0400 286);
+  --card: oklch(0.95 0 0);
+  --card-foreground: oklch(0.2500 0.0400 286);
+  --popover: oklch(0.995 0 0);
+  --popover-foreground: oklch(0.2500 0.0400 286);
+  --primary: oklch(0.4558 0.2499 285.87);
+  --primary-foreground: oklch(0.9900 0.0000 0.0000);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.94 0 0);
+  --muted-foreground: oklch(0.5000 0.0300 286);
+  --accent: oklch(0.82 0.06 285);
+  --accent-foreground: oklch(0.25 0.04 285);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.92 0 0);
+  --border-hover: oklch(0.80 0 0);
+  --ring: var(--primary);
+  --control-active: oklch(0.93 0 0);
+  --table-header-bg: oklch(0.96 0 0);
+  --sidebar: oklch(0.97 0 0);
+  --sidebar-primary: oklch(0.4754 0.2169 303.37);
+  --sidebar-accent: oklch(0.82 0.08 300);
+
+  /* Typography */
+  --font-sans: 'Basel', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Monaco, monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --shadow-elevated: 0 10px 20px rgba(0, 0, 0, 0.4), 0 6px 10px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+  --spacing: 0.25rem;
+
+  /* Font weights */
+  --font-weight-book: 485;
+  --font-weight-medium: 535;
+
+  /* Trading Colors */
+  --color-bullish: oklch(0.50 0.19 145);
+  --color-bearish: oklch(0.50 0.21 25);
+  --color-warning: oklch(0.50 0.19 85);
+  --color-buy: var(--color-bullish);
+  --color-sell: var(--color-bearish);
+  --color-limit: oklch(0.50 0.16 200);
+  --color-market: oklch(0.50 0.19 30);
+
+  /* Button/Badge color palette */
+  --color-green: var(--color-bullish);
+  --color-red: var(--color-bearish);
+  --color-blue: oklch(0.50 0.23 260);
+  --color-cyan: oklch(0.50 0.16 200);
+  --color-orange: oklch(0.50 0.19 30);
+  --color-purple: var(--primary);
+  --color-gray: oklch(0.45 0.02 286);
+  --color-yellow: oklch(0.52 0.19 88);
+  --color-pink: oklch(0.50 0.21 350);
+
+  /* Button semantic backgrounds (light mode: light tinted, colored text) */
+  --btn-primary-bg: oklch(0.92 0.06 286);
+  --btn-primary-bg-hover: oklch(0.88 0.08 286);
+  --btn-danger-bg: oklch(0.94 0.04 25);
+  --btn-danger-bg-hover: oklch(0.90 0.06 25);
+  --btn-buy-bg: oklch(0.94 0.04 145);
+  --btn-buy-bg-hover: oklch(0.90 0.06 145);
+  --btn-action-bg: oklch(0.94 0.04 260);
+  --btn-action-bg-hover: oklch(0.90 0.06 260);
+  --btn-secondary-bg: oklch(0.88 0.01 286);
+  --btn-secondary-bg-hover: oklch(0.84 0.02 286);
+
+  /* Network states */
+  --color-connected: oklch(0.65 0.18 145);
+  --color-pending: oklch(0.70 0.15 45);
+  --color-syncing: oklch(0.70 0.15 200);
+
+  /* Trading spacing */
+  --spacing-orderbook: 0.125rem;
+  --spacing-table-cell: 0.375rem;
+  --spacing-ticker: 0.25rem;
+
+  /* Typography for numbers */
+  --font-numeric: 'JetBrains Mono', 'Roboto Mono', monospace;
+  --font-weight-price: 500;
+  --font-size-orderbook: 0.725rem;
+
+  /* Animation timings */
+  --transition-price: 150ms ease-in-out;
+  --transition-flash: 300ms ease;
+  --animation-pulse: 2s infinite;
+  --transition-hover: 200ms ease;
+  --transition-active: 100ms ease-out;
+
+  /* Layout */
+  --navbar-height: 72px;
+
+  /* Z-index layers */
+  --z-base: 40;
+  --z-table-header: 10;
+  --z-table-pinned: 2;
+  --z-dropdown: 50;
+  --z-window: 150;
+
+  /* Interactive States */
+  --hover-overlay: oklch(0 0 0 / 0.05);
+  --hover-overlay-subtle: oklch(0 0 0 / 0.03);
+  --hover-overlay-ultra-subtle: oklch(0 0 0 / 0.02);
+  --hover-overlay-strong: oklch(0 0 0 / 0.08);
+  --active-overlay: oklch(0 0 0 / 0.10);
+
+  /* Terminal surface */
+  --terminal-bg: oklch(0.24 0.04 278);
+
+  /* Field surfaces - input panels, forms, editable areas */
+  --field: oklch(0.955 0 0);
+  --field-hover: oklch(0.935 0 0);
+  --field-active: oklch(0.975 0 0);
+  --field-border: oklch(0.92 0 0);
+  --field-disabled: oklch(0.90 0 0 / 0.7);
+
+  /* Dropdown panels */
+  --dropdown-bg: var(--background);
+  --dropdown-border: var(--border);
+  --dropdown-radius: 16px;
+  --dropdown-shadow: var(--shadow-elevated);
+}
+
+  /*
+   * Dark mode surface hierarchy (ascending lightness, hue ~291 purple tint):
+   *
+   *   --background  0.19  │ Page background
+   *   --sidebar     0.21  │ Sidebar panels
+   *   --card        0.23  │ Elevated panels, cards
+   *   --popover     0.25  │ Floating overlays (modals, dropdowns)
+   *   --muted       0.27  │ Secondary surfaces, hover states, inactive areas
+   *   --border      0.35  │ Dividers, separators
+   */
+.dark {
+  --background: oklch(0.19 0.07 291);
+  --foreground: oklch(0.98 0 0);
+  --card: oklch(0.23 0.055 291);
+  --card-foreground: oklch(0.98 0 0);
+  --popover: oklch(0.25 0.05 291);
+  --popover-foreground: oklch(0.98 0 0);
+  --primary: oklch(0.4558 0.2499 285.87);
+  --primary-foreground: oklch(1.0000 0 0);
+  --secondary: var(--muted);
+  --secondary-foreground: var(--foreground);
+  --muted: oklch(0.27 0.04 291);
+  --muted-foreground: oklch(0.72 0.01 291);
+  --accent: oklch(0.75 0.08 285);
+  --accent-foreground: oklch(0.98 0.01 285);
+  --destructive: oklch(0.6368 0.2078 25.3313);
+  --destructive-foreground: oklch(1.0000 0 0);
+  --border: oklch(0.35 0.04 291);
+  --border-hover: oklch(0.48 0.04 291);
+  --ring: var(--primary);
+  --control-active: oklch(0.24 0.08 291);
+  --table-header-bg: oklch(0.24 0.055 291);
+  --sidebar: oklch(0.21 0.06 291);
+  --sidebar-primary: oklch(0.4754 0.2169 303.37);
+  --sidebar-accent: oklch(0.75 0.10 300);
+
+  /* Typography */
+  --font-sans: 'Basel', -apple-system, system-ui, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, SF Mono, Menlo, Monaco, monospace;
+  --radius: 0.75rem;
+  --shadow-2xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-xs: 0px 1px 3px 0px hsl(0 0% 0% / 0.05);
+  --shadow-sm: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 1px 2px -1px hsl(0 0% 0% / 0.10);
+  --shadow-md: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 2px 4px -1px hsl(0 0% 0% / 0.10);
+  --shadow-lg: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 4px 6px -1px hsl(0 0% 0% / 0.10);
+  --shadow-xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.10), 0px 8px 10px -1px hsl(0 0% 0% / 0.10);
+  --shadow-2xl: 0px 1px 3px 0px hsl(0 0% 0% / 0.25);
+  --shadow-elevated: 0 10px 20px rgba(0, 0, 0, 0.4), 0 6px 10px rgba(0, 0, 0, 0.3), inset 0 1px 1px rgba(255, 255, 255, 0.05);
+
+  /* Trading Colors */
+  --color-bullish: oklch(0.69 0.20 142);
+  --color-bearish: oklch(0.67 0.22 17);
+  --color-warning: oklch(0.69 0.18 85);
+  --color-buy: var(--color-bullish);
+  --color-sell: var(--color-bearish);
+  --color-limit: oklch(0.65 0.18 200);
+  --color-market: oklch(0.68 0.20 30);
+
+  /* Button/Badge color palette */
+  --color-green: var(--color-bullish);
+  --color-red: var(--color-bearish);
+  --color-blue: oklch(0.65 0.22 260);
+  --color-cyan: oklch(0.65 0.18 200);
+  --color-orange: oklch(0.68 0.20 30);
+  --color-purple: var(--primary);
+  --color-gray: oklch(0.55 0.02 260);
+  --color-yellow: oklch(0.78 0.18 88);
+  --color-pink: oklch(0.68 0.22 350);
+
+  /* Button semantic backgrounds (dark mode: dark tinted, colored text) */
+  --btn-primary-bg: oklch(0.28 0.12 286);
+  --btn-primary-bg-hover: oklch(0.33 0.14 286);
+  --btn-danger-bg: oklch(0.28 0.08 17);
+  --btn-danger-bg-hover: oklch(0.33 0.10 17);
+  --btn-buy-bg: oklch(0.28 0.07 142);
+  --btn-buy-bg-hover: oklch(0.33 0.09 142);
+  --btn-action-bg: oklch(0.28 0.08 260);
+  --btn-action-bg-hover: oklch(0.33 0.10 260);
+  --btn-secondary-bg: oklch(0.35 0.03 291);
+  --btn-secondary-bg-hover: oklch(0.40 0.03 291);
+
+  /* Network states */
+  --color-connected: oklch(0.5799 0.1806 145);
+  --color-pending: oklch(0.72 0.18 45);
+  --color-syncing: oklch(0.65 0.18 200);
+
+  /* Interactive States */
+  --hover-overlay: oklch(1 0 0 / 0.05);
+  --hover-overlay-subtle: oklch(1 0 0 / 0.03);
+  --hover-overlay-ultra-subtle: oklch(1 0 0 / 0.02);
+  --hover-overlay-strong: oklch(1 0 0 / 0.08);
+  --active-overlay: oklch(1 0 0 / 0.10);
+
+  /* Terminal surface */
+  --terminal-bg: oklch(0.14 0.04 280);
+
+  /* Field surfaces - input panels, forms, editable areas */
+  --field: oklch(0.25 0.05 291);
+  --field-hover: oklch(0.27 0.05 291);
+  --field-active: oklch(0.19 0.07 291);
+  --field-border: oklch(0.35 0.04 291);
+  --field-disabled: oklch(0.22 0.03 291 / 0.6);
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-foreground: var(--foreground);
+  --color-card: var(--card);
+  --color-card-foreground: var(--card-foreground);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-destructive: var(--destructive);
+  --color-destructive-foreground: var(--destructive-foreground);
+  --color-border: var(--border);
+  --color-ring: var(--ring);
+  --color-sidebar: var(--sidebar);
+  --color-sidebar-primary: var(--sidebar-primary);
+  --color-sidebar-accent: var(--sidebar-accent);
+
+  --font-sans: var(--font-sans);
+  --font-mono: var(--font-mono);
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+  --radius-xl: calc(var(--radius) + 4px);
+  --radius-2xl: 1.5rem;
+
+  --shadow-2xs: var(--shadow-2xs);
+  --shadow-xs: var(--shadow-xs);
+  --shadow-sm: var(--shadow-sm);
+  --shadow: var(--shadow);
+  --shadow-md: var(--shadow-md);
+  --shadow-lg: var(--shadow-lg);
+  --shadow-xl: var(--shadow-xl);
+  --shadow-2xl: var(--shadow-2xl);
+  --shadow-elevated: var(--shadow-elevated);
+
+  /* Trading colors */
+  --color-bullish: var(--color-bullish);
+  --color-bearish: var(--color-bearish);
+  --color-buy: var(--color-buy);
+  --color-sell: var(--color-sell);
+  --color-limit: var(--color-limit);
+  --color-market: var(--color-market);
+  --color-connected: var(--color-connected);
+  --color-pending: var(--color-pending);
+  --color-syncing: var(--color-syncing);
+  --color-green: var(--color-green);
+  --color-red: var(--color-red);
+  --color-blue: var(--color-blue);
+  --color-cyan: var(--color-cyan);
+  --color-orange: var(--color-orange);
+  --color-purple: var(--color-purple);
+  --color-gray: var(--color-gray);
+  --color-yellow: var(--color-yellow);
+  --color-pink: var(--color-pink);
+
+  /* Trading spacing */
+  --spacing-orderbook: var(--spacing-orderbook);
+  --spacing-table-cell: var(--spacing-table-cell);
+  --spacing-ticker: var(--spacing-ticker);
+
+  /* Trading typography */
+  --font-numeric: var(--font-numeric);
+  --font-weight-price: var(--font-weight-price);
+  --font-size-orderbook: var(--font-size-orderbook);
+
+  /* Animation timings */
+  --transition-price: var(--transition-price);
+  --transition-flash: var(--transition-flash);
+  --animation-pulse: var(--animation-pulse);
+  --transition-hover: var(--transition-hover);
+  --transition-active: var(--transition-active);
+
+  /* Z-index layers */
+  --z-base: var(--z-base);
+  --z-dropdown: var(--z-dropdown);
+  --z-window: var(--z-window);
+
+  /* Interactive states */
+  --color-hover-overlay: var(--hover-overlay);
+  --color-hover-overlay-subtle: var(--hover-overlay-subtle);
+  --color-hover-overlay-ultra-subtle: var(--hover-overlay-ultra-subtle);
+  --color-hover-overlay-strong: var(--hover-overlay-strong);
+  --color-active-overlay: var(--active-overlay);
+
+  /* Field surfaces */
+  --color-field: var(--field);
+  --color-field-hover: var(--field-hover);
+  --color-field-active: var(--field-active);
+  --color-field-border: var(--field-border);
+  --color-field-disabled: var(--field-disabled);
+}
+
+/* Font setup */
+@font-face {
+  font-family: 'HalfBoldPixel';
+  src: url('/fonts/half_bold_pixel-7.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: swap;
+}
+
+html, body {
+  background-color: var(--background);
+  color: var(--foreground);
+  overscroll-behavior: none;
+  touch-action: manipulation;
+}
+
+@media (max-width: 767px) {
+  :root {
+    --navbar-height: 56px;
+  }
+}
+
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+*::-webkit-scrollbar {
+  display: none;
+  width: 0px;
+  height: 0px;
+}
+
+/* Shared dropdown panel — used by NavbarMobileMenu, NavbarPreferences, DropdownMenu */
+.dropdown-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  z-index: 9999;
+  background: var(--dropdown-bg);
+  border: 1px solid var(--dropdown-border);
+  border-radius: var(--dropdown-radius);
+  box-shadow: var(--dropdown-shadow);
+  overflow: hidden;
+  animation: dropdown-slide-down 0.15s ease-out;
+}
+
+@keyframes dropdown-slide-down {
+  from {
+    opacity: 0;
+    transform: translateY(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}

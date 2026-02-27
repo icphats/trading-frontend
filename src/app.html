@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+	<meta charset="utf-8" />
+	<link rel="icon" href="%sveltekit.assets%/favicon.ico" />
+	<meta name="viewport" content="width=device-width" />
+	<title>Partyhats</title>
+
+	<!-- Preload fonts (matching Uniswap's setup) -->
+	<link rel="preload" href="%sveltekit.assets%/fonts/Basel-Grotesk-Book.otf" as="font" type="font/otf" crossorigin />
+	<link rel="preload" href="%sveltekit.assets%/fonts/Basel-Grotesk-Medium.otf" as="font" type="font/otf" crossorigin />
+	<link rel="preload" href="%sveltekit.assets%/fonts/InputMono-Regular.ttf" as="font" type="font/ttf" crossorigin />
+
+	<style>
+		/* Basel font-face definitions (matching Uniswap's setup) */
+		@font-face {
+			font-family: 'Basel';
+			font-weight: 535;
+			font-style: normal;
+			font-display: block;
+			src: url('/fonts/Basel-Grotesk-Medium.otf') format('opentype');
+		}
+
+		@font-face {
+			font-family: 'Basel';
+			font-weight: 485;
+			font-style: normal;
+			font-display: block;
+			src: url('/fonts/Basel-Grotesk-Book.otf') format('opentype');
+		}
+
+		/* InputMono for wallet addresses and code - only use where monospace is required */
+		@font-face {
+			font-family: 'InputMono';
+			font-weight: 400;
+			font-style: normal;
+			font-display: swap;
+			src: url('/fonts/InputMono-Regular.ttf') format('truetype');
+		}
+	</style>
+
+	<script>
+		// Immediately set theme to prevent flash of unstyled content
+		(function() {
+			const savedMode = localStorage.getItem('theme');
+			let isDark = false;
+
+			if (savedMode === 'dark') {
+				isDark = true;
+			} else if (savedMode === 'light') {
+				isDark = false;
+			} else {
+				// System mode (default) - check system preference
+				isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+			}
+
+			if (isDark) {
+				document.documentElement.classList.add('dark');
+			}
+		})();
+	</script>
+	%sveltekit.head%
+</head>
+
+<body data-sveltekit-preload-data="hover">
+	<div style="display: contents">%sveltekit.body%</div>
+	<div id="portal-root"></div>
+</body>
+
+</html>
