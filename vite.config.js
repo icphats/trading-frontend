@@ -7,8 +7,8 @@ import tailwindcss from '@tailwindcss/vite'
 import juno from '@junobuild/vite-plugin'
 
 
-dotenv.config({ path: '../../.env' });
-dotenv.config();
+dotenv.config({ path: '../../.env' }); // monorepo context
+dotenv.config();                       // standalone
 
 export default defineConfig({
   build: {
