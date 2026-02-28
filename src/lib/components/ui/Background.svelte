@@ -15,7 +15,8 @@
   let elementsReady = $state(false);
   let floatingElements = $state<FloatingElement[]>([]);
 
-  let showBackground = $derived(page.url.pathname === "/");
+  let isMobile = $state(false);
+  let showBackground = $derived(page.url.pathname === "/" && !isMobile);
 
   // Blur calculation based on Uniswap's approach:
   // - Center zone gets more blur (content area)
@@ -54,12 +55,11 @@
   }
 
   function generateFloatingElements() {
-    const isMobile = window.innerWidth < 768;
     return srcArray.map((src, index) => {
       const config = getElementConfig(index);
       const animationName = `float${index}`;
       const size = calculateSize(index);
-      const blur = isMobile ? 0 : calculateBlur(config.x, config.y, size);
+      const blur = calculateBlur(config.x, config.y, size);
       const opacity = calculateOpacity(config.x, config.y);
 
       const keyframes = generateKeyframesCSS(config, animationName);
@@ -74,7 +74,7 @@
           top: ${config.y}%;
           animation: ${animationName} ${config.duration}s infinite alternate;
           opacity: ${opacity.toFixed(2)};
-          ${blur > 0 ? `filter: blur(${blur.toFixed(1)}px);` : ''}
+          filter: blur(${blur.toFixed(1)}px);
           width: ${size}px;
           height: ${size}px;
         `,
@@ -97,7 +97,8 @@
   }
 
   onMount(() => {
-    if (srcArray.length > 0) {
+    isMobile = window.innerWidth < 768;
+    if (srcArray.length > 0 && !isMobile) {
       // Use pre-generated static values
       const elements = generateFloatingElements();
       injectKeyframes(elements);
