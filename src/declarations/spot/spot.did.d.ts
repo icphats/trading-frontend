@@ -372,14 +372,7 @@ export interface IndexerTokenData {
   'volume_30d_usd_e6' : bigint,
   'volume_7d_usd_e6' : bigint,
 }
-export interface InitArgs {
-  'base' : TokenMetadata,
-  'quote' : TokenMetadata,
-  'oracle_principal' : Principal,
-  'treasury_principal' : [] | [Principal],
-  'indexer_principal' : Principal,
-  'registry_principal' : Principal,
-}
+export interface InitArgs { 'base' : TokenMetadata, 'quote' : TokenMetadata }
 export interface KillAllResult {
   'orders' : bigint,
   'budget_hit' : boolean,
@@ -1157,7 +1150,9 @@ export interface UpgradeArgs {
   'set_min_usd_value' : [] | [bigint],
   'remove_admins' : [] | [Array<Principal>],
   'set_treasury_principal' : [] | [Principal],
+  'set_registry_principal' : [] | [Principal],
   'rate_limit_cleanup_tier01_ms' : [] | [bigint],
+  'set_oracle_principal' : [] | [Principal],
   'set_cycles_threshold' : [] | [bigint],
   'rate_limit_degrade_threshold' : [] | [bigint],
   'set_maker_rebate_pips' : [] | [number],
@@ -1166,6 +1161,7 @@ export interface UpgradeArgs {
   'reset_topup_backoff' : [] | [boolean],
   'max_positions_per_user' : [] | [bigint],
   'rate_limit_degrade_base_duration_ms' : [] | [bigint],
+  'set_indexer_principal' : [] | [Principal],
   'set_maker_fee_pips' : [] | [number],
   'max_triggers_per_user' : [] | [bigint],
   'add_admins' : [] | [Array<Principal>],

@@ -81,13 +81,16 @@ type UpgradeArgs =
    remove_admins: opt vec principal;
    reset_topup_backoff: opt bool;
    set_cycles_threshold: opt nat;
+   set_indexer_principal: opt principal;
    set_instruction_budget: opt nat64;
    set_maker_fee_pips: opt nat32;
    set_maker_rebate_pips: opt nat32;
    set_max_route_pool_inputs: opt nat;
    set_min_pool_quote_liquidity_e6: opt nat;
    set_min_usd_value: opt nat;
+   set_oracle_principal: opt principal;
    set_pool_protocol_fee_pips: opt nat;
+   set_registry_principal: opt principal;
    set_taker_fee_pips: opt nat32;
    set_treasury_principal: opt principal;
  };
@@ -870,11 +873,7 @@ type KillAllResult =
 type InitArgs = 
  record {
    base: TokenMetadata;
-   indexer_principal: principal;
-   oracle_principal: principal;
    quote: TokenMetadata;
-   registry_principal: principal;
-   treasury_principal: opt principal;
  };
 type IndexerTokenData = 
  record {

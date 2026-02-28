@@ -7,10 +7,6 @@ export const idlFactory = ({ IDL }) => {
   const InitArgs = IDL.Record({
     'base' : TokenMetadata,
     'quote' : TokenMetadata,
-    'oracle_principal' : IDL.Principal,
-    'treasury_principal' : IDL.Opt(IDL.Principal),
-    'indexer_principal' : IDL.Principal,
-    'registry_principal' : IDL.Principal,
   });
   const Tick = IDL.Int32;
   const PollVersions = IDL.Record({
@@ -142,7 +138,9 @@ export const idlFactory = ({ IDL }) => {
     'set_min_usd_value' : IDL.Opt(IDL.Nat),
     'remove_admins' : IDL.Opt(IDL.Vec(IDL.Principal)),
     'set_treasury_principal' : IDL.Opt(IDL.Principal),
+    'set_registry_principal' : IDL.Opt(IDL.Principal),
     'rate_limit_cleanup_tier01_ms' : IDL.Opt(IDL.Nat64),
+    'set_oracle_principal' : IDL.Opt(IDL.Principal),
     'set_cycles_threshold' : IDL.Opt(IDL.Nat),
     'rate_limit_degrade_threshold' : IDL.Opt(IDL.Nat),
     'set_maker_rebate_pips' : IDL.Opt(IDL.Nat32),
@@ -151,6 +149,7 @@ export const idlFactory = ({ IDL }) => {
     'reset_topup_backoff' : IDL.Opt(IDL.Bool),
     'max_positions_per_user' : IDL.Opt(IDL.Nat),
     'rate_limit_degrade_base_duration_ms' : IDL.Opt(IDL.Nat64),
+    'set_indexer_principal' : IDL.Opt(IDL.Principal),
     'set_maker_fee_pips' : IDL.Opt(IDL.Nat32),
     'max_triggers_per_user' : IDL.Opt(IDL.Nat),
     'add_admins' : IDL.Opt(IDL.Vec(IDL.Principal)),
@@ -1174,10 +1173,6 @@ export const init = ({ IDL }) => {
   const InitArgs = IDL.Record({
     'base' : TokenMetadata,
     'quote' : TokenMetadata,
-    'oracle_principal' : IDL.Principal,
-    'treasury_principal' : IDL.Opt(IDL.Principal),
-    'indexer_principal' : IDL.Principal,
-    'registry_principal' : IDL.Principal,
   });
   return [InitArgs];
 };
