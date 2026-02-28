@@ -50,8 +50,8 @@ class PollingCoordinator {
   visibleCount = $state(0);
   userMarketCount = $state(0);
 
-  // Cadence constants
-  private readonly FAST_MS = 500;
+  // Cadence constants (1s on mobile, 500ms on desktop)
+  private readonly FAST_MS = typeof window !== 'undefined' && window.innerWidth < 768 ? 1_000 : 500;
   private readonly MEDIUM_MS = 8_000;
   private readonly SLOW_MS = 15_000;
 
