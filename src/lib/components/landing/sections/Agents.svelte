@@ -551,6 +551,8 @@
     grid-template-rows: auto auto;
     gap: 1.25rem 3rem;
     align-items: center;
+    /* Offset for fixed navbar so content centers in visible area */
+    margin-top: var(--navbar-height);
   }
 
   /* Headline side */

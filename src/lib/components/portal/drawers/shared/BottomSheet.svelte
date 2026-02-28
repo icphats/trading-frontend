@@ -201,7 +201,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
-    padding: 8px 0 16px 0;
+    padding: 8px 0;
     flex-shrink: 0;
     cursor: grab;
     touch-action: none;

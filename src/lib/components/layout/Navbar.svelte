@@ -1,7 +1,7 @@
 <script lang="ts">
   import { page } from "$app/stores";
   import { user } from "$lib/domain/user/auth.svelte";
-  import { app, type ThemeMode } from "$lib/state/app.state.svelte";
+  import { app } from "$lib/state/app.state.svelte";
   import NavbarLogo from "./NavbarLogo.svelte";
   import NavbarLinks from "./NavbarLinks.svelte";
   import NavbarGlobalSearchModal from "./NavbarGlobalSearchModal.svelte";
@@ -9,12 +9,12 @@
   import { AccountDrawer, accountDrawer } from "$lib/components/portal/drawers/specific/AccountDrawer";
   import { trollboxDrawer } from "$lib/components/portal/drawers/specific/TrollboxDrawer";
 
-  function handleThemeChange(mode: ThemeMode) {
-    app.setThemeMode(mode);
+  function handleThemeToggle() {
+    app.setThemeMode(app.themeMode === 'dark' ? 'light' : 'dark');
   }
 
   let isCashierModalOpen = $state(false);
-  let settingsDropdownOpen = $state(false);
+  // Theme toggle (cycles light ↔ dark)
   let isSearchOpen = $state(false);
   let isMobileMenuOpen = $state(false);
 
@@ -44,7 +44,6 @@
   }
 
   function handleLogout() {
-    settingsDropdownOpen = false;
     user.logout();
   }
 
@@ -73,20 +72,6 @@
     isMobileMenuOpen = false;
   }
 
-  // Close settings/preferences dropdown when clicking outside
-  $effect(() => {
-    if (!settingsDropdownOpen) return;
-
-    const handleClickOutside = (event: MouseEvent) => {
-      const target = event.target as HTMLElement;
-      if (!target.closest(".settings-button-wrapper") && !target.closest(".preferences-wrapper")) {
-        settingsDropdownOpen = false;
-      }
-    };
-
-    document.addEventListener("click", handleClickOutside);
-    return () => document.removeEventListener("click", handleClickOutside);
-  });
 
   // Close mobile menu when clicking outside
   $effect(() => {
@@ -267,6 +252,29 @@
         </svg>
       </button>
 
+      <!-- Theme Toggle -->
+      <button class="icon-button" onclick={handleThemeToggle} aria-label="Toggle theme">
+        {#if app.themeMode === 'dark'}
+          <!-- Sun icon (click to switch to light) -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="5"></circle>
+            <line x1="12" y1="1" x2="12" y2="3"></line>
+            <line x1="12" y1="21" x2="12" y2="23"></line>
+            <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
+            <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
+            <line x1="1" y1="12" x2="3" y2="12"></line>
+            <line x1="21" y1="12" x2="23" y2="12"></line>
+            <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
+            <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
+          </svg>
+        {:else}
+          <!-- Moon icon (click to switch to dark) -->
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
+          </svg>
+        {/if}
+      </button>
+
       {#if user.isReady}
         {#if user.isAuthenticated}
           <!-- Wallet Button -->
@@ -283,70 +291,6 @@
             </svg>
           </button>
         {:else}
-          <!-- Preferences Button (logged out) -->
-          <div class="preferences-wrapper">
-            <button
-              class="preferences-button"
-              onclick={() => settingsDropdownOpen = !settingsDropdownOpen}
-              aria-label="Preferences"
-            >
-              <!-- Three dots icon (MoreHorizontal) -->
-              <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                <circle cx="12" cy="12" r="1"></circle>
-                <circle cx="19" cy="12" r="1"></circle>
-                <circle cx="5" cy="12" r="1"></circle>
-              </svg>
-            </button>
-
-            {#if settingsDropdownOpen}
-              <div class="preferences-dropdown">
-                <div class="preferences-header">Preferences</div>
-                <div class="theme-section">
-                  <span class="theme-label">Theme</span>
-                  <div class="theme-toggle">
-                    <button
-                      class="theme-option"
-                      class:active={app.themeMode === 'system'}
-                      onclick={() => handleThemeChange('system')}
-                    >
-                      Auto
-                    </button>
-                    <button
-                      class="theme-option"
-                      class:active={app.themeMode === 'light'}
-                      onclick={() => handleThemeChange('light')}
-                      aria-label="Light theme"
-                    >
-                      <!-- Sun icon -->
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <circle cx="12" cy="12" r="5"></circle>
-                        <line x1="12" y1="1" x2="12" y2="3"></line>
-                        <line x1="12" y1="21" x2="12" y2="23"></line>
-                        <line x1="4.22" y1="4.22" x2="5.64" y2="5.64"></line>
-                        <line x1="18.36" y1="18.36" x2="19.78" y2="19.78"></line>
-                        <line x1="1" y1="12" x2="3" y2="12"></line>
-                        <line x1="21" y1="12" x2="23" y2="12"></line>
-                        <line x1="4.22" y1="19.78" x2="5.64" y2="18.36"></line>
-                        <line x1="18.36" y1="5.64" x2="19.78" y2="4.22"></line>
-                      </svg>
-                    </button>
-                    <button
-                      class="theme-option"
-                      class:active={app.themeMode === 'dark'}
-                      onclick={() => handleThemeChange('dark')}
-                      aria-label="Dark theme"
-                    >
-                      <!-- Moon icon -->
-                      <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                        <path d="M21 12.79A9 9 0 1 1 11.21 3 7 7 0 0 0 21 12.79z"></path>
-                      </svg>
-                    </button>
-                  </div>
-                </div>
-              </div>
-            {/if}
-          </div>
-
           <!-- Connect Button (matches Uniswap styling) -->
           <button class="connect-button" onclick={handleConnect}>
             Connect
@@ -550,109 +494,6 @@
     transform: scale(0.98);
   }
 
-  /* ===== PREFERENCES BUTTON (Logged out) ===== */
-  .preferences-wrapper {
-    position: relative;
-  }
-
-  .preferences-button {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 40px;
-    height: 40px;
-    background: transparent;
-    border: none;
-    border-radius: 12px;
-    cursor: pointer;
-    color: var(--muted-foreground);
-    transition: background-color 0.15s ease;
-  }
-
-  .preferences-button:hover {
-    background: var(--muted);
-    color: var(--foreground);
-  }
-
-  .preferences-dropdown {
-    position: absolute;
-    top: calc(100% + 8px);
-    right: 0;
-    min-width: 240px;
-    z-index: 9999;
-    background: var(--background);
-    border: 1px solid var(--border);
-    border-radius: 16px;
-    box-shadow: var(--shadow-elevated);
-    overflow: hidden;
-    animation: slideDown 0.15s ease-out;
-    padding: 12px;
-  }
-
-  .preferences-header {
-    font-size: 14px;
-    font-weight: 535;
-    color: var(--foreground);
-    padding-bottom: 12px;
-    border-bottom: 1px solid var(--border);
-    margin-bottom: 12px;
-  }
-
-  /* Theme Section */
-  .theme-section {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 8px 8px;
-    gap: 16px;
-  }
-
-  .theme-label {
-    font-size: 14px;
-    font-weight: 485;
-    color: var(--foreground);
-  }
-
-  .theme-toggle {
-    display: flex;
-    align-items: center;
-    background: var(--muted);
-    border-radius: 20px;
-    padding: 4px;
-    gap: 0;
-  }
-
-  .theme-option {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 32px;
-    padding: 0 12px;
-    background: transparent;
-    border: none;
-    border-radius: 16px;
-    cursor: pointer;
-    transition: all 0.1s ease;
-    color: var(--muted-foreground);
-    font-size: 14px;
-    font-weight: 485;
-  }
-
-  .theme-option:hover:not(.active) {
-    color: var(--foreground);
-  }
-
-  .theme-option.active {
-    background: var(--background);
-    color: var(--foreground);
-    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12);
-  }
-
-  .theme-option svg {
-    width: 20px;
-    height: 20px;
-  }
-
   @keyframes slideDown {
     from {
       opacity: 0;
@@ -807,10 +648,6 @@
     .mobile-menu-dropdown {
       left: -12px;
     }
-
-    .preferences-dropdown {
-      right: -12px;
-    }
   }
 
   /* Mobile (<768px): Hide nav links, show hamburger menu */
@@ -828,7 +665,7 @@
     }
 
     .nav-right {
-      gap: 4px;
+      gap: 8px;
     }
   }
 </style>

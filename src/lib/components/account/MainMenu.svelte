@@ -120,7 +120,7 @@
 	/* Header Row: Avatar left, buttons right */
 	.header-row {
 		display: flex;
-		align-items: flex-start;
+		align-items: center;
 		justify-content: space-between;
 		margin-bottom: 0.5rem;
 		flex-shrink: 0;
@@ -185,6 +185,12 @@
 	.icon-button:hover {
 		background-color: var(--muted);
 		color: var(--foreground);
+	}
+
+	@media (max-width: 767px) {
+		.main-menu {
+			padding-top: 0.5rem;
+		}
 	}
 
 	/* Portfolio Section */
