@@ -2,13 +2,11 @@ import { Actor } from "@icp-sdk/core/agent";
 import { AnonymousIdentity } from "@icp-sdk/core/agent";
 import { createAgent } from "@dfinity/utils";
 import { createActor } from "$lib/actors/create-actor";
-import { idlFactory as minterIDL } from 'declarations/minter/minter.did.js';
 import { idlFactory as registryIDL } from 'declarations/registry/registry.did.js';
 import { idlFactory as indexerIDL } from 'declarations/indexer/indexer.did.js';
 import { idlFactory as trollboxIDL } from 'declarations/trollbox/trollbox.did.js';
 import { idlFactory as treasuryIDL } from 'declarations/treasury/treasury.did.js';
 import { idlFactory as oracleIDL } from 'declarations/oracle/oracle.did.js';
-import type { _SERVICE as MinterService } from 'declarations/minter/minter.did';
 import type { _SERVICE as RegistryService } from 'declarations/registry/registry.did';
 import type { _SERVICE as IndexerService } from 'declarations/indexer/indexer.did';
 import type { _SERVICE as TrollboxService } from 'declarations/trollbox/trollbox.did';
@@ -23,7 +21,6 @@ export class API {
     oracle: OracleService | null = $state(null);
 
     // Authenticated actors (require user agent)
-    minter: MinterService | null = $state(null);
     registry: RegistryService | null = $state(null);
     trollbox: TrollboxService | null = $state(null);
 
@@ -73,10 +70,9 @@ export class API {
      * Called after user.init() completes
      */
     init = async (): Promise<void> => {
-        if (!canisterIds.minter || !canisterIds.registry || !canisterIds.trollbox) {
+        if (!canisterIds.registry || !canisterIds.trollbox) {
             throw new Error('Missing required canister IDs in environment');
         }
-        this.minter = createActor<MinterService>(minterIDL, canisterIds.minter);
         this.registry = createActor<RegistryService>(registryIDL, canisterIds.registry);
         this.trollbox = createActor<TrollboxService>(trollboxIDL, canisterIds.trollbox);
 

@@ -9,7 +9,6 @@ export const DERIVATION_ORIGIN = IS_LOCAL
     : 'https://icphats.io'; // staging
 
 export const canisterIds = {
-    minter: process.env.CANISTER_ID_MINTER,
     registry: process.env.CANISTER_ID_REGISTRY,
     indexer: process.env.CANISTER_ID_INDEXER,
     treasury: process.env.CANISTER_ID_TREASURY,
