@@ -131,9 +131,13 @@
   </div>
 </div>
 
-<!-- Token Selection Modals -->
-<TokenSelectionModal bind:open={tokenModalOpen} title="Select Base Token" onSelect={handleTokenSelect} />
-<TokenSelectionModal bind:open={quoteTokenModalOpen} title="Select Quote Token" onSelect={handleQuoteTokenSelect} restrictToTokens={restrictedQuoteTokens} />
+<!-- Token Selection Modals - conditionally mounted to prevent reactive chain interference -->
+{#if tokenModalOpen}
+  <TokenSelectionModal bind:open={tokenModalOpen} title="Select Base Token" onSelect={handleTokenSelect} />
+{/if}
+{#if quoteTokenModalOpen}
+  <TokenSelectionModal bind:open={quoteTokenModalOpen} title="Select Quote Token" onSelect={handleQuoteTokenSelect} restrictToTokens={restrictedQuoteTokens} />
+{/if}
 
 <style>
   .token-dropdown-button {

@@ -521,7 +521,7 @@
 
 <Modal bind:open onClose={handleClose} showHeader={false} size="sm" customClass="global-search-modal" closeOnBackdrop={true} contentPadding={false}>
   {#snippet children()}
-    <div class="global-search-content">
+    <div class="modal-search-body">
       <!-- Search Input -->
       <SearchInput
         bind:value={search.query}
@@ -530,7 +530,7 @@
       />
 
       <!-- Results -->
-      <div class="results-container">
+      <div class="modal-search-list">
         {#if isLoadingToken && search.isPrincipal}
           <EmptyState variant="loading" message="Loading token metadata..." />
         {:else if search.isSearching && totalResults === 0}
@@ -712,40 +712,6 @@
     overflow: hidden !important;
     display: flex;
     flex-direction: column;
-  }
-
-  .global-search-content {
-    display: flex;
-    flex-direction: column;
-    min-height: 0;
-    flex: 1;
-    padding: 0;
-  }
-
-  /* Results Container */
-  .results-container {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background: var(--background);
-    border-radius: 0 0 var(--radius-lg) var(--radius-lg);
-  }
-
-  .results-container::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .results-container::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .results-container::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-  }
-
-  .results-container::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
   }
 
   /* Recent Section */

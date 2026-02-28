@@ -28,6 +28,7 @@
   let fetchedToken = $state<NormalizedToken | null>(null);
   let popularTokens = $state<IndexerTokenListItem[]>([]);
   let popularTokensLoading = $state(false);
+  let popularTokensFetched = false;
 
   // Get PortfolioToken from userPortfolio (has balance data for display)
   const userTokens = $derived.by((): PortfolioToken[] => {
@@ -152,11 +153,11 @@
     });
   });
 
-  // Fetch popular tokens when modal opens
+  // Fetch popular tokens when modal opens (once per mount)
   $effect(() => {
-    if (open && canisterIds.indexer && popularTokens.length === 0 && !popularTokensLoading) {
+    if (open && canisterIds.indexer && !popularTokensFetched && !popularTokensLoading) {
+      popularTokensFetched = true;
       popularTokensLoading = true;
-      // Use untrack to prevent entityStore updates from cascading back to parent components
       untrack(() => {
         getPopularTokens(50n)
           .then((tokens) => {
@@ -266,7 +267,7 @@
 
 <Modal bind:open onClose={handleClose} showHeader={false} size="sm" closeOnBackdrop={true} contentPadding={false}>
   {#snippet children()}
-    <div class="modal-body">
+    <div class="modal-search-body">
       <!-- Search Input -->
       <SearchInput
         bind:value={search.query}
@@ -275,7 +276,7 @@
       />
 
       <!-- Token List -->
-      <div class="token-list">
+      <div class="modal-search-list">
         {#if search.isPrincipal}
           <!-- Show fetched token from Principal ID search -->
           {#if fetchedToken && (!restrictedIds || restrictedIds.has(fetchedToken.canisterId))}
@@ -370,30 +371,3 @@
   {/snippet}
 </Modal>
 
-<style>
-  /* Token list - scrollable area */
-  .token-list {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0.25rem 0;
-    max-height: 50vh;
-  }
-
-  .token-list::-webkit-scrollbar {
-    width: 4px;
-  }
-
-  .token-list::-webkit-scrollbar-track {
-    background: transparent;
-  }
-
-  .token-list::-webkit-scrollbar-thumb {
-    background: var(--border);
-    border-radius: 2px;
-  }
-
-  .token-list::-webkit-scrollbar-thumb:hover {
-    background: var(--muted-foreground);
-  }
-</style>

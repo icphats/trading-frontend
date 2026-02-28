@@ -16,23 +16,24 @@
   let isCreating = $state(false);
   let creationError = $state<string>("");
 
-  // Initialize quote token to ICP on mount
+  // Initialize quote token to ICP on mount (once only)
+  let quoteTokenInitialized = false;
   $effect(() => {
-    if (!marketCreation.selectedQuoteToken) {
-      const icpToken = entityStore.getTokenBySymbol("ICP");
-      if (icpToken) {
-        // Convert NormalizedToken to TokenMetadata format
-        marketCreation.selectedQuoteToken = {
-          canisterId: icpToken.canisterId,
-          name: icpToken.name,
-          displayName: icpToken.displayName,
-          symbol: icpToken.symbol,
-          displaySymbol: icpToken.displaySymbol,
-          decimals: icpToken.decimals,
-          fee: icpToken.fee,
-          logo: icpToken.logo ?? undefined,
-        };
-      }
+    if (quoteTokenInitialized) return;
+    const icpToken = entityStore.getTokenBySymbol("ICP");
+    if (icpToken) {
+      quoteTokenInitialized = true;
+      // Convert NormalizedToken to TokenMetadata format
+      marketCreation.selectedQuoteToken = {
+        canisterId: icpToken.canisterId,
+        name: icpToken.name,
+        displayName: icpToken.displayName,
+        symbol: icpToken.symbol,
+        displaySymbol: icpToken.displaySymbol,
+        decimals: icpToken.decimals,
+        fee: icpToken.fee,
+        logo: icpToken.logo ?? undefined,
+      };
     }
   });
 

@@ -258,6 +258,39 @@
     gap: 0.75rem;
   }
 
+  /* Search-list modal body - search input + scrollable list, no gap */
+  :global(.modal-search-body) {
+    display: flex;
+    flex-direction: column;
+    min-height: 0;
+    flex: 1;
+  }
+
+  /* Scrollable list area inside search-list modals */
+  :global(.modal-search-list) {
+    flex: 1;
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 0.25rem 0;
+  }
+
+  :global(.modal-search-list)::-webkit-scrollbar {
+    width: 4px;
+  }
+
+  :global(.modal-search-list)::-webkit-scrollbar-track {
+    background: transparent;
+  }
+
+  :global(.modal-search-list)::-webkit-scrollbar-thumb {
+    background: var(--border);
+    border-radius: 2px;
+  }
+
+  :global(.modal-search-list)::-webkit-scrollbar-thumb:hover {
+    background: var(--muted-foreground);
+  }
+
   /* State containers for loading/error states */
   :global(.modal-state) {
     padding: 2rem 1rem;

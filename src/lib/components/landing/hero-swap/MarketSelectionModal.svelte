@@ -73,14 +73,14 @@
 
 <Modal bind:open onClose={handleClose} showHeader={false} size="sm" closeOnBackdrop={true} contentPadding={false}>
   {#snippet children()}
-    <div class="modal-body">
+    <div class="modal-search-body">
       <SearchInput
         bind:value={searchQuery}
         placeholder="Search markets"
         autofocus
       />
 
-      <div class="market-list">
+      <div class="modal-search-list">
         {#if filteredMarkets.length > 0}
           <SectionHeader label="Markets" count={filteredMarkets.length} />
           {#each filteredMarkets as market (market.canisterId)}
@@ -108,13 +108,3 @@
     </div>
   {/snippet}
 </Modal>
-
-<style>
-  .market-list {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-    padding: 0.25rem 0;
-    max-height: 50vh;
-  }
-</style>
