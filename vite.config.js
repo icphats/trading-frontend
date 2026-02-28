@@ -1,4 +1,5 @@
 import { fileURLToPath, URL } from 'url';
+import fs from 'fs';
 import { sveltekit } from '@sveltejs/kit/vite';
 import { defineConfig } from 'vite';
 import environment from 'vite-plugin-environment';
@@ -22,6 +23,10 @@ export default defineConfig({
     },
   },
   server: {
+    https: fs.existsSync('./localhost.pem') ? {
+      key: fs.readFileSync('./localhost-key.pem'),
+      cert: fs.readFileSync('./localhost.pem'),
+    } : undefined,
     proxy: {
       "/api": {
         target: "http://127.0.0.1:8080",

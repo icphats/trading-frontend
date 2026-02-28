@@ -51,8 +51,8 @@
 			} else if (savedMode === 'light') {
 				isDark = false;
 			} else {
-				// System mode (default) - check system preference
-				isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+				// No saved preference (first-time user) - default to dark
+				isDark = true;
 			}
 
 			if (isDark) {

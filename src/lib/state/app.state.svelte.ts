@@ -74,9 +74,9 @@ export class App {
             return;
         }
 
-        // Default to system preference
-        this.themeMode = 'system';
-        this.theme = this.getSystemTheme();
+        // Default to dark for first-time users
+        this.themeMode = 'dark';
+        this.theme = 'dark';
     }
 
     setThemeMode(mode: ThemeMode) {
