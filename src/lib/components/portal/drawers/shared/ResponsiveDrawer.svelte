@@ -41,7 +41,7 @@
     closeOnBackdrop?: boolean;
     /** Close on Escape key (default: true) */
     closeOnEsc?: boolean;
-    /** BottomSheet max height (default: 90vh) */
+    /** BottomSheet max height (default: 90dvh) */
     bottomSheetMaxHeight?: string;
     /** SideDrawer width for large screens (default: 390) */
     sideDrawerWidthLarge?: number;
@@ -58,7 +58,7 @@
     mobileBreakpoint = 768,
     closeOnBackdrop = true,
     closeOnEsc = true,
-    bottomSheetMaxHeight = "90vh",
+    bottomSheetMaxHeight = "90dvh",
     sideDrawerWidthLarge = 390,
     sideDrawerWidthMedium = 320,
     backdropClass = "",
