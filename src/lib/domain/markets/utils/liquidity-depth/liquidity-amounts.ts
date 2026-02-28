@@ -2,7 +2,7 @@
  * Liquidity Amount Calculation Utilities
  *
  * Functions for calculating token amounts and USD values from liquidity data.
- * Adapts Uniswap V3's getAmount0/getAmount1 formulas.
+ * Adapts Uniswap V3's getAmountBase/getAmountQuote formulas.
  */
 
 import { getAmountsForLiquidity } from "$lib/domain/markets/utils";
@@ -31,10 +31,10 @@ export const USD_DECIMALS = 12;
  * @param tickUpper - Upper tick of the range
  * @param poolCurrentTick - Current tick of the pool
  * @param liquidity - Liquidity value for the range
- * @returns Object with amount0 and amount1 in native units
+ * @returns Object with amountBase and amountQuote in native units
  *
  * @example
- * const { amount0, amount1 } = calculateAmountsLocked(-1000, 1000, 0, 1000000n);
+ * const { amountBase, amountQuote } = calculateAmountsLocked(-1000, 1000, 0, 1000000n);
  * // Returns amounts based on current tick position relative to range
  */
 export function calculateAmountsLocked(
@@ -42,21 +42,21 @@ export function calculateAmountsLocked(
   tickUpper: number,
   poolCurrentTick: number,
   liquidity: bigint
-): { amount0: bigint; amount1: bigint } {
+): { amountBase: bigint; amountQuote: bigint } {
   if (liquidity <= 0n) {
-    return { amount0: 0n, amount1: 0n };
+    return { amountBase: 0n, amountQuote: 0n };
   }
 
   try {
-    const [amount0, amount1] = getAmountsForLiquidity(
+    const [amountBase, amountQuote] = getAmountsForLiquidity(
       poolCurrentTick,
       tickLower,
       tickUpper,
       liquidity
     );
-    return { amount0, amount1 };
+    return { amountBase, amountQuote };
   } catch {
-    return { amount0: 0n, amount1: 0n };
+    return { amountBase: 0n, amountQuote: 0n };
   }
 }
 
@@ -65,60 +65,60 @@ export function calculateAmountsLocked(
 // ============================================================================
 
 /**
- * Calculate USD value for token0 amount.
+ * Calculate USD value for base token amount.
  *
- * @param amount - Token0 amount in native units
- * @param token0Decimals - Decimals for token0
- * @param token0PriceUsd - Token0 USD price in E12 format (null if unknown)
+ * @param amount - Base token amount in native units
+ * @param baseDecimals - Decimals for base token
+ * @param basePriceUsd - Base token USD price in E12 format (null if unknown)
  * @returns USD value as number, or 0 if price unknown
  *
  * @example
- * const usd = calculateToken0UsdValue(100000000n, 8, 1000000000000n);
+ * const usd = calculateBaseUsdValue(100000000n, 8, 1000000000000n);
  * // Returns 1.0 ($1.00 for 1 token at $1 price)
  */
-export function calculateToken0UsdValue(
+export function calculateBaseUsdValue(
   amount: bigint,
-  token0Decimals: number,
-  token0PriceUsd: bigint | null
+  baseDecimals: number,
+  basePriceUsd: bigint | null
 ): number {
-  if (!token0PriceUsd || amount <= 0n) return 0;
-  const amountNum = fromDecimals(amount, token0Decimals);
-  const priceNum = fromDecimals(token0PriceUsd, USD_DECIMALS);
+  if (!basePriceUsd || amount <= 0n) return 0;
+  const amountNum = fromDecimals(amount, baseDecimals);
+  const priceNum = fromDecimals(basePriceUsd, USD_DECIMALS);
   return amountNum * priceNum;
 }
 
 /**
- * Calculate USD value for token1 amount.
+ * Calculate USD value for quote token amount.
  *
- * @param amount - Token1 amount in native units
- * @param token1Decimals - Decimals for token1
- * @param token1PriceUsd - Token1 USD price in E12 format (null if unknown)
+ * @param amount - Quote token amount in native units
+ * @param quoteDecimals - Decimals for quote token
+ * @param quotePriceUsd - Quote token USD price in E12 format (null if unknown)
  * @returns USD value as number, or 0 if price unknown
  *
  * @example
- * const usd = calculateToken1UsdValue(100000000n, 8, 10000000000000n);
+ * const usd = calculateQuoteUsdValue(100000000n, 8, 10000000000000n);
  * // Returns 10.0 ($10.00 for 1 token at $10 price)
  */
-export function calculateToken1UsdValue(
+export function calculateQuoteUsdValue(
   amount: bigint,
-  token1Decimals: number,
-  token1PriceUsd: bigint | null
+  quoteDecimals: number,
+  quotePriceUsd: bigint | null
 ): number {
-  if (!token1PriceUsd || amount <= 0n) return 0;
-  const amountNum = fromDecimals(amount, token1Decimals);
-  const priceNum = fromDecimals(token1PriceUsd, USD_DECIMALS);
+  if (!quotePriceUsd || amount <= 0n) return 0;
+  const amountNum = fromDecimals(amount, quoteDecimals);
+  const priceNum = fromDecimals(quotePriceUsd, USD_DECIMALS);
   return amountNum * priceNum;
 }
 
 /**
  * Calculate total USD value for token amounts.
  *
- * @param amount0 - Token0 amount in native units
- * @param amount1 - Token1 amount in native units
- * @param token0Decimals - Decimals for token0
- * @param token1Decimals - Decimals for token1
- * @param token0PriceUsd - Token0 USD price in E12 format (null if unknown)
- * @param token1PriceUsd - Token1 USD price in E12 format (null if unknown)
+ * @param amountBase - Base token amount in native units
+ * @param amountQuote - Quote token amount in native units
+ * @param baseDecimals - Decimals for base token
+ * @param quoteDecimals - Decimals for quote token
+ * @param basePriceUsd - Base token USD price in E12 format (null if unknown)
+ * @param quotePriceUsd - Quote token USD price in E12 format (null if unknown)
  * @returns Total USD value as number
  *
  * @example
@@ -127,19 +127,19 @@ export function calculateToken1UsdValue(
  *   8, 8,
  *   1000000000000n, 2000000000000n
  * );
- * // Returns 5.0 (1 token0 @ $1 + 2 token1 @ $2 = $5)
+ * // Returns 5.0 (1 base @ $1 + 2 quote @ $2 = $5)
  */
 export function calculateUsdValue(
-  amount0: bigint,
-  amount1: bigint,
-  token0Decimals: number,
-  token1Decimals: number,
-  token0PriceUsd: bigint | null,
-  token1PriceUsd: bigint | null
+  amountBase: bigint,
+  amountQuote: bigint,
+  baseDecimals: number,
+  quoteDecimals: number,
+  basePriceUsd: bigint | null,
+  quotePriceUsd: bigint | null
 ): number {
   return (
-    calculateToken0UsdValue(amount0, token0Decimals, token0PriceUsd) +
-    calculateToken1UsdValue(amount1, token1Decimals, token1PriceUsd)
+    calculateBaseUsdValue(amountBase, baseDecimals, basePriceUsd) +
+    calculateQuoteUsdValue(amountQuote, quoteDecimals, quotePriceUsd)
   );
 }
 
@@ -151,14 +151,14 @@ export function calculateUsdValue(
  * Result of total amounts calculation.
  */
 export interface TotalAmounts {
-  /** Total token0 amount across all buckets */
-  amount0: bigint;
-  /** Total token1 amount across all buckets */
-  amount1: bigint;
-  /** USD value of total token0 */
-  usd0: number;
-  /** USD value of total token1 */
-  usd1: number;
+  /** Total base token amount across all buckets */
+  amountBase: bigint;
+  /** Total quote token amount across all buckets */
+  amountQuote: bigint;
+  /** USD value of total base token */
+  usdBase: number;
+  /** USD value of total quote token */
+  usdQuote: number;
   /** Total USD value (usd0 + usd1) */
   totalUsd: number;
 }
@@ -167,47 +167,47 @@ export interface TotalAmounts {
  * Calculate total amounts from liquidity buckets.
  *
  * @param buckets - Array of liquidity buckets
- * @param token0Decimals - Decimals for token0
- * @param token1Decimals - Decimals for token1
- * @param token0PriceUsd - Token0 USD price in E12 format
- * @param token1PriceUsd - Token1 USD price in E12 format
+ * @param baseDecimals - Decimals for base token
+ * @param quoteDecimals - Decimals for quote token
+ * @param basePriceUsd - Base token USD price in E12 format
+ * @param quotePriceUsd - Quote token USD price in E12 format
  * @returns Total amounts and USD values
  *
  * @example
  * const totals = calculateTotalAmounts(buckets, 8, 8, price0, price1);
- * // Returns { amount0: 1000n, amount1: 2000n, usd0: 10, usd1: 20, totalUsd: 30 }
+ * // Returns { amountBase: 1000n, amountQuote: 2000n, usdBase: 10, usdQuote: 20, totalUsd: 30 }
  */
 export function calculateTotalAmounts(
-  buckets: Array<{ amount0Locked: bigint; amount1Locked: bigint }>,
-  token0Decimals: number,
-  token1Decimals: number,
-  token0PriceUsd: bigint | null,
-  token1PriceUsd: bigint | null
+  buckets: Array<{ amountBaseLocked: bigint; amountQuoteLocked: bigint }>,
+  baseDecimals: number,
+  quoteDecimals: number,
+  basePriceUsd: bigint | null,
+  quotePriceUsd: bigint | null
 ): TotalAmounts {
-  let totalAmount0 = 0n;
-  let totalAmount1 = 0n;
+  let totalAmountBase = 0n;
+  let totalAmountQuote = 0n;
 
   for (const bucket of buckets) {
-    totalAmount0 += bucket.amount0Locked;
-    totalAmount1 += bucket.amount1Locked;
+    totalAmountBase += bucket.amountBaseLocked;
+    totalAmountQuote += bucket.amountQuoteLocked;
   }
 
-  const usd0 = calculateToken0UsdValue(
-    totalAmount0,
-    token0Decimals,
-    token0PriceUsd
+  const usdBase = calculateBaseUsdValue(
+    totalAmountBase,
+    baseDecimals,
+    basePriceUsd
   );
-  const usd1 = calculateToken1UsdValue(
-    totalAmount1,
-    token1Decimals,
-    token1PriceUsd
+  const usdQuote = calculateQuoteUsdValue(
+    totalAmountQuote,
+    quoteDecimals,
+    quotePriceUsd
   );
 
   return {
-    amount0: totalAmount0,
-    amount1: totalAmount1,
-    usd0,
-    usd1,
-    totalUsd: usd0 + usd1,
+    amountBase: totalAmountBase,
+    amountQuote: totalAmountQuote,
+    usdBase,
+    usdQuote,
+    totalUsd: usdBase + usdQuote,
   };
 }

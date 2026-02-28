@@ -12,8 +12,8 @@
     tvl?: number | null;
     volume24h?: number | null;
     fees24h?: number | null;
-    token0Balance?: PoolBalance | null;
-    token1Balance?: PoolBalance | null;
+    baseBalance?: PoolBalance | null;
+    quoteBalance?: PoolBalance | null;
     isLoading?: boolean;
   }
 
@@ -21,19 +21,19 @@
     tvl = null,
     volume24h = null,
     fees24h = null,
-    token0Balance = null,
-    token1Balance = null,
+    baseBalance = null,
+    quoteBalance = null,
     isLoading = false
   }: Props = $props();
 
   // Calculate balance percentages for the visual bar
   const totalValueUsd = $derived(
-    (token0Balance?.valueUsd ?? 0) + (token1Balance?.valueUsd ?? 0)
+    (baseBalance?.valueUsd ?? 0) + (quoteBalance?.valueUsd ?? 0)
   );
-  const token0Percent = $derived(
-    totalValueUsd > 0 ? ((token0Balance?.valueUsd ?? 0) / totalValueUsd) * 100 : 50
+  const basePercent = $derived(
+    totalValueUsd > 0 ? ((baseBalance?.valueUsd ?? 0) / totalValueUsd) * 100 : 50
   );
-  const token1Percent = $derived(100 - token0Percent);
+  const quotePercent = $derived(100 - basePercent);
 
   // Format helpers
   function formatLargeNumber(num: number | null | undefined): string {
@@ -74,30 +74,30 @@
     </div>
   {:else}
     <!-- Pool Balances Section (if available) -->
-    {#if token0Balance && token1Balance}
+    {#if baseBalance && quoteBalance}
       <div class="balances-section">
         <span class="stat-label">Pool Balances</span>
         <div class="balances-row">
           <div class="balance-item">
-            <Logo src={token0Balance.logo} alt={token0Balance.symbol} size="xxs" />
-            <span class="balance-amount">{formatTokenAmount(token0Balance.amount)}</span>
-            <span class="balance-symbol">{token0Balance.symbol}</span>
+            <Logo src={baseBalance.logo} alt={baseBalance.symbol} size="xxs" />
+            <span class="balance-amount">{formatTokenAmount(baseBalance.amount)}</span>
+            <span class="balance-symbol">{baseBalance.symbol}</span>
           </div>
           <div class="balance-item">
-            <Logo src={token1Balance.logo} alt={token1Balance.symbol} size="xxs" />
-            <span class="balance-amount">{formatTokenAmount(token1Balance.amount)}</span>
-            <span class="balance-symbol">{token1Balance.symbol}</span>
+            <Logo src={quoteBalance.logo} alt={quoteBalance.symbol} size="xxs" />
+            <span class="balance-amount">{formatTokenAmount(quoteBalance.amount)}</span>
+            <span class="balance-symbol">{quoteBalance.symbol}</span>
           </div>
         </div>
         <!-- Balance Bar -->
         <div class="balance-bar">
           <div
-            class="balance-bar-segment token0"
-            style="width: {token0Percent}%"
+            class="balance-bar-segment base"
+            style="width: {basePercent}%"
           ></div>
           <div
-            class="balance-bar-segment token1"
-            style="width: {token1Percent}%"
+            class="balance-bar-segment quote"
+            style="width: {quotePercent}%"
           ></div>
         </div>
       </div>
@@ -190,13 +190,13 @@
     transition: width 300ms ease-out;
   }
 
-  .balance-bar-segment.token0 {
+  .balance-bar-segment.base {
     background: var(--primary);
     border-top-left-radius: 4px;
     border-bottom-left-radius: 4px;
   }
 
-  .balance-bar-segment.token1 {
+  .balance-bar-segment.quote {
     background: var(--muted-foreground);
     border-top-right-radius: 4px;
     border-bottom-right-radius: 4px;

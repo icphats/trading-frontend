@@ -40,10 +40,10 @@ export interface LiquidityBucket {
   price: number;
   /** Total liquidity aggregated in this bucket */
   totalLiquidity: bigint;
-  /** Token0 amount locked in this range */
-  amount0Locked: bigint;
-  /** Token1 amount locked in this range */
-  amount1Locked: bigint;
+  /** Base token amount locked in this range */
+  amountBaseLocked: bigint;
+  /** Quote token amount locked in this range */
+  amountQuoteLocked: bigint;
   /** Total USD value locked in this bucket */
   usdValueLocked: number;
   /** Which pools contribute to this bucket */
@@ -63,10 +63,10 @@ export interface LiquidityBarData {
   price: number;
   /** USD value locked (for bar height) */
   value: number;
-  /** Token0 USD value portion */
-  token0Value: number;
-  /** Token1 USD value portion */
-  token1Value: number;
+  /** Base token USD value portion */
+  baseValue: number;
+  /** Quote token USD value portion */
+  quoteValue: number;
   /** Whether this is the current price bar */
   isCurrent: boolean;
 }
@@ -79,14 +79,14 @@ export interface LiquidityBarData {
  * Configuration for liquidity data processing.
  */
 export interface LiquidityDataConfig {
-  /** Token0 decimals for amount formatting */
-  token0Decimals: number;
-  /** Token1 decimals for amount formatting */
-  token1Decimals: number;
-  /** Token0 USD price in E12 format (null if unknown) */
-  token0PriceUsd: bigint | null;
-  /** Token1 USD price in E12 format (null if unknown) */
-  token1PriceUsd: bigint | null;
+  /** Base token decimals for amount formatting */
+  baseDecimals: number;
+  /** Quote token decimals for amount formatting */
+  quoteDecimals: number;
+  /** Base token USD price in E12 format (null if unknown) */
+  basePriceUsd: bigint | null;
+  /** Quote token USD price in E12 format (null if unknown) */
+  quotePriceUsd: bigint | null;
   /** Current tick for price reference */
   currentTick: number;
   /** Number of buckets to generate */

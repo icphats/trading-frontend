@@ -49,10 +49,12 @@
 
   function handleTokenSelect(token: TokenMetadata) {
     marketCreation.selectedToken = token;
+    marketCreation.checkMarketExists();
   }
 
   function handleQuoteTokenSelect(token: TokenMetadata) {
     marketCreation.selectedQuoteToken = token;
+    marketCreation.checkMarketExists();
   }
 </script>
 
@@ -109,6 +111,17 @@
         </button>
       </div>
     </div>
+
+    <!-- Validation Feedback -->
+    {#if marketCreation.checkingMarketExists}
+      <div class="bg-blue-500/10 border border-blue-500/20 rounded-[var(--radius-md)] p-4">
+        <p class="text-sm text-blue-500">Checking if market exists...</p>
+      </div>
+    {:else if marketCreation.step1Error}
+      <div class="bg-red-500/10 border border-red-500/20 rounded-[var(--radius-md)] p-4">
+        <p class="text-sm font-semibold text-red-500">{marketCreation.step1Error}</p>
+      </div>
+    {/if}
 
     <!-- Info Box -->
     <div class="bg-blue-500/10 border border-blue-500/20 rounded-[var(--radius-md)] p-4">

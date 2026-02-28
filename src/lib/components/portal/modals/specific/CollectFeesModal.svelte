@@ -26,8 +26,8 @@
 
   // Token data
   const market = $derived(entityStore.getMarket(spot.canister_id));
-  const token0 = $derived(market?.baseToken ? entityStore.getToken(market.baseToken) : null);
-  const token1 = $derived(market?.quoteToken ? entityStore.getToken(market.quoteToken) : null);
+  const base = $derived(market?.baseToken ? entityStore.getToken(market.baseToken) : null);
+  const quote = $derived(market?.quoteToken ? entityStore.getToken(market.quoteToken) : null);
 
   // Uncollected fees
   const feesOwed0 = $derived(position?.uncollected_fees_base ?? 0n);
@@ -114,29 +114,29 @@
       {:else if position}
         <!-- Fee Amounts Panel -->
         <div class="modal-panel">
-          <!-- Token 0 Row -->
+          <!-- Base Token Row -->
           <div class="modal-detail-row">
             <div class="fee-token">
-              {#if token0}
-                <Logo src={token0.logo ?? undefined} alt={token0.displaySymbol} size="sm" circle={true} />
-                <span class="token-symbol">{token0.displaySymbol}</span>
+              {#if base}
+                <Logo src={base.logo ?? undefined} alt={base.displaySymbol} size="sm" circle={true} />
+                <span class="token-symbol">{base.displaySymbol}</span>
               {/if}
             </div>
             <span class="modal-detail-value">
-              {token0 ? bigIntToString(feesOwed0, token0.decimals) : '0'}
+              {base ? bigIntToString(feesOwed0, base.decimals) : '0'}
             </span>
           </div>
 
-          <!-- Token 1 Row -->
+          <!-- Quote Token Row -->
           <div class="modal-detail-row">
             <div class="fee-token">
-              {#if token1}
-                <Logo src={token1.logo ?? undefined} alt={token1.displaySymbol} size="sm" circle={true} />
-                <span class="token-symbol">{token1.displaySymbol}</span>
+              {#if quote}
+                <Logo src={quote.logo ?? undefined} alt={quote.displaySymbol} size="sm" circle={true} />
+                <span class="token-symbol">{quote.displaySymbol}</span>
               {/if}
             </div>
             <span class="modal-detail-value">
-              {token1 ? bigIntToString(feesOwed1, token1.decimals) : '0'}
+              {quote ? bigIntToString(feesOwed1, quote.decimals) : '0'}
             </span>
           </div>
         </div>

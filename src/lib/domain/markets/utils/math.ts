@@ -72,17 +72,17 @@ export const DEFAULT_TICK_SPACING = 60;
  * Convert tick to human-readable price
  *
  * In Uniswap V3:
- * - tick represents: log₁.₀₀₀₁(token1_raw / token0_raw)
- * - raw_price = 1.0001^tick = token1_raw / token0_raw
- * - human_price = raw_price * 10^(token0Decimals - token1Decimals)
+ * - tick represents: log₁.₀₀₀₁(quote_raw / base_raw)
+ * - raw_price = 1.0001^tick = quote_raw / base_raw
+ * - human_price = raw_price * 10^(baseDecimals - quoteDecimals)
  *
- * This gives "how many token1 per 1 token0" in human-readable terms.
- * Price convention: token1/token0 = quote/base
+ * This gives "how many quote per 1 base" in human-readable terms.
+ * Price convention: quote/base
  *
  * @param tick - Tick index
- * @param token0Decimals - Decimals of base token (default: 8)
- * @param token1Decimals - Decimals of quote token (default: 8)
- * @returns Human-readable price (token1 per token0)
+ * @param baseDecimals - Decimals of base token (default: 8)
+ * @param quoteDecimals - Decimals of quote token (default: 8)
+ * @returns Human-readable price (quote per base)
  *
  * @example
  * // PARTY (8 decimals) / ICP (8 decimals), tick = 0
@@ -95,11 +95,11 @@ export const DEFAULT_TICK_SPACING = 60;
  */
 export function tickToPrice(
     tick: Tick,
-    token0Decimals: number = 8,
-    token1Decimals: number = 8
+    baseDecimals: number = 8,
+    quoteDecimals: number = 8
 ): number {
     const rawPrice = Math.pow(1.0001, tick);
-    const decimalAdjustment = Math.pow(10, token0Decimals - token1Decimals);
+    const decimalAdjustment = Math.pow(10, baseDecimals - quoteDecimals);
     return rawPrice * decimalAdjustment;
 }
 
@@ -107,15 +107,15 @@ export function tickToPrice(
  * Convert human-readable price to the nearest valid tick
  *
  * This is the inverse of tickToPrice:
- * - humanPrice = 1.0001^tick * 10^(token0Decimals - token1Decimals)
- * - rawPrice = humanPrice / 10^(token0Decimals - token1Decimals)
+ * - humanPrice = 1.0001^tick * 10^(baseDecimals - quoteDecimals)
+ * - rawPrice = humanPrice / 10^(baseDecimals - quoteDecimals)
  * - tick = log(rawPrice) / log(1.0001)
  *
- * Price convention: token1/token0 = quote/base
+ * Price convention: quote/base
  *
- * @param price - Human-readable price (token1 per token0), supports 0 for MIN_TICK and Infinity for MAX_TICK
- * @param token0Decimals - Decimals of base token (default: 8)
- * @param token1Decimals - Decimals of quote token (default: 8)
+ * @param price - Human-readable price (quote per base), supports 0 for MIN_TICK and Infinity for MAX_TICK
+ * @param baseDecimals - Decimals of base token (default: 8)
+ * @param quoteDecimals - Decimals of quote token (default: 8)
  * @param tickSpacing - Tick spacing for rounding (default: 60)
  * @returns Nearest valid tick aligned to tickSpacing
  *
@@ -126,8 +126,8 @@ export function tickToPrice(
  */
 export function priceToTick(
     price: number,
-    token0Decimals: number = 8,
-    token1Decimals: number = 8,
+    baseDecimals: number = 8,
+    quoteDecimals: number = 8,
     tickSpacing: number = DEFAULT_TICK_SPACING
 ): Tick {
     // Handle special cases for full range
@@ -136,7 +136,7 @@ export function priceToTick(
     if (price <= 0) return MIN_TICK;
 
     // Convert human price to raw price by removing decimal adjustment
-    const decimalAdjustment = Math.pow(10, token0Decimals - token1Decimals);
+    const decimalAdjustment = Math.pow(10, baseDecimals - quoteDecimals);
     const rawPrice = price / decimalAdjustment;
 
     const tick = Math.log(rawPrice) / Math.log(1.0001);
@@ -164,9 +164,9 @@ export const E12 = 10n ** 12n;
  * Human price = raw_price * 10^(baseDecimals - quoteDecimals)
  *
  * @param sqrtPriceX96 - Square root price in Q64.96 format
- * @param baseDecimals - Decimals of base token (token0) (default: 8)
- * @param quoteDecimals - Decimals of quote token (token1) (default: 8)
- * @returns Human-readable price (token1 per token0)
+ * @param baseDecimals - Decimals of base token (default: 8)
+ * @param quoteDecimals - Decimals of quote token (default: 8)
+ * @returns Human-readable price (quote per base)
  *
  * @example
  * sqrtPriceX96ToPrice(79228162514264337593543950336n) // 1.0
@@ -192,8 +192,8 @@ export function sqrtPriceX96ToPrice(
  * Matches backend math.mo sqrt_price_to_price_e12().
  *
  * @param sqrtPriceX96 - Square root price in Q64.96 format
- * @param baseDecimals - Decimals of base token (token0) (default: 8)
- * @param quoteDecimals - Decimals of quote token (token1) (default: 8)
+ * @param baseDecimals - Decimals of base token (default: 8)
+ * @param quoteDecimals - Decimals of quote token (default: 8)
  * @returns Price in E12 format (divide by 1e12 for human-readable price)
  *
  * @example
@@ -324,64 +324,64 @@ export function sqrtPriceX96ToTick(sqrtPriceX96: SqrtPriceX96): Tick {
  * @param currentTick - Current pool tick
  * @param tickLower - Lower tick of range
  * @param tickUpper - Upper tick of range
- * @param amount0 - Amount of token0
- * @param amount1 - Amount of token1
+ * @param amountBase - Amount of base token
+ * @param amountQuote - Amount of quote token
  * @returns Liquidity amount
  */
 export function getLiquidityForAmounts(
     currentTick: Tick,
     tickLower: Tick,
     tickUpper: Tick,
-    amount0: bigint,
-    amount1: bigint
+    amountBase: bigint,
+    amountQuote: bigint
 ): Liquidity {
     const sqrtPriceCurrent = tickToSqrtPriceX96(currentTick);
     const sqrtPriceLower = tickToSqrtPriceX96(tickLower);
     const sqrtPriceUpper = tickToSqrtPriceX96(tickUpper);
 
     if (currentTick < tickLower) {
-        // Price is below range, only token0 needed
-        return getLiquidityForAmount0(sqrtPriceLower, sqrtPriceUpper, amount0);
+        // Price is below range, only base token needed
+        return getLiquidityForAmountBase(sqrtPriceLower, sqrtPriceUpper, amountBase);
     } else if (currentTick >= tickUpper) {
-        // Price is above range, only token1 needed
-        return getLiquidityForAmount1(sqrtPriceLower, sqrtPriceUpper, amount1);
+        // Price is above range, only quote token needed
+        return getLiquidityForAmountQuote(sqrtPriceLower, sqrtPriceUpper, amountQuote);
     } else {
         // Price is in range, use both tokens
-        const liquidity0 = getLiquidityForAmount0(sqrtPriceCurrent, sqrtPriceUpper, amount0);
-        const liquidity1 = getLiquidityForAmount1(sqrtPriceLower, sqrtPriceCurrent, amount1);
+        const liquidity0 = getLiquidityForAmountBase(sqrtPriceCurrent, sqrtPriceUpper, amountBase);
+        const liquidity1 = getLiquidityForAmountQuote(sqrtPriceLower, sqrtPriceCurrent, amountQuote);
         return liquidity0 < liquidity1 ? liquidity0 : liquidity1;
     }
 }
 
 /**
- * Calculate liquidity from amount0
- * L = amount0 * (sqrtPriceUpper * sqrtPriceLower) / (sqrtPriceUpper - sqrtPriceLower)
+ * Calculate liquidity from base amount
+ * L = amountBase * (sqrtPriceUpper * sqrtPriceLower) / (sqrtPriceUpper - sqrtPriceLower)
  */
-export function getLiquidityForAmount0(
+export function getLiquidityForAmountBase(
     sqrtPriceLower: SqrtPriceX96,
     sqrtPriceUpper: SqrtPriceX96,
-    amount0: bigint
+    amountBase: bigint
 ): Liquidity {
     if (sqrtPriceLower >= sqrtPriceUpper) return 0n;
 
-    const numerator = amount0 * sqrtPriceLower * sqrtPriceUpper;
+    const numerator = amountBase * sqrtPriceLower * sqrtPriceUpper;
     const denominator = Q96 * (sqrtPriceUpper - sqrtPriceLower);
 
     return numerator / denominator;
 }
 
 /**
- * Calculate liquidity from amount1
- * L = amount1 / (sqrtPriceUpper - sqrtPriceLower)
+ * Calculate liquidity from quote amount
+ * L = amountQuote / (sqrtPriceUpper - sqrtPriceLower)
  */
-export function getLiquidityForAmount1(
+export function getLiquidityForAmountQuote(
     sqrtPriceLower: SqrtPriceX96,
     sqrtPriceUpper: SqrtPriceX96,
-    amount1: bigint
+    amountQuote: bigint
 ): Liquidity {
     if (sqrtPriceLower >= sqrtPriceUpper) return 0n;
 
-    return (amount1 * Q96) / (sqrtPriceUpper - sqrtPriceLower);
+    return (amountQuote * Q96) / (sqrtPriceUpper - sqrtPriceLower);
 }
 
 // ============================================================================
@@ -395,7 +395,7 @@ export function getLiquidityForAmount1(
  * @param tickLower - Lower tick of range
  * @param tickUpper - Upper tick of range
  * @param liquidity - Liquidity amount
- * @returns Token amounts [amount0, amount1]
+ * @returns Token amounts [amountBase, amountQuote]
  */
 export function getAmountsForLiquidity(
     currentTick: Tick,
@@ -408,26 +408,26 @@ export function getAmountsForLiquidity(
     const sqrtPriceUpper = tickToSqrtPriceX96(tickUpper);
 
     if (currentTick < tickLower) {
-        // Price below range, all token0
-        const amount0 = getAmount0ForLiquidity(sqrtPriceLower, sqrtPriceUpper, liquidity);
-        return [amount0, 0n];
+        // Price below range, all base
+        const amountBase = getAmountBaseForLiquidity(sqrtPriceLower, sqrtPriceUpper, liquidity);
+        return [amountBase, 0n];
     } else if (currentTick >= tickUpper) {
-        // Price above range, all token1
-        const amount1 = getAmount1ForLiquidity(sqrtPriceLower, sqrtPriceUpper, liquidity);
-        return [0n, amount1];
+        // Price above range, all quote
+        const amountQuote = getAmountQuoteForLiquidity(sqrtPriceLower, sqrtPriceUpper, liquidity);
+        return [0n, amountQuote];
     } else {
         // Price in range, both tokens
-        const amount0 = getAmount0ForLiquidity(sqrtPriceCurrent, sqrtPriceUpper, liquidity);
-        const amount1 = getAmount1ForLiquidity(sqrtPriceLower, sqrtPriceCurrent, liquidity);
-        return [amount0, amount1];
+        const amountBase = getAmountBaseForLiquidity(sqrtPriceCurrent, sqrtPriceUpper, liquidity);
+        const amountQuote = getAmountQuoteForLiquidity(sqrtPriceLower, sqrtPriceCurrent, liquidity);
+        return [amountBase, amountQuote];
     }
 }
 
 /**
- * Calculate amount0 for liquidity
- * amount0 = L * (sqrtPriceUpper - sqrtPriceCurrent) / (sqrtPriceUpper * sqrtPriceCurrent)
+ * Calculate base amount for liquidity
+ * amountBase = L * (sqrtPriceUpper - sqrtPriceCurrent) / (sqrtPriceUpper * sqrtPriceCurrent)
  */
-function getAmount0ForLiquidity(
+function getAmountBaseForLiquidity(
     sqrtPriceLower: SqrtPriceX96,
     sqrtPriceUpper: SqrtPriceX96,
     liquidity: Liquidity
@@ -441,10 +441,10 @@ function getAmount0ForLiquidity(
 }
 
 /**
- * Calculate amount1 for liquidity
- * amount1 = L * (sqrtPriceUpper - sqrtPriceLower)
+ * Calculate quote amount for liquidity
+ * amountQuote = L * (sqrtPriceUpper - sqrtPriceLower)
  */
-function getAmount1ForLiquidity(
+function getAmountQuoteForLiquidity(
     sqrtPriceLower: SqrtPriceX96,
     sqrtPriceUpper: SqrtPriceX96,
     liquidity: Liquidity
@@ -459,45 +459,45 @@ function getAmount1ForLiquidity(
 // ============================================================================
 
 /**
- * Convert token0 amount to token1 amount at a given tick
- * Formula: token1 = token0 * price where price = 1.0001^tick
+ * Convert base token amount to quote token amount at a given tick
+ * Formula: quote = base * price where price = 1.0001^tick
  *
- * @param amount0 - Token0 amount (e.g., PARTY)
+ * @param amountBase - Base token amount (e.g., PARTY)
  * @param tick - Price tick
- * @returns Equivalent token1 amount (e.g., ICP)
+ * @returns Equivalent quote token amount (e.g., ICP)
  *
  * @example
- * convertToken0ToToken1(1000000n, 0) // 1000000n (at tick 0, price = 1.0)
- * convertToken0ToToken1(1000000n, 69080) // ~1000000n (at price ≈ 1000)
+ * convertBaseToQuote(1000000n, 0) // 1000000n (at tick 0, price = 1.0)
+ * convertBaseToQuote(1000000n, 69080) // ~1000000n (at price ≈ 1000)
  */
-export function convertToken0ToToken1(amount0: bigint, tick: Tick): bigint {
-    if (amount0 === 0n) return 0n;
+export function convertBaseToQuote(amountBase: bigint, tick: Tick): bigint {
+    if (amountBase === 0n) return 0n;
 
     const price = tickToPrice(tick);
-    const amount1 = Number(amount0) * price;
+    const amountQuote = Number(amountBase) * price;
 
-    return BigInt(Math.floor(amount1));
+    return BigInt(Math.floor(amountQuote));
 }
 
 /**
- * Convert token1 amount to token0 amount at a given tick
- * Formula: token0 = token1 / price where price = 1.0001^tick
+ * Convert quote token amount to base token amount at a given tick
+ * Formula: base = quote / price where price = 1.0001^tick
  *
- * @param amount1 - Token1 amount (e.g., ICP)
+ * @param amountQuote - Quote token amount (e.g., ICP)
  * @param tick - Price tick
- * @returns Equivalent token0 amount (e.g., PARTY)
+ * @returns Equivalent base token amount (e.g., PARTY)
  *
  * @example
- * convertToken1ToToken0(1000000n, 0) // 1000000n (at tick 0, price = 1.0)
- * convertToken1ToToken0(1000000n, 69080) // ~1000n (at price ≈ 1000)
+ * convertQuoteToBase(1000000n, 0) // 1000000n (at tick 0, price = 1.0)
+ * convertQuoteToBase(1000000n, 69080) // ~1000n (at price ≈ 1000)
  */
-export function convertToken1ToToken0(amount1: bigint, tick: Tick): bigint {
-    if (amount1 === 0n) return 0n;
+export function convertQuoteToBase(amountQuote: bigint, tick: Tick): bigint {
+    if (amountQuote === 0n) return 0n;
 
     const price = tickToPrice(tick);
-    const amount0 = Number(amount1) / price;
+    const amountBase = Number(amountQuote) / price;
 
-    return BigInt(Math.floor(amount0));
+    return BigInt(Math.floor(amountBase));
 }
 
 // ============================================================================
@@ -543,7 +543,7 @@ export function calculateMinAmountOut(
  *
  * @param currentSqrtPrice - Current sqrt price
  * @param slippageBasisPoints - Slippage tolerance in basis points
- * @param zeroForOne - Swap direction (true = token0→token1)
+ * @param zeroForOne - Swap direction (true = base→quote)
  * @returns Sqrt price limit
  */
 export function calculateSqrtPriceLimit(

@@ -114,13 +114,13 @@ export interface AggregateConfig {
   /** Current tick for determining which bucket is "current" */
   currentTick: number;
   /** Token0 decimals for price calculation */
-  token0Decimals: number;
+  baseDecimals: number;
   /** Token1 decimals for price calculation */
-  token1Decimals: number;
+  quoteDecimals: number;
   /** Token0 USD price in E12 format (null if unknown) */
-  token0PriceUsd: bigint | null;
+  basePriceUsd: bigint | null;
   /** Token1 USD price in E12 format (null if unknown) */
-  token1PriceUsd: bigint | null;
+  quotePriceUsd: bigint | null;
 }
 
 /**
@@ -139,10 +139,10 @@ export interface AggregateConfig {
  *   tickRange: { min: -14000, max: 14000 },
  *   bucketSize: 600,
  *   currentTick: 0,
- *   token0Decimals: 8,
- *   token1Decimals: 8,
- *   token0PriceUsd: 1000000000000n, // $1.00
- *   token1PriceUsd: 1000000000000n, // $1.00
+ *   baseDecimals: 8,
+ *   quoteDecimals: 8,
+ *   basePriceUsd: 1000000000000n, // $1.00
+ *   quotePriceUsd: 1000000000000n, // $1.00
  * });
  */
 export function aggregateIntoBuckets(
@@ -153,10 +153,10 @@ export function aggregateIntoBuckets(
     tickRange,
     bucketSize,
     currentTick,
-    token0Decimals,
-    token1Decimals,
-    token0PriceUsd,
-    token1PriceUsd,
+    baseDecimals,
+    quoteDecimals,
+    basePriceUsd,
+    quotePriceUsd,
   } = config;
 
   // Map from bucket start tick to aggregated data
@@ -166,7 +166,7 @@ export function aggregateIntoBuckets(
   const { min, max } = tickRange;
   for (let tick = min; tick <= max; tick += bucketSize) {
     const bucketCenter = tick + bucketSize / 2;
-    const price = tickToPrice(bucketCenter, token0Decimals, token1Decimals);
+    const price = tickToPrice(bucketCenter, baseDecimals, quoteDecimals);
 
     bucketMap.set(tick, {
       tick: bucketCenter,
@@ -174,8 +174,8 @@ export function aggregateIntoBuckets(
       tickUpper: tick + bucketSize,
       price,
       totalLiquidity: 0n,
-      amount0Locked: 0n,
-      amount1Locked: 0n,
+      amountBaseLocked: 0n,
+      amountQuoteLocked: 0n,
       usdValueLocked: 0,
       poolContributions: [],
       isCurrentTick: currentTick >= tick && currentTick < tick + bucketSize,
@@ -219,7 +219,7 @@ export function aggregateIntoBuckets(
         // Calculate amounts for the overlapping tick range
         // Use the unified currentTick (from most liquid pool) for consistent token split
         // across all pools, not pool.currentTick which varies by fee tier
-        const { amount0, amount1 } = calculateAmountsLocked(
+        const { amountBase, amountQuote } = calculateAmountsLocked(
           overlapLower,
           overlapUpper,
           currentTick,
@@ -227,15 +227,15 @@ export function aggregateIntoBuckets(
         );
 
         bucket.totalLiquidity += segment.liquidity;
-        bucket.amount0Locked += amount0;
-        bucket.amount1Locked += amount1;
+        bucket.amountBaseLocked += amountBase;
+        bucket.amountQuoteLocked += amountQuote;
         bucket.usdValueLocked += calculateUsdValue(
-          amount0,
-          amount1,
-          token0Decimals,
-          token1Decimals,
-          token0PriceUsd,
-          token1PriceUsd
+          amountBase,
+          amountQuote,
+          baseDecimals,
+          quoteDecimals,
+          basePriceUsd,
+          quotePriceUsd
         );
 
         // Track pool contribution

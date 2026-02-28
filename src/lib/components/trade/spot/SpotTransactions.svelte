@@ -10,8 +10,8 @@
   let { spot }: { spot: SpotMarket } = $props();
 
   // Get token metadata from registry
-  const token0 = $derived(spot.tokens ? entityStore.getToken(spot.tokens[0].toString()) : null);
-  const token1 = $derived(spot.tokens && spot.tokens[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
+  const base = $derived(spot.tokens ? entityStore.getToken(spot.tokens[0].toString()) : null);
+  const quote = $derived(spot.tokens && spot.tokens[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
 
   // Infinite scroll state - now uses backend pagination
   let sentinelEl: HTMLDivElement | null = $state(null);
@@ -62,8 +62,8 @@
     <GridCell>Time</GridCell>
     <GridCell align="center">Side</GridCell>
     <GridCell align="center">Price</GridCell>
-    <GridCell align="center">{token0?.displaySymbol ?? "Base"}</GridCell>
-    <GridCell align="center">{token1?.displaySymbol ?? "Quote"}</GridCell>
+    <GridCell align="center">{base?.displaySymbol ?? "Base"}</GridCell>
+    <GridCell align="center">{quote?.displaySymbol ?? "Quote"}</GridCell>
     <GridCell align="center">USD</GridCell>
   </GridHeader>
 
@@ -85,13 +85,13 @@
             {isBuy ? "+" : "-"}
             {formatToken({
               value: tx.base_amount,
-              unitName: token0?.decimals ?? 8,
+              unitName: base?.decimals ?? 8,
               displayDecimals: 6,
               commas: true,
             })}
           </span>
-          {#if token0}
-            <Logo src={token0.logo ?? undefined} alt={token0.symbol} size="xxs" circle={true} />
+          {#if base}
+            <Logo src={base.logo ?? undefined} alt={base.symbol} size="xxs" circle={true} />
           {/if}
         </div>
       </GridCell>
@@ -100,13 +100,13 @@
           <span class="text-muted">
             {formatToken({
               value: tx.quote_amount,
-              unitName: token1?.decimals ?? 8,
+              unitName: quote?.decimals ?? 8,
               displayDecimals: 6,
               commas: true,
             })}
           </span>
-          {#if token1}
-            <Logo src={token1.logo ?? undefined} alt={token1.symbol} size="xxs" circle={true} />
+          {#if quote}
+            <Logo src={quote.logo ?? undefined} alt={quote.symbol} size="xxs" circle={true} />
           {/if}
         </div>
       </GridCell>

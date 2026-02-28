@@ -18,8 +18,8 @@
     aggregateIntoBuckets,
     getMaxTickSpacing,
     getCurrentTickFromPools,
-    calculateToken0UsdValue,
-    calculateToken1UsdValue,
+    calculateBaseUsdValue,
+    calculateQuoteUsdValue,
     calculateTotalAmounts,
     type LiquidityBucket,
   } from "$lib/domain/markets/utils/liquidity-depth";
@@ -31,23 +31,21 @@
   interface Props {
     /** Pool depth data from market depth response */
     pools: PoolDepthRow[];
-    /** Token0 decimals for amount formatting */
-    token0Decimals: number;
-    /** Token1 decimals for amount formatting */
-    token1Decimals: number;
-    /** Token0 USD price in E12 format (null if unknown) */
-    token0PriceUsd: bigint | null;
-    /** Token1 USD price in E12 format (null if unknown) */
-    token1PriceUsd: bigint | null;
-    /** Token0 logo URL */
-    token0Logo?: string;
-    /** Token1 logo URL */
-    token1Logo?: string;
-    /** Token0 symbol for tooltip */
-    token0Symbol?: string;
-    /** Token1 symbol for tooltip */
-    token1Symbol?: string;
-    /** Quote token symbol for price display */
+    /** Base token decimals for amount formatting */
+    baseDecimals: number;
+    /** Quote token decimals for amount formatting */
+    quoteDecimals: number;
+    /** Base token USD price in E12 format (null if unknown) */
+    basePriceUsd: bigint | null;
+    /** Quote token USD price in E12 format (null if unknown) */
+    quotePriceUsd: bigint | null;
+    /** Base token logo URL */
+    baseLogo?: string;
+    /** Quote token logo URL */
+    quoteLogo?: string;
+    /** Base token symbol for tooltip */
+    baseSymbol?: string;
+    /** Quote token symbol for tooltip and price display */
     quoteSymbol?: string;
     /** Reference tick from market depth (shared with order book) */
     referenceTick?: number;
@@ -63,14 +61,13 @@
 
   let {
     pools,
-    token0Decimals,
-    token1Decimals,
-    token0PriceUsd,
-    token1PriceUsd,
-    token0Logo,
-    token1Logo,
-    token0Symbol = "Token0",
-    token1Symbol = "Token1",
+    baseDecimals,
+    quoteDecimals,
+    basePriceUsd,
+    quotePriceUsd,
+    baseLogo,
+    quoteLogo,
+    baseSymbol = "Base",
     quoteSymbol = "Quote",
     referenceTick: refTick,
     referencePriceE12,
@@ -90,8 +87,8 @@
 
   // Colors
   const COLORS = {
-    above: "var(--color-bearish)", // Sell side (token0) - red
-    below: "var(--color-bullish)", // Buy side (token1) - green
+    above: "var(--color-bearish)", // Sell side (base) - red
+    below: "var(--color-bullish)", // Buy side (quote) - green
     current: "var(--primary)",
     grid: "var(--border)",
     text: "var(--muted-foreground)",
@@ -216,10 +213,10 @@
       tickRange,
       bucketSize,
       currentTick,
-      token0Decimals,
-      token1Decimals,
-      token0PriceUsd,
-      token1PriceUsd,
+      baseDecimals,
+      quoteDecimals,
+      basePriceUsd,
+      quotePriceUsd,
     });
   });
 
@@ -238,10 +235,10 @@
   const totals = $derived(
     calculateTotalAmounts(
       aggregatedBars,
-      token0Decimals,
-      token1Decimals,
-      token0PriceUsd,
-      token1PriceUsd
+      baseDecimals,
+      quoteDecimals,
+      basePriceUsd,
+      quotePriceUsd
     )
   );
 
@@ -368,7 +365,7 @@
   // ============================================================================
 
   function formatPriceDisplay(tick: number): string {
-    const price = tickToPrice(tick, token0Decimals, token1Decimals);
+    const price = tickToPrice(tick, baseDecimals, quoteDecimals);
     if (!isFinite(price) || price > 1e15) return "Inf";
     if (price < 1e-15) return "0";
     return formatSigFig(price, 5, { subscriptZeros: true });
@@ -496,12 +493,12 @@
   }
 
   // Helper functions for USD calculations in template
-  function getToken0UsdValue(amount: bigint): number {
-    return calculateToken0UsdValue(amount, token0Decimals, token0PriceUsd);
+  function getBaseUsdValue(amount: bigint): number {
+    return calculateBaseUsdValue(amount, baseDecimals, basePriceUsd);
   }
 
-  function getToken1UsdValue(amount: bigint): number {
-    return calculateToken1UsdValue(amount, token1Decimals, token1PriceUsd);
+  function getQuoteUsdValue(amount: bigint): number {
+    return calculateQuoteUsdValue(amount, quoteDecimals, quotePriceUsd);
   }
 </script>
 
@@ -602,13 +599,13 @@
               />
 
               {#if bar.usdValueLocked > 0}
-                {#if bar.amount0Locked > 0n && bar.amount1Locked > 0n}
+                {#if bar.amountBaseLocked > 0n && bar.amountQuoteLocked > 0n}
                   <!-- Bar with BOTH tokens: split color showing ratio -->
-                  {@const token0Usd = getToken0UsdValue(bar.amount0Locked)}
-                  {@const token1Usd = getToken1UsdValue(bar.amount1Locked)}
-                  {@const ratio = token0Usd / (token0Usd + token1Usd || 1)}
+                  {@const baseUsd = getBaseUsdValue(bar.amountBaseLocked)}
+                  {@const quoteUsd = getQuoteUsdValue(bar.amountQuoteLocked)}
+                  {@const ratio = baseUsd / (baseUsd + quoteUsd || 1)}
 
-                  <!-- Token1 portion (below/green) - starts from left -->
+                  <!-- Quote portion (below/green) - starts from left -->
                   <rect
                     x={0}
                     {y}
@@ -618,7 +615,7 @@
                     opacity={hoveredBar ? (isHovered ? 1 : 0.4) : 0.7}
                     rx="1"
                   />
-                  <!-- Token0 portion (above/red) - continues after token1 -->
+                  <!-- Base portion (above/red) - continues after quote -->
                   <rect
                     x={width * (1 - ratio)}
                     {y}
@@ -635,7 +632,7 @@
                     {y}
                     width={Math.max(1, width)}
                     height={barHeight}
-                    fill={bar.amount0Locked > 0n ? COLORS.above : COLORS.below}
+                    fill={bar.amountBaseLocked > 0n ? COLORS.above : COLORS.below}
                     opacity={hoveredBar ? (isHovered ? 1 : 0.4) : 0.7}
                     rx="1"
                   />
@@ -782,40 +779,40 @@
 
       <!-- Tooltip (follows cursor, flips when near top) -->
       {#if hoveredBar}
-        {@const token0Usd = getToken0UsdValue(hoveredBar.amount0Locked)}
-        {@const token1Usd = getToken1UsdValue(hoveredBar.amount1Locked)}
-        {@const totalUsd = token0Usd + token1Usd}
-        {@const token0Pct = totalUsd > 0 ? (token0Usd / totalUsd) * 100 : 0}
-        {@const token1Pct = totalUsd > 0 ? (token1Usd / totalUsd) * 100 : 0}
-        {@const hasToken0 = hoveredBar.amount0Locked > 0n}
-        {@const hasToken1 = hoveredBar.amount1Locked > 0n}
+        {@const baseUsd = getBaseUsdValue(hoveredBar.amountBaseLocked)}
+        {@const quoteUsd = getQuoteUsdValue(hoveredBar.amountQuoteLocked)}
+        {@const totalUsd = baseUsd + quoteUsd}
+        {@const basePct = totalUsd > 0 ? (baseUsd / totalUsd) * 100 : 0}
+        {@const quotePct = totalUsd > 0 ? (quoteUsd / totalUsd) * 100 : 0}
+        {@const hasBase = hoveredBar.amountBaseLocked > 0n}
+        {@const hasQuote = hoveredBar.amountQuoteLocked > 0n}
         {@const isTopHalf = mouseY < chartHeight / 2}
         <div
           class="tooltip"
           class:tooltip-below={isTopHalf}
           style="left: {mouseX + 16}px; top: {mouseY + (isTopHalf ? 8 : -8)}px;"
         >
-          {#if hasToken0}
+          {#if hasBase}
             <div class="tooltip-row">
               <div class="tooltip-token">
-                <Logo src={token0Logo} alt={token0Symbol} size="xxs" circle={true} />
-                <span class="tooltip-symbol">{token0Symbol}</span>
+                <Logo src={baseLogo} alt={baseSymbol} size="xxs" circle={true} />
+                <span class="tooltip-symbol">{baseSymbol}</span>
               </div>
               <div class="tooltip-values">
-                <span class="tooltip-usd">{formatCompactUSD(token0Usd)}</span>
-                <span class="tooltip-pct">{token0Pct.toFixed(0)}%</span>
+                <span class="tooltip-usd">{formatCompactUSD(baseUsd)}</span>
+                <span class="tooltip-pct">{basePct.toFixed(0)}%</span>
               </div>
             </div>
           {/if}
-          {#if hasToken1}
+          {#if hasQuote}
             <div class="tooltip-row">
               <div class="tooltip-token">
-                <Logo src={token1Logo} alt={token1Symbol} size="xxs" circle={true} />
-                <span class="tooltip-symbol">{token1Symbol}</span>
+                <Logo src={quoteLogo} alt={quoteSymbol} size="xxs" circle={true} />
+                <span class="tooltip-symbol">{quoteSymbol}</span>
               </div>
               <div class="tooltip-values">
-                <span class="tooltip-usd">{formatCompactUSD(token1Usd)}</span>
-                <span class="tooltip-pct">{token1Pct.toFixed(0)}%</span>
+                <span class="tooltip-usd">{formatCompactUSD(quoteUsd)}</span>
+                <span class="tooltip-pct">{quotePct.toFixed(0)}%</span>
               </div>
             </div>
           {/if}
@@ -826,22 +823,22 @@
     <!-- Totals footer -->
     <div class="totals-footer">
       <div class="total-item">
-        <Logo src={token0Logo} alt="" size="xxs" circle={true} />
+        <Logo src={baseLogo} alt="" size="xxs" circle={true} />
         <span class="total-amount"
-          >{formatNumber(fromDecimals(totals.amount0, token0Decimals), {
+          >{formatNumber(fromDecimals(totals.amountBase, baseDecimals), {
             maximumFractionDigits: 0,
           })}</span
         >
-        <span class="total-usd">{formatCompactUSD(totals.usd0)}</span>
+        <span class="total-usd">{formatCompactUSD(totals.usdBase)}</span>
       </div>
       <div class="total-item">
-        <Logo src={token1Logo} alt="" size="xxs" circle={true} />
+        <Logo src={quoteLogo} alt="" size="xxs" circle={true} />
         <span class="total-amount"
-          >{formatNumber(fromDecimals(totals.amount1, token1Decimals), {
+          >{formatNumber(fromDecimals(totals.amountQuote, quoteDecimals), {
             maximumFractionDigits: 0,
           })}</span
         >
-        <span class="total-usd">{formatCompactUSD(totals.usd1)}</span>
+        <span class="total-usd">{formatCompactUSD(totals.usdQuote)}</span>
       </div>
     </div>
   {/if}

@@ -175,7 +175,7 @@ export class SpotMarket implements ISpotMarket {
   initialized = $state<boolean>(false);
 
   /**
-   * Token addresses [token0, token1]
+   * Token addresses [base, quote]
    */
   tokens = $state<[Principal, Principal] | null>(null);
 
@@ -184,7 +184,7 @@ export class SpotMarket implements ISpotMarket {
   // ============================================
 
   /**
-   * Base token (token0) decimals
+   * Base token decimals
    * DERIVED from entityStore - single source of truth
    * Used for volume scaling in chart transforms
    */
@@ -195,7 +195,7 @@ export class SpotMarket implements ISpotMarket {
   }
 
   /**
-   * Quote token (token1) decimals
+   * Quote token decimals
    * DERIVED from entityStore - single source of truth
    */
   get quoteTokenDecimals(): number {
@@ -511,7 +511,7 @@ export class SpotMarket implements ISpotMarket {
     id: bigint;              // Unique transaction ID (from backend)
     price_e12: bigint;       // Execution price (E12 precision)
     timestamp: number;       // Unix timestamp in milliseconds
-    base_amount: bigint;     // Base token (token0) amount traded
+    base_amount: bigint;     // Base token amount traded
     quote_amount: bigint;    // Quote token amount traded
     usd_value: bigint;       // Pre-computed USD value (E6 - canonical USD accumulator precision)
     side: 'buy' | 'sell';    // Trade direction
@@ -547,7 +547,7 @@ export class SpotMarket implements ISpotMarket {
   });
 
   /**
-   * Current spot price (token1 / token0)
+   * Current spot price (quote / base)
    * Derived from priceE12 for consistency with E12 display format.
    */
   spotPrice = $derived.by(() => {
@@ -603,7 +603,7 @@ export class SpotMarket implements ISpotMarket {
 
   /**
    * Active quote token as Candid variant for backend calls
-   * Derived from the token1 (quote token) ledger stored in this.tokens
+   * Derived from the quote token ledger stored in this.tokens
    * Returns { ICP: null } as fallback if tokens not yet loaded
    */
   activeQuoteToken = $derived.by((): QuoteToken => {
@@ -628,15 +628,15 @@ export class SpotMarket implements ISpotMarket {
 
   /**
    * Get the quote token symbol for cache keys and display
-   * Derived from the token1 (quote token) ledger stored in this.tokens
+   * Derived from the quote token ledger stored in this.tokens
    * Returns 'icp' as fallback if tokens not yet loaded
    */
   getQuoteTokenSymbol(): 'icp' | 'usdc' | 'usdt' {
     if (!this.tokens || !this.tokens[1]) {
       return 'icp'; // Default fallback
     }
-    const token1Ledger = this.tokens[1].toString();
-    return QUOTE_TOKEN_BY_LEDGER[token1Ledger] ?? 'icp';
+    const quoteLedger = this.tokens[1].toString();
+    return QUOTE_TOKEN_BY_LEDGER[quoteLedger] ?? 'icp';
   }
 
   // ============================================
@@ -1401,15 +1401,15 @@ export class SpotMarket implements ISpotMarket {
 
   /**
    * Collect accrued fees from a liquidity position
-   * @returns Collected amounts { collected_amt0, collected_amt1 }
+   * @returns Collected amounts { collected_amt_base, collected_amt_quote }
    */
-  async collectFees(positionId: PositionId): Promise<{ collected_amt0: bigint; collected_amt1: bigint }> {
+  async collectFees(positionId: PositionId): Promise<{ collected_amt_base: bigint; collected_amt_quote: bigint }> {
     const result = await marketRepository.collectSpotFees(this.canister_id, positionId);
 
     if ('ok' in result) {
       // Step 2: Bump versions (no available balances in response — poll handles it)
       pollingCoordinator.applyMutationVersions(this.canister_id, result.ok.versions);
-      return { collected_amt0: result.ok.collected_amt0, collected_amt1: result.ok.collected_amt1 };
+      return { collected_amt_base: result.ok.collected_amt_base, collected_amt_quote: result.ok.collected_amt_quote };
     }
 
     const errorMessage = formatResultError(result);
@@ -1459,19 +1459,19 @@ export class SpotMarket implements ISpotMarket {
    */
   async increaseLiquidity(
     positionId: PositionId,
-    amount0Desired: bigint,
-    amount1Desired: bigint,
-  ): Promise<{ liquidity_delta: bigint; actual_amt0: bigint; actual_amt1: bigint }> {
+    amountBaseDesired: bigint,
+    amountQuoteDesired: bigint,
+  ): Promise<{ liquidity_delta: bigint; actual_amt_base: bigint; actual_amt_quote: bigint }> {
     const result = await marketRepository.increaseSpotLiquidity(
-      this.canister_id, positionId, amount0Desired, amount1Desired,
+      this.canister_id, positionId, amountBaseDesired, amountQuoteDesired,
     );
 
     if ('ok' in result) {
       pollingCoordinator.applyMutationVersions(this.canister_id, result.ok.versions);
       return {
         liquidity_delta: result.ok.liquidity_delta,
-        actual_amt0: result.ok.actual_amt0,
-        actual_amt1: result.ok.actual_amt1,
+        actual_amt_base: result.ok.actual_amt_base,
+        actual_amt_quote: result.ok.actual_amt_quote,
       };
     }
 
@@ -1488,18 +1488,18 @@ export class SpotMarket implements ISpotMarket {
     feePips: number,
     tickLower: Tick,
     tickUpper: Tick,
-    amount0Desired: bigint,
-    amount1Desired: bigint,
+    amountBaseDesired: bigint,
+    amountQuoteDesired: bigint,
     initialTick?: Tick,
     lockUntilMs?: bigint,
-  ): Promise<{ position_id: PositionId; actual_amt0: bigint; actual_amt1: bigint }> {
+  ): Promise<{ position_id: PositionId; actual_amt_base: bigint; actual_amt_quote: bigint }> {
     const result = await marketRepository.addSpotLiquidity(
-      this.canister_id, feePips, tickLower, tickUpper, amount0Desired, amount1Desired, initialTick, lockUntilMs,
+      this.canister_id, feePips, tickLower, tickUpper, amountBaseDesired, amountQuoteDesired, initialTick, lockUntilMs,
     );
 
     if ('ok' in result) {
       pollingCoordinator.applyMutationVersions(this.canister_id, result.ok.versions);
-      return { position_id: result.ok.position_id, actual_amt0: result.ok.actual_amt0, actual_amt1: result.ok.actual_amt1 };
+      return { position_id: result.ok.position_id, actual_amt_base: result.ok.actual_amt_base, actual_amt_quote: result.ok.actual_amt_quote };
     }
 
     const errorMessage = formatResultError(result);
@@ -1514,14 +1514,14 @@ export class SpotMarket implements ISpotMarket {
   async decreaseLiquidity(
     positionId: PositionId,
     liquidityDelta: bigint,
-  ): Promise<{ amount0: bigint; amount1: bigint }> {
+  ): Promise<{ amountBase: bigint; amountQuote: bigint }> {
     const result = await marketRepository.decreaseSpotLiquidity(
       this.canister_id, positionId, liquidityDelta,
     );
 
     if ('ok' in result) {
       pollingCoordinator.applyMutationVersions(this.canister_id, result.ok.versions);
-      return { amount0: result.ok.amount0, amount1: result.ok.amount1 };
+      return { amountBase: result.ok.amount_base, amountQuote: result.ok.amount_quote };
     }
 
     const errorMessage = formatResultError(result);
@@ -1747,8 +1747,8 @@ export class SpotMarket implements ISpotMarket {
       return;
     }
 
-    const token0CanisterId = this.tokens[0].toString();
-    const existing = entityStore.getToken(token0CanisterId);
+    const baseCanisterId = this.tokens[0].toString();
+    const existing = entityStore.getToken(baseCanisterId);
 
     // Quote tokens (ckUSDT, ICP, ckUSDC): indexer is source of truth for TVL/volume.
     // A single spot market only has its own slice — pushing it would overwrite
@@ -1756,7 +1756,7 @@ export class SpotMarket implements ISpotMarket {
     const isQuote = existing?.isQuoteToken === true;
 
     entityStore.upsertToken({
-      canisterId: token0CanisterId,
+      canisterId: baseCanisterId,
       // NOTE: priceUsd intentionally NOT set here - indexer is source of truth
       priceChange24h: this.priceChange24h,
       ...(!isQuote && {
@@ -1772,8 +1772,8 @@ export class SpotMarket implements ISpotMarket {
    * Enables instant UI on next page load with last known values
    */
   private persistStateToCache(): void {
-    const token0 = this.tokens?.[0] ? entityStore.getToken(this.tokens[0].toString()) : null;
-    const token1 = this.tokens?.[1] ? entityStore.getToken(this.tokens[1].toString()) : null;
+    const baseToken = this.tokens?.[0] ? entityStore.getToken(this.tokens[0].toString()) : null;
+    const quoteToken = this.tokens?.[1] ? entityStore.getToken(this.tokens[1].toString()) : null;
 
     marketRepository.persistHydrateResult(
       this.canister_id,
@@ -1783,8 +1783,8 @@ export class SpotMarket implements ISpotMarket {
       this.liquidity,
       this.volume24hUsd,
       this.priceChange24h,
-      token0 ? { canisterId: token0.canisterId, symbol: token0.symbol, decimals: token0.decimals } : undefined,
-      token1 ? { canisterId: token1.canisterId, symbol: token1.symbol, decimals: token1.decimals } : undefined
+      baseToken ? { canisterId: baseToken.canisterId, symbol: baseToken.symbol, decimals: baseToken.decimals } : undefined,
+      quoteToken ? { canisterId: quoteToken.canisterId, symbol: quoteToken.symbol, decimals: quoteToken.decimals } : undefined
     );
   }
 

@@ -45,8 +45,8 @@
   }: Props = $props();
 
   // Get token metadata
-  const token0 = $derived(spot.tokens ? entityStore.getToken(spot.tokens[0].toString()) : null);
-  const token1 = $derived(spot.tokens && spot.tokens[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
+  const base = $derived(spot.tokens ? entityStore.getToken(spot.tokens[0].toString()) : null);
+  const quote = $derived(spot.tokens && spot.tokens[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
 
   // Derive activity type info
   const typeLabel = $derived(activity ? getActivityTypeLabel(activity.activity_type) : '');
@@ -63,10 +63,10 @@
   const usdFormatted = $derived.by(() => {
     if (!activity) return '-';
     const tokenContext = {
-      baseSymbol: token0?.displaySymbol ?? 'BASE',
-      quoteSymbol: token1?.displaySymbol ?? 'QUOTE',
-      baseDecimals: token0?.decimals ?? 8,
-      quoteDecimals: token1?.decimals ?? 8,
+      baseSymbol: base?.displaySymbol ?? 'BASE',
+      quoteSymbol: quote?.displaySymbol ?? 'QUOTE',
+      baseDecimals: base?.decimals ?? 8,
+      quoteDecimals: quote?.decimals ?? 8,
     };
     const value = computeActivityUsdValue(activity, tokenContext);
     if (value === 0) return '-';
@@ -102,7 +102,7 @@
 
   // Format token amount
   function formatAmount(value: bigint, isBase: boolean): string {
-    const decimals = isBase ? (token0?.decimals ?? 8) : (token1?.decimals ?? 8);
+    const decimals = isBase ? (base?.decimals ?? 8) : (quote?.decimals ?? 8);
     return formatToken({
       value,
       unitName: decimals,
@@ -113,7 +113,7 @@
 
   // Get token symbol
   function getTokenSymbol(isBase: boolean): string {
-    return isBase ? (token0?.displaySymbol ?? 'BASE') : (token1?.displaySymbol ?? 'QUOTE');
+    return isBase ? (base?.displaySymbol ?? 'BASE') : (quote?.displaySymbol ?? 'QUOTE');
   }
 
   // Derive status label from activity_type (single source of truth)
@@ -290,11 +290,11 @@
               <span class="modal-detail-value">{liquidityDetails.liquidity_delta.toLocaleString()}</span>
             </div>
             <div class="modal-detail-row">
-              <span class="modal-detail-label">{token0?.displaySymbol ?? 'Base'} Amount</span>
+              <span class="modal-detail-label">{base?.displaySymbol ?? 'Base'} Amount</span>
               <span class="modal-detail-value">{formatAmount(liquidityDetails.amount_base, true)}</span>
             </div>
             <div class="modal-detail-row">
-              <span class="modal-detail-label">{token1?.displaySymbol ?? 'Quote'} Amount</span>
+              <span class="modal-detail-label">{quote?.displaySymbol ?? 'Quote'} Amount</span>
               <span class="modal-detail-value">{formatAmount(liquidityDetails.amount_quote, false)}</span>
             </div>
 

@@ -22,9 +22,9 @@
     /** Current price (for percentage calculations) */
     currentPrice?: number;
     /** Token0 decimals */
-    token0Decimals?: number;
+    baseDecimals?: number;
     /** Token1 decimals */
-    token1Decimals?: number;
+    quoteDecimals?: number;
     /** Quote token symbol */
     quoteSymbol?: string;
     /** Base token symbol */
@@ -47,8 +47,8 @@
     type,
     tick,
     currentPrice,
-    token0Decimals = 8,
-    token1Decimals = 8,
+    baseDecimals = 8,
+    quoteDecimals = 8,
     quoteSymbol = 'Quote',
     baseSymbol = 'Base',
     tickSpacing = 60,
@@ -70,7 +70,7 @@
   const isAtBound = $derived(isAtMinBound || isAtMaxBound);
 
   // Derived price from tick (with inversion applied)
-  const rawPrice = $derived(tickToPrice(tick, token0Decimals, token1Decimals));
+  const rawPrice = $derived(tickToPrice(tick, baseDecimals, quoteDecimals));
   const price = $derived(isInverted && rawPrice > 0 ? 1 / rawPrice : rawPrice);
 
   // Current price for display (inverted if needed)
@@ -161,13 +161,13 @@
         if (newDisplayPrice > 0) {
           // If inverted, convert back to original price before getting tick
           const originalPrice = isInverted ? 1 / newDisplayPrice : newDisplayPrice;
-          const newTick = priceToTick(originalPrice, token0Decimals, token1Decimals, tickSpacing);
+          const newTick = priceToTick(originalPrice, baseDecimals, quoteDecimals, tickSpacing);
           onTickChange?.(newTick);
         }
       } else if (parsed > 0) {
         // If inverted, convert back to original price before getting tick
         const originalPrice = isInverted ? 1 / parsed : parsed;
-        const newTick = priceToTick(originalPrice, token0Decimals, token1Decimals, tickSpacing);
+        const newTick = priceToTick(originalPrice, baseDecimals, quoteDecimals, tickSpacing);
         onTickChange?.(newTick);
       }
     }

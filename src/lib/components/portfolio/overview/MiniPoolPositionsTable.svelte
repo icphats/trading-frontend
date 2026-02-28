@@ -43,13 +43,13 @@
         <div class="pool-row" use:ticker={pool.canisterId}>
           <div class="pool-info">
             <TokenPairLogo
-              token0Logo={pool.token0.logo ?? undefined}
-              token1Logo={pool.token1.logo ?? undefined}
-              token0Symbol={pool.token0.displaySymbol}
-              token1Symbol={pool.token1.displaySymbol}
+              baseLogo={pool.base.logo ?? undefined}
+              quoteLogo={pool.quote.logo ?? undefined}
+              baseSymbol={pool.base.displaySymbol}
+              quoteSymbol={pool.quote.displaySymbol}
               size="xxs"
             />
-            <span class="pool-pair">{pool.token0.displaySymbol}/{pool.token1.displaySymbol}</span>
+            <span class="pool-pair">{pool.base.displaySymbol}/{pool.quote.displaySymbol}</span>
           </div>
           <span class="pool-value">{formatUSD(pool.valueUsd, 2)}</span>
         </div>

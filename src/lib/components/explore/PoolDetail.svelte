@@ -38,31 +38,31 @@
   );
 
   // Get token ledger IDs directly from pool data (more reliable than parsing symbol)
-  const token0Ledger = $derived(pool?.base_ledger?.toString() ?? null);
-  const token1Ledger = $derived(pool?.quote_ledger?.toString() ?? null);
+  const baseLedger = $derived(pool?.base_ledger?.toString() ?? null);
+  const quoteLedger = $derived(pool?.quote_ledger?.toString() ?? null);
 
   // Find tokens from tokenItems using ledger IDs
-  const token0FromItems = $derived(
-    token0Ledger ? tokenItems.find(t => t.token_ledger.toString() === token0Ledger) : null
+  const baseFromItems = $derived(
+    baseLedger ? tokenItems.find(t => t.token_ledger.toString() === baseLedger) : null
   );
-  const token1FromItems = $derived(
-    token1Ledger ? tokenItems.find(t => t.token_ledger.toString() === token1Ledger) : null
+  const quoteFromItems = $derived(
+    quoteLedger ? tokenItems.find(t => t.token_ledger.toString() === quoteLedger) : null
   );
 
   // Get tokens from entity store for logos and other metadata
-  const token0 = $derived(token0Ledger ? entityStore.getToken(token0Ledger) : null);
-  const token1 = $derived(token1Ledger ? entityStore.getToken(token1Ledger) : null);
+  const baseToken = $derived(baseLedger ? entityStore.getToken(baseLedger) : null);
+  const quoteToken = $derived(quoteLedger ? entityStore.getToken(quoteLedger) : null);
 
   // Get display symbols — prefer entityStore (normalized), fallback to indexer/pool
   const poolSymbolParts = $derived(pool?.symbol?.split('/') ?? []);
-  const token0Symbol = $derived(
-    token0?.displaySymbol ?? token0FromItems?.symbol ?? poolSymbolParts[0]?.trim() ?? ''
+  const baseSymbol = $derived(
+    baseToken?.displaySymbol ?? baseFromItems?.symbol ?? poolSymbolParts[0]?.trim() ?? ''
   );
-  const token1Symbol = $derived(
-    token1?.displaySymbol ?? token1FromItems?.symbol ?? poolSymbolParts[1]?.trim() ?? quote.toUpperCase()
+  const quoteSymbol = $derived(
+    quoteToken?.displaySymbol ?? quoteFromItems?.symbol ?? poolSymbolParts[1]?.trim() ?? quote.toUpperCase()
   );
 
-  const poolLabel = $derived(`${token0Symbol}/${token1Symbol}`);
+  const poolLabel = $derived(`${baseSymbol}/${quoteSymbol}`);
 
   // Breadcrumb
   const breadcrumbItems = $derived([
@@ -78,10 +78,10 @@
   }
 
   // Displayed token order (based on reversed state)
-  const displayToken0Symbol = $derived(isReversed ? token1Symbol : token0Symbol);
-  const displayToken1Symbol = $derived(isReversed ? token0Symbol : token1Symbol);
-  const displayToken0Logo = $derived(isReversed ? token1?.logo : token0?.logo);
-  const displayToken1Logo = $derived(isReversed ? token0?.logo : token1?.logo);
+  const displayBaseSymbol = $derived(isReversed ? quoteSymbol : baseSymbol);
+  const displayQuoteSymbol = $derived(isReversed ? baseSymbol : quoteSymbol);
+  const displayBaseLogo = $derived(isReversed ? quoteToken?.logo : baseToken?.logo);
+  const displayQuoteLogo = $derived(isReversed ? baseToken?.logo : quoteToken?.logo);
 
   // Derive pool from entityStore (populated by fetchPoolState from spot canister)
   const poolId = $derived(`${canister}:${fee}`);
@@ -108,13 +108,13 @@
 
   // Pool balances - derived from entityStore reserves (fetched from spot canister)
   // When isReversed, display tokens are swapped but underlying reserves stay the same
-  const token0Balance = $derived.by(() => {
+  const baseBalance = $derived.by(() => {
     if (!pool) return null;
 
     const reserves = normalizedPool;
-    // When reversed, "display token0" is actually the underlying token1
-    const underlyingToken = isReversed ? token1 : token0;
-    const underlyingReserve = isReversed ? reserves?.token1Reserve : reserves?.token0Reserve;
+    // When reversed, "display base" is actually the underlying quote
+    const underlyingToken = isReversed ? quoteToken : baseToken;
+    const underlyingReserve = isReversed ? reserves?.quoteReserve : reserves?.baseReserve;
     const decimals = underlyingToken?.decimals ?? 8;
     const hasReserves = underlyingReserve !== null && underlyingReserve !== undefined;
 
@@ -127,20 +127,20 @@
     const valueUsd = priceUsd > 0 ? amount * priceUsd : (tvl ?? 0) / 2;
 
     return {
-      symbol: displayToken0Symbol,
-      logo: displayToken0Logo ?? undefined,
+      symbol: displayBaseSymbol,
+      logo: displayBaseLogo ?? undefined,
       amount,
       valueUsd
     };
   });
 
-  const token1Balance = $derived.by(() => {
+  const quoteBalance = $derived.by(() => {
     if (!pool) return null;
 
     const reserves = normalizedPool;
-    // When reversed, "display token1" is actually the underlying token0
-    const underlyingToken = isReversed ? token0 : token1;
-    const underlyingReserve = isReversed ? reserves?.token0Reserve : reserves?.token1Reserve;
+    // When reversed, "display quote" is actually the underlying base
+    const underlyingToken = isReversed ? baseToken : quoteToken;
+    const underlyingReserve = isReversed ? reserves?.baseReserve : reserves?.quoteReserve;
     const decimals = underlyingToken?.decimals ?? 8;
     const hasReserves = underlyingReserve !== null && underlyingReserve !== undefined;
 
@@ -153,8 +153,8 @@
     const valueUsd = priceUsd > 0 ? amount * priceUsd : (tvl ?? 0) / 2;
 
     return {
-      symbol: displayToken1Symbol,
-      logo: displayToken1Logo ?? undefined,
+      symbol: displayQuoteSymbol,
+      logo: displayQuoteLogo ?? undefined,
       amount,
       valueUsd
     };
@@ -163,7 +163,7 @@
   // Build links for LinksSection - only when pool data is available
   const links = $derived.by(() => {
     // Don't show links until we have pool data with valid symbols
-    if (!pool || !token0Symbol || !token1Symbol) {
+    if (!pool || !baseSymbol || !quoteSymbol) {
       return [];
     }
 
@@ -171,23 +171,23 @@
       {
         canisterId: canister,
         label: 'Pool',
-        tokenLogos: [token0?.logo, token1?.logo],
-        tokenSymbols: [token0Symbol, token1Symbol]
+        tokenLogos: [baseToken?.logo, quoteToken?.logo],
+        tokenSymbols: [baseSymbol, quoteSymbol]
       }
     ];
-    if (token0Ledger) {
+    if (baseLedger) {
       items.push({
-        canisterId: token0Ledger,
-        label: token0Symbol,
-        tokenLogos: [token0?.logo],
+        canisterId: baseLedger,
+        label: baseSymbol,
+        tokenLogos: [baseToken?.logo],
         tokenSymbols: []
       });
     }
-    if (token1Ledger) {
+    if (quoteLedger) {
       items.push({
-        canisterId: token1Ledger,
-        label: token1Symbol,
-        tokenLogos: [token1?.logo],
+        canisterId: quoteLedger,
+        label: quoteSymbol,
+        tokenLogos: [quoteToken?.logo],
         tokenSymbols: []
       });
     }
@@ -231,8 +231,8 @@
           poolId: `${canister}:${fee}`,
           spotCanisterId: canister,
           // Reserves
-          token0Reserve: poolState.token0_reserve,
-          token1Reserve: poolState.token1_reserve,
+          baseReserve: poolState.base_reserve,
+          quoteReserve: poolState.quote_reserve,
           liquidity: poolState.liquidity,
           feePips: poolState.fee_pips,
           // Analytics (real-time from get_pool)
@@ -335,10 +335,10 @@
     }
 
     // Token prices (E12) for converting native reserves to USD
-    const price0 = token0?.priceUsd ? Number(token0.priceUsd) / 1e12 : 0;
-    const price1 = token1?.priceUsd ? Number(token1.priceUsd) / 1e12 : 0;
-    const dec0 = Math.pow(10, token0?.decimals ?? 8);
-    const dec1 = Math.pow(10, token1?.decimals ?? 8);
+    const price0 = baseToken?.priceUsd ? Number(baseToken.priceUsd) / 1e12 : 0;
+    const price1 = quoteToken?.priceUsd ? Number(quoteToken.priceUsd) / 1e12 : 0;
+    const dec0 = Math.pow(10, baseToken?.decimals ?? 8);
+    const dec1 = Math.pow(10, quoteToken?.decimals ?? 8);
 
     // Transform snapshots to FeeDataPoint format (enriched: fees, volume, TVL)
     // Backend returns oldest-first (ascending) via build_response
@@ -359,10 +359,10 @@
 
     <div class="pool-detail-content">
       <PoolDetailHeader
-        token0Symbol={displayToken0Symbol}
-        token1Symbol={displayToken1Symbol}
-        token0Logo={displayToken0Logo ?? undefined}
-        token1Logo={displayToken1Logo ?? undefined}
+        baseSymbol={displayBaseSymbol}
+        quoteSymbol={displayQuoteSymbol}
+        baseLogo={displayBaseLogo ?? undefined}
+        quoteLogo={displayQuoteLogo ?? undefined}
         feePips={fee}
         isLoading={isLoading || !pool}
         onToggleReversed={toggleReversed}
@@ -375,18 +375,18 @@
             fetchData={fetchChartData}
             fetchFeesData={fetchFeesData}
             mode="pool"
-            token0Symbol={token0Symbol}
-            token1Symbol={token1Symbol}
+            baseSymbol={baseSymbol}
+            quoteSymbol={quoteSymbol}
             {isReversed}
-            baseTokenDecimals={token0?.decimals ?? 8}
+            baseTokenDecimals={baseToken?.decimals ?? 8}
             {poolDepthData}
             isLoadingDepth={isLoadingDepth}
-            token0Decimals={token0?.decimals ?? 8}
-            token1Decimals={token1?.decimals ?? 8}
-            token0Logo={token0?.logo ?? undefined}
-            token1Logo={token1?.logo ?? undefined}
-            token0PriceUsd={token0?.priceUsd ?? null}
-            token1PriceUsd={token1?.priceUsd ?? null}
+            baseDecimals={baseToken?.decimals ?? 8}
+            quoteDecimals={quoteToken?.decimals ?? 8}
+            baseLogo={baseToken?.logo ?? undefined}
+            quoteLogo={quoteToken?.logo ?? undefined}
+            basePriceUsd={baseToken?.priceUsd ?? null}
+            quotePriceUsd={quoteToken?.priceUsd ?? null}
           />
         {:else}
           <div class="chart-placeholder">
@@ -412,8 +412,8 @@
           {tvl}
           {volume24h}
           {fees24h}
-          token0Balance={token0Balance}
-          token1Balance={token1Balance}
+          baseBalance={baseBalance}
+          quoteBalance={quoteBalance}
           isLoading={isLoading || !pool}
         />
       </div>
@@ -424,8 +424,8 @@
         {#if canister}
           <ActivityTable
             spotCanisterId={canister}
-            token0Symbol={displayToken0Symbol}
-            token1Symbol={displayToken1Symbol}
+            baseSymbol={displayBaseSymbol}
+            quoteSymbol={displayQuoteSymbol}
           />
         {:else}
           <div class="activity-placeholder">
@@ -460,8 +460,8 @@
         {tvl}
         {volume24h}
         {fees24h}
-        token0Balance={token0Balance}
-        token1Balance={token1Balance}
+        baseBalance={baseBalance}
+        quoteBalance={quoteBalance}
         isLoading={isLoading || !pool}
       />
     </div>

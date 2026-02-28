@@ -169,8 +169,8 @@ const DEFAULT_MARKET: Omit<NormalizedMarket, 'canisterId'> = {
 
 const DEFAULT_POOL: Omit<NormalizedPool, 'poolId' | 'spotCanisterId'> = {
   symbol: 'UNKNOWN/UNKNOWN',
-  token0: '',
-  token1: '',
+  base: '',
+  quote: '',
   feePips: 0,
   liquidity: 0n,
   tvl: 0n,
@@ -178,8 +178,8 @@ const DEFAULT_POOL: Omit<NormalizedPool, 'poolId' | 'spotCanisterId'> = {
   volume7d: 0n,
   fees24h: 0n,
   apr: 0,
-  token0Reserve: null,
-  token1Reserve: null,
+  baseReserve: null,
+  quoteReserve: null,
   source: 'discovered',
   lastUpdatedAt: Date.now(),
 };

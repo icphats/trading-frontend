@@ -30,15 +30,15 @@
   let { spot }: { spot: SpotMarket } = $props();
 
   // Get token metadata from registry
-  const token0 = $derived(spot.tokens ? entityStore.getToken(spot.tokens[0].toString()) : null);
-  const token1 = $derived(spot.tokens && spot.tokens[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
+  const base = $derived(spot.tokens ? entityStore.getToken(spot.tokens[0].toString()) : null);
+  const quote = $derived(spot.tokens && spot.tokens[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
 
   // Token context for normalization
   const tokenContext = $derived<TokenContext>({
-    baseSymbol: token0?.displaySymbol ?? 'BASE',
-    quoteSymbol: token1?.displaySymbol ?? 'QUOTE',
-    baseDecimals: token0?.decimals ?? 8,
-    quoteDecimals: token1?.decimals ?? 8,
+    baseSymbol: base?.displaySymbol ?? 'BASE',
+    quoteSymbol: quote?.displaySymbol ?? 'QUOTE',
+    baseDecimals: base?.decimals ?? 8,
+    quoteDecimals: quote?.decimals ?? 8,
   });
 
   // Infinite scroll state
@@ -106,7 +106,7 @@
   </GridHeader>
 
   {#each normalizedActivities as item (item.id)}
-    {@const tokenMeta = item.amountToken === 'base' ? token0 : token1}
+    {@const tokenMeta = item.amountToken === 'base' ? base : quote}
     {@const decimals = item.amountToken === 'base' ? tokenContext.baseDecimals : tokenContext.quoteDecimals}
     <GridRow clickable onclick={() => handleRowClick(item.raw)}>
       <GridCell compact>

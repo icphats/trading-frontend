@@ -98,10 +98,10 @@
         <div class="order-row" use:ticker={item.spotCanisterId}>
           <div class="order-info">
             <TokenPairLogo
-              token0Logo={item.baseLogo}
-              token1Logo={item.quoteLogo}
-              token0Symbol={item.baseSymbol}
-              token1Symbol={item.quoteSymbol}
+              baseLogo={item.baseLogo}
+              quoteLogo={item.quoteLogo}
+              baseSymbol={item.baseSymbol}
+              quoteSymbol={item.quoteSymbol}
               size="xxs"
             />
             <span class="order-pair">{item.baseSymbol}/{item.quoteSymbol}</span>

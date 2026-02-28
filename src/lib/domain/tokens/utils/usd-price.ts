@@ -14,7 +14,7 @@
  * const icpPrice = pricingService.icpUsdPrice;
  *
  * // Pass to utility (will re-run when icpPrice updates)
- * const usdPrice = getOrderBookTokenUsdPrice('token0', midpoint, quoteToken, icpPrice);
+ * const usdPrice = getOrderBookTokenUsdPrice('base', midpoint, quoteToken, icpPrice);
  * ```
  */
 
@@ -72,7 +72,7 @@ export function getBaseTokenUsdPrice(
  * Get USD price for a token in the order book context
  * Uses midpoint price for base token, direct conversion for quote token
  *
- * @param tokenType - "token0" (base) or "token1" (quote)
+ * @param tokenType - "base" or "quote"
  * @param midpointPrice - Midpoint price of base in quote token (number)
  * @param quoteToken - The quote token type
  * @param icpUsdPrice - ICP/USD price from pricingService.icpUsdPrice (E12 - 12 decimals), or null if not loaded
@@ -80,19 +80,19 @@ export function getBaseTokenUsdPrice(
  *
  * @example
  * // For base token (PARTY) at 0.05 ICP, ICP = $12
- * getOrderBookTokenUsdPrice("token0", 0.05, { ICP: null }, 12_000_000_000_000n) // $0.60
+ * getOrderBookTokenUsdPrice("base", 0.05, { ICP: null }, 12_000_000_000_000n) // $0.60
  *
  * @example
  * // For quote token (ICP)
- * getOrderBookTokenUsdPrice("token1", 0.05, { ICP: null }, 12_000_000_000_000n) // $12
+ * getOrderBookTokenUsdPrice("quote", 0.05, { ICP: null }, 12_000_000_000_000n) // $12
  */
 export function getOrderBookTokenUsdPrice(
-  tokenType: 'token0' | 'token1',
+  tokenType: 'base' | 'quote',
   midpointPrice: number,
   quoteToken: QuoteToken,
   icpUsdPrice: bigint | null
 ): bigint | null {
-  if (tokenType === 'token1') {
+  if (tokenType === 'quote') {
     return getQuoteTokenUsdPrice(quoteToken, icpUsdPrice);
   }
   return getBaseTokenUsdPrice(midpointPrice, quoteToken, icpUsdPrice);

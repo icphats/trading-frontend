@@ -31,12 +31,12 @@ export interface CachedMarketState {
   liquidity: string; // bigint as string
   volume24h: string; // bigint as string
   priceChange24h: number;
-  token0: {
+  base: {
     canisterId: string;
     symbol: string;
     decimals: number;
   } | null;
-  token1: {
+  quote: {
     canisterId: string;
     symbol: string;
     decimals: number;

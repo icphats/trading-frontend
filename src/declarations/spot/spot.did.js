@@ -5,16 +5,12 @@ export const idlFactory = ({ IDL }) => {
     'ledger' : IDL.Principal,
   });
   const InitArgs = IDL.Record({
-    'maker_fee_pips' : IDL.Opt(IDL.Nat32),
-    'taker_fee_pips' : IDL.Opt(IDL.Nat32),
+    'base' : TokenMetadata,
+    'quote' : TokenMetadata,
     'oracle_principal' : IDL.Principal,
-    'token0' : TokenMetadata,
-    'token1' : TokenMetadata,
     'treasury_principal' : IDL.Opt(IDL.Principal),
-    'maker_rebate_pips' : IDL.Opt(IDL.Nat32),
     'indexer_principal' : IDL.Principal,
     'registry_principal' : IDL.Principal,
-    'admin_principals' : IDL.Vec(IDL.Principal),
   });
   const Tick = IDL.Int32;
   const PollVersions = IDL.Record({
@@ -42,8 +38,8 @@ export const idlFactory = ({ IDL }) => {
   });
   const LiquidityResult = IDL.Variant({
     'ok' : IDL.Record({
-      'actual_amt0' : IDL.Nat,
-      'actual_amt1' : IDL.Nat,
+      'actual_amt_quote' : IDL.Nat,
+      'actual_amt_base' : IDL.Nat,
       'versions' : PollVersions,
       'position_id' : PositionId,
     }),
@@ -84,8 +80,8 @@ export const idlFactory = ({ IDL }) => {
     'liquidity' : IDL.Nat,
     'fee_pips' : IDL.Nat32,
     'tick_lower' : IDL.Int,
-    'tokens_owed_0' : IDL.Nat,
-    'tokens_owed_1' : IDL.Nat,
+    'tokens_owed_base' : IDL.Nat,
+    'tokens_owed_quote' : IDL.Nat,
     'tick_upper' : IDL.Int,
   });
   const TriggerStatus = IDL.Variant({
@@ -143,6 +139,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const UpgradeArgs = IDL.Record({
     'rate_limit_cleanup_tier2_ms' : IDL.Opt(IDL.Nat64),
+    'set_min_usd_value' : IDL.Opt(IDL.Nat),
     'remove_admins' : IDL.Opt(IDL.Vec(IDL.Principal)),
     'set_treasury_principal' : IDL.Opt(IDL.Principal),
     'rate_limit_cleanup_tier01_ms' : IDL.Opt(IDL.Nat64),
@@ -158,9 +155,11 @@ export const idlFactory = ({ IDL }) => {
     'max_triggers_per_user' : IDL.Opt(IDL.Nat),
     'add_admins' : IDL.Opt(IDL.Vec(IDL.Principal)),
     'set_pool_protocol_fee_pips' : IDL.Opt(IDL.Nat),
+    'set_min_pool_quote_liquidity_e6' : IDL.Opt(IDL.Nat),
     'rate_limit_soft_block_threshold' : IDL.Opt(IDL.Nat),
     'rate_limit_hard_block_threshold' : IDL.Opt(IDL.Nat),
     'rate_limit_degrade_delta' : IDL.Opt(IDL.Nat),
+    'set_max_route_pool_inputs' : IDL.Opt(IDL.Nat),
     'set_instruction_budget' : IDL.Opt(IDL.Nat64),
     'set_taker_fee_pips' : IDL.Opt(IDL.Nat32),
     'max_orders_per_user' : IDL.Opt(IDL.Nat),
@@ -245,17 +244,17 @@ export const idlFactory = ({ IDL }) => {
   const CloseAllPositionsResult = IDL.Variant({
     'ok' : IDL.Record({
       'closed' : IDL.Nat32,
-      'amount0' : IDL.Nat,
-      'amount1' : IDL.Nat,
+      'amount_quote' : IDL.Nat,
+      'amount_base' : IDL.Nat,
       'versions' : PollVersions,
     }),
     'err' : ApiError,
   });
   const CollectFeesResult = IDL.Variant({
     'ok' : IDL.Record({
-      'collected_amt0' : IDL.Nat,
-      'collected_amt1' : IDL.Nat,
+      'collected_amt_base' : IDL.Nat,
       'versions' : PollVersions,
+      'collected_amt_quote' : IDL.Nat,
     }),
     'err' : ApiError,
   });
@@ -334,8 +333,8 @@ export const idlFactory = ({ IDL }) => {
   });
   const DecreaseLiquidityResult = IDL.Variant({
     'ok' : IDL.Record({
-      'amount0' : IDL.Nat,
-      'amount1' : IDL.Nat,
+      'amount_quote' : IDL.Nat,
+      'amount_base' : IDL.Nat,
       'versions' : PollVersions,
     }),
     'err' : ApiError,
@@ -457,23 +456,25 @@ export const idlFactory = ({ IDL }) => {
     'pool_protocol_fee_pips' : IDL.Nat,
     'maker_fee_pips' : IDL.Nat32,
     'system_state' : SystemState,
+    'min_pool_quote_liquidity_e6' : IDL.Nat,
+    'base' : IDL.Record({
+      'fee' : IDL.Nat,
+      'decimals' : IDL.Nat8,
+      'ledger' : IDL.Principal,
+    }),
     'instruction_budget' : IDL.Nat64,
+    'quote' : IDL.Record({
+      'fee' : IDL.Nat,
+      'decimals' : IDL.Nat8,
+      'ledger' : IDL.Principal,
+    }),
     'timer_running' : IDL.Bool,
+    'max_route_pool_inputs' : IDL.Nat,
     'taker_fee_pips' : IDL.Nat32,
     'market_initialized' : IDL.Bool,
     'oracle_principal' : IDL.Principal,
     'cycles_threshold' : IDL.Nat,
     'max_positions_per_user' : IDL.Nat,
-    'token0' : IDL.Record({
-      'fee' : IDL.Nat,
-      'decimals' : IDL.Nat8,
-      'ledger' : IDL.Principal,
-    }),
-    'token1' : IDL.Record({
-      'fee' : IDL.Nat,
-      'decimals' : IDL.Nat8,
-      'ledger' : IDL.Principal,
-    }),
     'treasury_principal' : IDL.Opt(IDL.Principal),
     'maker_rebate_pips' : IDL.Nat32,
     'users' : IDL.Nat,
@@ -483,6 +484,7 @@ export const idlFactory = ({ IDL }) => {
     'registry_principal' : IDL.Principal,
     'positions' : IDL.Nat,
     'this_principal' : IDL.Principal,
+    'min_usd_value' : IDL.Nat,
     'orders_live' : IDL.Nat,
     'max_orders_per_user' : IDL.Nat,
     'admin_principals' : IDL.Vec(IDL.Principal),
@@ -729,14 +731,14 @@ export const idlFactory = ({ IDL }) => {
   const PoolState = IDL.Record({
     'sqrt_price_x96' : SqrtPriceX96,
     'tvl_usd_e6' : IDL.Nat,
+    'base_reserve' : IDL.Nat,
     'tick' : Tick,
     'liquidity' : IDL.Nat,
     'volume_24h_usd_e6' : IDL.Nat,
     'fees_24h_usd_e6' : IDL.Nat,
-    'token1_reserve' : IDL.Nat,
     'apr_bps' : IDL.Nat,
-    'token0_reserve' : IDL.Nat,
     'fee_pips' : IDL.Nat32,
+    'quote_reserve' : IDL.Nat,
     'initialized_ticks' : IDL.Vec(TickLiquidityData),
     'tick_spacing' : IDL.Nat,
   });
@@ -766,32 +768,32 @@ export const idlFactory = ({ IDL }) => {
     'uncollected_fees_base' : IDL.Nat,
     'owner' : IDL.Principal,
     'uncollected_fees_quote' : IDL.Nat,
-    'fee_growth_inside_1_last_x128' : IDL.Nat,
     'liquidity' : Liquidity,
+    'fee_growth_inside_quote_last_x128' : IDL.Nat,
+    'fee_growth_inside_base_last_x128' : IDL.Nat,
     'fee_pips' : IDL.Nat32,
     'locked_until' : IDL.Opt(IDL.Nat64),
     'tick_lower' : Tick,
-    'fee_growth_inside_0_last_x128' : IDL.Nat,
     'tick_upper' : Tick,
     'position_id' : PositionId,
-  });
-  const BookLevelRaw = IDL.Record({ 'total' : IDL.Nat, 'tick' : Tick });
-  const BookLevelsResponse = IDL.Record({
-    'asks' : IDL.Vec(BookLevelRaw),
-    'bids' : IDL.Vec(BookLevelRaw),
   });
   const RoutingTokenInfo = IDL.Record({
     'fee' : IDL.Nat,
     'decimals' : IDL.Nat8,
     'ledger' : IDL.Principal,
   });
+  const BookLevelRaw = IDL.Record({ 'total' : IDL.Nat, 'tick' : Tick });
+  const BookLevelsResponse = IDL.Record({
+    'asks' : IDL.Vec(BookLevelRaw),
+    'bids' : IDL.Vec(BookLevelRaw),
+  });
   const RoutingPoolState = IDL.Record({
     'sqrt_price_x96' : SqrtPriceX96,
+    'base_reserve' : IDL.Nat,
     'tick' : Tick,
     'liquidity' : IDL.Nat,
-    'token1_reserve' : IDL.Nat,
-    'token0_reserve' : IDL.Nat,
     'fee_pips' : IDL.Nat32,
+    'quote_reserve' : IDL.Nat,
     'initialized_ticks' : IDL.Vec(TickLiquidityData),
     'tick_spacing' : IDL.Nat,
   });
@@ -800,10 +802,10 @@ export const idlFactory = ({ IDL }) => {
     'reference_tick' : IDL.Opt(Tick),
     'system_state' : SystemState,
     'last_book_tick' : IDL.Opt(Tick),
+    'base' : RoutingTokenInfo,
     'book' : BookLevelsResponse,
+    'quote' : RoutingTokenInfo,
     'taker_fee_pips' : IDL.Nat32,
-    'token0' : RoutingTokenInfo,
-    'token1' : RoutingTokenInfo,
     'last_trade_sqrt_price_x96' : IDL.Opt(SqrtPriceX96),
     'pools' : IDL.Vec(RoutingPoolState),
     'last_trade_tick' : IDL.Opt(Tick),
@@ -915,9 +917,9 @@ export const idlFactory = ({ IDL }) => {
   });
   const IncreaseLiquidityResult = IDL.Variant({
     'ok' : IDL.Record({
+      'actual_amt_quote' : IDL.Nat,
+      'actual_amt_base' : IDL.Nat,
       'liquidity_delta' : IDL.Nat,
-      'actual_amt0' : IDL.Nat,
-      'actual_amt1' : IDL.Nat,
       'versions' : PollVersions,
     }),
     'err' : ApiError,
@@ -1170,16 +1172,12 @@ export const init = ({ IDL }) => {
     'ledger' : IDL.Principal,
   });
   const InitArgs = IDL.Record({
-    'maker_fee_pips' : IDL.Opt(IDL.Nat32),
-    'taker_fee_pips' : IDL.Opt(IDL.Nat32),
+    'base' : TokenMetadata,
+    'quote' : TokenMetadata,
     'oracle_principal' : IDL.Principal,
-    'token0' : TokenMetadata,
-    'token1' : TokenMetadata,
     'treasury_principal' : IDL.Opt(IDL.Principal),
-    'maker_rebate_pips' : IDL.Opt(IDL.Nat32),
     'indexer_principal' : IDL.Principal,
     'registry_principal' : IDL.Principal,
-    'admin_principals' : IDL.Vec(IDL.Principal),
   });
   return [InitArgs];
 };

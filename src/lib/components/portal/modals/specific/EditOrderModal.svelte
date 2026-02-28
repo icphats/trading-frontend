@@ -44,16 +44,16 @@
   let tickSpacing = $derived(spot.tickSpacing);
 
   // Token data from entityStore
-  let token0 = $derived<NormalizedToken | undefined>(
+  let base = $derived<NormalizedToken | undefined>(
     spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : undefined
   );
-  let token1 = $derived<NormalizedToken | undefined>(
+  let quote = $derived<NormalizedToken | undefined>(
     spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : undefined
   );
 
   // Trading balances (deposited in spot canister, available for orders)
-  let token0Balance = $derived<bigint>(spot.availableBase);
-  let token1Balance = $derived<bigint>(spot.availableQuote);
+  let baseBalance = $derived<bigint>(spot.availableBase);
+  let quoteBalance = $derived<bigint>(spot.availableQuote);
 
   // Read-only side from order
   const orderSide = $derived(order ? ('buy' in order.side ? 'Buy' : 'Sell') : 'Buy');
@@ -70,15 +70,15 @@
 
       const isBuy = 'buy' in order.side;
 
-      if (isBuy && token1) {
+      if (isBuy && quote) {
         lastEditedField = 'total';
         const remaining = order.quote_amount - order.quote_filled;
-        localTotal = bigIntToString(remaining, token1.decimals);
+        localTotal = bigIntToString(remaining, quote.decimals);
         // localAmount will be computed by the bidirectional effect
-      } else if (token0) {
+      } else if (base) {
         lastEditedField = 'amount';
         const remaining = order.base_amount - order.base_filled;
-        localAmount = bigIntToString(remaining, token0.decimals);
+        localAmount = bigIntToString(remaining, base.decimals);
         // localTotal will be computed by the bidirectional effect
       }
     }
@@ -90,11 +90,11 @@
 
   // Calculate total from amount when amount changes
   $effect(() => {
-    if (lastEditedField !== 'amount' || !token1) return;
+    if (lastEditedField !== 'amount' || !quote) return;
 
     if (displayPrice !== null && displayPrice > 0 && localAmount && parseFloat(localAmount) > 0) {
       const total = parseFloat(localAmount) * displayPrice;
-      localTotal = total.toFixed(token1.decimals).replace(/\.?0+$/, '');
+      localTotal = total.toFixed(quote.decimals).replace(/\.?0+$/, '');
     } else {
       localTotal = "";
     }
@@ -110,11 +110,11 @@
   });
 
   const originalOrderSummary = $derived.by(() => {
-    if (!order || !token0 || !token1) return '';
+    if (!order || !base || !quote) return '';
     const isBuy = 'buy' in order.side;
     const originalSide = isBuy ? 'Buy' : 'Sell';
     const originalPrice = formatSigFig(tickToPrice(order.tick, spot.baseTokenDecimals, spot.quoteTokenDecimals));
-    const inputToken = isBuy ? token1 : token0;
+    const inputToken = isBuy ? quote : base;
     const total = isBuy ? order.quote_amount : order.base_amount;
     const filled = isBuy ? order.quote_filled : order.base_filled;
     const remaining = total - filled;
@@ -123,10 +123,10 @@
   });
 
   const newOrderSummary = $derived.by(() => {
-    if (!token0 || !token1 || limitTick === null) return '';
+    if (!base || !quote || limitTick === null) return '';
     const isBuy = order ? 'buy' in order.side : false;
     const newPrice = formatSigFig(tickToPrice(limitTick, spot.baseTokenDecimals, spot.quoteTokenDecimals));
-    const inputToken = isBuy ? token1 : token0;
+    const inputToken = isBuy ? quote : base;
     const inputValue = isBuy ? localTotal : localAmount;
     if (!inputValue) return '';
     return `${orderSide} ${inputValue} ${inputToken.displaySymbol} @ $${newPrice}`;
@@ -137,7 +137,7 @@
   // ============================================
 
   const canSubmit = $derived.by(() => {
-    if (limitTick === null || !token0 || !token1) return false;
+    if (limitTick === null || !base || !quote) return false;
     const isBuy = order ? 'buy' in order.side : false;
     const inputValue = isBuy ? localTotal : localAmount;
     return !!(inputValue && parseFloat(inputValue) > 0);
@@ -162,24 +162,24 @@
   }
 
   function handleTotalChange(val: string) {
-    if (!token0) return;
+    if (!base) return;
     lastEditedField = 'total';
     localTotal = val;
 
     if (displayPrice !== null && displayPrice > 0 && val && parseFloat(val) > 0) {
       const amount = parseFloat(val) / displayPrice;
-      localAmount = amount.toFixed(token0.decimals).replace(/\.?0+$/, '');
+      localAmount = amount.toFixed(base.decimals).replace(/\.?0+$/, '');
     } else if (!val) {
       localAmount = "";
     }
   }
 
   async function handleSubmit() {
-    if (!order || !token0 || !token1) return;
+    if (!order || !base || !quote) return;
 
     const isBuy = 'buy' in order.side;
     const inputValue = isBuy ? localTotal : localAmount;
-    const inputDecimals = isBuy ? token1.decimals : token0.decimals;
+    const inputDecimals = isBuy ? quote.decimals : base.decimals;
 
     if (!inputValue || parseFloat(inputValue) <= 0) {
       toastState.show({ message: 'Invalid amount', variant: 'error', duration: 3000 });
@@ -191,8 +191,8 @@
     }
 
     const amountBigInt = stringToBigInt(inputValue, inputDecimals);
-    const baseSymbol = token0.displaySymbol;
-    const baseLogo = token0.logo ?? undefined;
+    const baseSymbol = base.displaySymbol;
+    const baseLogo = base.logo ?? undefined;
 
     // Close immediately — toast handles loading/success/error feedback
     open = false;
@@ -226,7 +226,7 @@
 
 <Modal bind:open onClose={handleClose} title="Edit Order" size="sm" compactHeader={true}>
   {#snippet children()}
-    {#if order && token0 && token1}
+    {#if order && base && quote}
       <div class="modal-body">
         <!-- Side Display (read-only) -->
         <div class="side-display">
@@ -241,20 +241,20 @@
             label="Limit Price"
             tick={limitTick}
             currentPrice={spotPrice}
-            token0Decimals={token0.decimals}
-            token1Decimals={token1.decimals}
+            baseDecimals={base.decimals}
+            quoteDecimals={quote.decimals}
             {tickSpacing}
 
             onTickChange={handleLimitTickUpdate}
           />
         </div>
 
-        <!-- Amount Input (token0 - base) -->
+        <!-- Amount Input (base) -->
         <div class="modal-form-section">
           <TokenAmountInput
-            label={`Amount (${token0.displaySymbol})`}
-            token={token0}
-            balance={token0Balance}
+            label={`Amount (${base.displaySymbol})`}
+            token={base}
+            balance={baseBalance}
             value={localAmount}
             onValueChange={handleAmountChange}
 
@@ -262,12 +262,12 @@
           />
         </div>
 
-        <!-- Total Input (token1 - quote) -->
+        <!-- Total Input (quote) -->
         <div class="modal-form-section">
           <TokenAmountInput
-            label={`Total (${token1.displaySymbol})`}
-            token={token1}
-            balance={token1Balance}
+            label={`Total (${quote.displaySymbol})`}
+            token={quote}
+            balance={quoteBalance}
             value={localTotal}
             onValueChange={handleTotalChange}
 

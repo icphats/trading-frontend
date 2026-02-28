@@ -500,12 +500,12 @@
                     type="market"
                     id={market.marketId}
                     pairLogos={{
-                      token0: market.baseToken?.logo ?? undefined,
-                      token1: market.quoteTokenData?.logo ?? undefined,
+                      base: market.baseToken?.logo ?? undefined,
+                      quote: market.quoteTokenData?.logo ?? undefined,
                     }}
                     pairSymbols={{
-                      token0: market.baseToken?.symbol ?? '???',
-                      token1: market.quoteToken.toUpperCase(),
+                      base: market.baseToken?.symbol ?? '???',
+                      quote: market.quoteToken.toUpperCase(),
                     }}
                     primaryLabel="{market.baseToken?.symbol ?? '???'}/{market.quoteToken.toUpperCase()}"
                     secondaryLabel={market.baseToken?.name}

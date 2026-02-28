@@ -63,8 +63,8 @@ export type {
 export interface SpotAddLiquidityParams {
   tickLower: Tick;
   tickUpper: Tick;
-  amount0Desired: bigint;
-  amount1Desired: bigint;
+  amountBaseDesired: bigint;
+  amountQuoteDesired: bigint;
   initialTick?: Tick;
 }
 
@@ -73,8 +73,8 @@ export interface SpotAddLiquidityParams {
  */
 export interface SpotIncreaseLiquidityParams {
   positionId: PositionId;
-  amount0Desired: bigint;
-  amount1Desired: bigint;
+  amountBaseDesired: bigint;
+  amountQuoteDesired: bigint;
 }
 
 /**
@@ -107,8 +107,8 @@ export interface SpotQuoteSwapParams {
  * Swap result
  */
 export interface SpotSwapResult {
-  amount0: bigint;
-  amount1: bigint;
+  amountBase: bigint;
+  amountQuote: bigint;
 }
 
 /**
@@ -122,8 +122,8 @@ export interface SpotOrderBookParams {
  * Position collected fees result
  */
 export interface SpotCollectedFees {
-  token0Amount: bigint;
-  token1Amount: bigint;
+  baseAmount: bigint;
+  quoteAmount: bigint;
 }
 
 /**
@@ -137,8 +137,8 @@ export interface SpotLiquidityQuote {
  * Amounts quote result
  */
 export interface SpotAmountsQuote {
-  amount0: bigint;
-  amount1: bigint;
+  amountBase: bigint;
+  amountQuote: bigint;
 }
 
 /**
@@ -147,9 +147,9 @@ export interface SpotAmountsQuote {
 export interface SpotTransaction {
   tick: bigint;
   timestamp: bigint;
-  amount0: bigint;
-  amount1: bigint;
-  token1UsdRate: bigint;
+  amountBase: bigint;
+  amountQuote: bigint;
+  quoteUsdRate: bigint;
   side: 'buy' | 'sell';
 }
 

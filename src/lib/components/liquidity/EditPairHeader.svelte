@@ -9,13 +9,13 @@
   }
 
   interface Props {
-    token0: TokenInfo;
-    token1: TokenInfo;
+    base: TokenInfo;
+    quote: TokenInfo;
     feePips: number; // Fee in pips (100-10000)
     onEdit: () => void;
   }
 
-  let { token0, token1, feePips, onEdit }: Props = $props();
+  let { base, quote, feePips, onEdit }: Props = $props();
 
   const feeDisplay = $derived(formatFeePips(feePips));
 </script>
@@ -25,19 +25,19 @@
     <!-- Double Token Logo -->
     <div class="token-logos">
       <div class="logo-wrapper">
-        <Logo src={token0.logo ?? undefined} alt={token0.displaySymbol} size="lg" circle={true} />
+        <Logo src={base.logo ?? undefined} alt={base.displaySymbol} size="lg" circle={true} />
       </div>
       <div class="logo-wrapper overlap">
-        <Logo src={token1.logo ?? undefined} alt={token1.displaySymbol} size="lg" circle={true} />
+        <Logo src={quote.logo ?? undefined} alt={quote.displaySymbol} size="lg" circle={true} />
       </div>
     </div>
 
     <!-- Token Pair + Fee Badge -->
     <div class="pair-details">
       <div class="pair-row">
-        <span class="pair-text">{token0.displaySymbol}</span>
+        <span class="pair-text">{base.displaySymbol}</span>
         <span class="pair-separator">/</span>
-        <span class="pair-text">{token1.displaySymbol}</span>
+        <span class="pair-text">{quote.displaySymbol}</span>
       </div>
       <div class="badges">
         <span class="fee-badge">{feeDisplay}</span>

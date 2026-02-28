@@ -95,10 +95,10 @@
   let formattedPrice = $derived(market.formattedPrice);
 
   // Get balances reactively - triggers re-check when balance changes
-  let token0Balance = $derived(
+  let baseBalance = $derived(
     market.tokens?.[0] ? userPortfolio.getToken(market.tokens[0].toString())?.balance ?? 0n : 0n
   );
-  let token1Balance = $derived(
+  let quoteBalance = $derived(
     market.tokens?.[1] ? userPortfolio.getToken(market.tokens[1].toString())?.balance ?? 0n : 0n
   );
 
@@ -106,7 +106,7 @@
   // Re-runs when balance changes from 0 → non-zero
   $effect(() => {
     if (!user.principal || !market.tokens?.[0]) return;
-    if (token0Balance > 0n) {
+    if (baseBalance > 0n) {
       checkAndApprove(market.tokens[0].toString(), market.canister_id);
     }
   });
@@ -115,7 +115,7 @@
   // Re-runs when balance changes from 0 → non-zero
   $effect(() => {
     if (!user.principal || !market.tokens?.[1]) return;
-    if (token1Balance > 0n) {
+    if (quoteBalance > 0n) {
       checkAndApprove(market.tokens[1].toString(), market.canister_id);
     }
   });

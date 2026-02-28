@@ -84,6 +84,9 @@ type UpgradeArgs =
    set_instruction_budget: opt nat64;
    set_maker_fee_pips: opt nat32;
    set_maker_rebate_pips: opt nat32;
+   set_max_route_pool_inputs: opt nat;
+   set_min_pool_quote_liquidity_e6: opt nat;
+   set_min_usd_value: opt nat;
    set_pool_protocol_fee_pips: opt nat;
    set_taker_fee_pips: opt nat32;
    set_treasury_principal: opt principal;
@@ -252,8 +255,8 @@ type Spot =
  service {
    /// Add liquidity to a new concentrated position.
    /// First LP must supply initial_tick to set pool price; subsequent LPs add at current price.
-   add_liquidity: (fee_pips: nat32, t_lo: Tick, t_hi: Tick, amt_0: nat,
-    amt_1: nat, initial_tick: opt Tick, lock_until_ms: opt nat64) ->
+   add_liquidity: (fee_pips: nat32, t_lo: Tick, t_hi: Tick, amt_base: 
+    nat, amt_quote: nat, initial_tick: opt Tick, lock_until_ms: opt nat64) ->
     (LiquidityResult);
    /// Get event log entries with cursor-based pagination (newest first).
    admin_get_event_logs: (cursor: opt nat64, limit: nat32) ->
@@ -381,8 +384,8 @@ type Spot =
    /// Get version counters (primary polling endpoint, ~500ms interval).
    get_versions: () -> (PollVersions) query;
    /// Increase liquidity in an existing position by position ID.
-   increase_liquidity: (id: PositionId, amt_0_desired: nat, amt_1_desired:
-    nat) -> (IncreaseLiquidityResult);
+   increase_liquidity: (id: PositionId, amt_base_desired: nat,
+    amt_quote_desired: nat) -> (IncreaseLiquidityResult);
    /// Lock a position until lock_until_ms (one-way ratchet: can only extend).
    /// Blocks decrease_liquidity and close_all_positions while locked.
    lock_position: (id: PositionId, lock_until_ms: nat64) ->
@@ -422,28 +425,28 @@ type RoutingTokenInfo =
  };
 type RoutingState = 
  record {
+   base: RoutingTokenInfo;
    book: BookLevelsResponse;
    last_book_tick: opt Tick;
    last_trade_sqrt_price_x96: opt SqrtPriceX96;
    last_trade_tick: opt Tick;
    maker_fee_pips: nat32;
    pools: vec RoutingPoolState;
+   quote: RoutingTokenInfo;
    reference_tick: opt Tick;
    system_state: SystemState;
    taker_fee_pips: nat32;
-   token0: RoutingTokenInfo;
-   token1: RoutingTokenInfo;
  };
 type RoutingPoolState = 
  record {
+   base_reserve: nat;
    fee_pips: nat32;
    initialized_ticks: vec TickLiquidityData;
    liquidity: nat;
+   quote_reserve: nat;
    sqrt_price_x96: SqrtPriceX96;
    tick: Tick;
    tick_spacing: nat;
-   token0_reserve: nat;
-   token1_reserve: nat;
  };
 type QuoteResult = 
  record {
@@ -505,8 +508,8 @@ type PositionViewEnhanced =
  };
 type PositionView = 
  record {
-   fee_growth_inside_0_last_x128: nat;
-   fee_growth_inside_1_last_x128: nat;
+   fee_growth_inside_base_last_x128: nat;
+   fee_growth_inside_quote_last_x128: nat;
    fee_pips: nat32;
    liquidity: Liquidity;
    locked_until: opt nat64;
@@ -538,8 +541,8 @@ type PositionDebugEntry =
    liquidity: nat;
    tick_lower: int;
    tick_upper: int;
-   tokens_owed_0: nat;
-   tokens_owed_1: nat;
+   tokens_owed_base: nat;
+   tokens_owed_quote: nat;
  };
 type PoolSwapSpec = 
  record {
@@ -551,15 +554,15 @@ type PoolSwapSpec =
 type PoolState = 
  record {
    apr_bps: nat;
+   base_reserve: nat;
    fee_pips: nat32;
    fees_24h_usd_e6: nat;
    initialized_ticks: vec TickLiquidityData;
    liquidity: nat;
+   quote_reserve: nat;
    sqrt_price_x96: SqrtPriceX96;
    tick: Tick;
    tick_spacing: nat;
-   token0_reserve: nat;
-   token1_reserve: nat;
    tvl_usd_e6: nat;
    volume_24h_usd_e6: nat;
  };
@@ -811,8 +814,8 @@ type LiquidityResult =
    err: ApiError;
    ok:
     record {
-      actual_amt0: nat;
-      actual_amt1: nat;
+      actual_amt_base: nat;
+      actual_amt_quote: nat;
       position_id: PositionId;
       versions: PollVersions;
     };
@@ -866,15 +869,11 @@ type KillAllResult =
  };
 type InitArgs = 
  record {
-   admin_principals: vec principal;
+   base: TokenMetadata;
    indexer_principal: principal;
-   maker_fee_pips: opt nat32;
-   maker_rebate_pips: opt nat32;
    oracle_principal: principal;
+   quote: TokenMetadata;
    registry_principal: principal;
-   taker_fee_pips: opt nat32;
-   token0: TokenMetadata;
-   token1: TokenMetadata;
    treasury_principal: opt principal;
  };
 type IndexerTokenData = 
@@ -926,8 +925,8 @@ type IncreaseLiquidityResult =
    err: ApiError;
    ok:
     record {
-      actual_amt0: nat;
-      actual_amt1: nat;
+      actual_amt_base: nat;
+      actual_amt_quote: nat;
       liquidity_delta: nat;
       versions: PollVersions;
     };
@@ -959,6 +958,11 @@ type GetUserActivityResult =
 type FrozenControl = 
  record {
    admin_principals: vec principal;
+   base: record {
+           decimals: nat8;
+           fee: nat;
+           ledger: principal;
+         };
    cycles_threshold: nat;
    indexer_principal: principal;
    instruction_budget: nat64;
@@ -967,27 +971,25 @@ type FrozenControl =
    market_initialized: bool;
    max_orders_per_user: nat;
    max_positions_per_user: nat;
+   max_route_pool_inputs: nat;
    max_triggers_per_user: nat;
+   min_pool_quote_liquidity_e6: nat;
+   min_usd_value: nat;
    oracle_principal: principal;
    orders_live: nat;
    pool_protocol_fee_pips: nat;
    pools: nat;
    positions: nat;
+   quote: record {
+            decimals: nat8;
+            fee: nat;
+            ledger: principal;
+          };
    registry_principal: principal;
    system_state: SystemState;
    taker_fee_pips: nat32;
    this_principal: principal;
    timer_running: bool;
-   token0: record {
-             decimals: nat8;
-             fee: nat;
-             ledger: principal;
-           };
-   token1: record {
-             decimals: nat8;
-             fee: nat;
-             ledger: principal;
-           };
    treasury_principal: opt principal;
    triggers_live: nat;
    users: nat;
@@ -1053,8 +1055,8 @@ type DecreaseLiquidityResult =
  variant {
    err: ApiError;
    ok: record {
-         amount0: nat;
-         amount1: nat;
+         amount_base: nat;
+         amount_quote: nat;
          versions: PollVersions;
        };
  };
@@ -1092,8 +1094,8 @@ type CollectFeesResult =
    err: ApiError;
    ok:
     record {
-      collected_amt0: nat;
-      collected_amt1: nat;
+      collected_amt_base: nat;
+      collected_amt_quote: nat;
       versions: PollVersions;
     };
  };
@@ -1102,8 +1104,8 @@ type CloseAllPositionsResult =
    err: ApiError;
    ok:
     record {
-      amount0: nat;
-      amount1: nat;
+      amount_base: nat;
+      amount_quote: nat;
       closed: nat32;
       versions: PollVersions;
     };

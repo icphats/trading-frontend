@@ -23,8 +23,8 @@ const MAX_TICK = 887272;
 export function priceToTickDirectional(
 	targetPrice: number,
 	opts: {
-		token0Decimals: number;
-		token1Decimals: number;
+		baseDecimals: number;
+		quoteDecimals: number;
 		tickSpacing: number;
 		directional: boolean;
 		side?: Side;
@@ -33,7 +33,7 @@ export function priceToTickDirectional(
 	if (targetPrice <= 0) return MIN_TICK;
 	if (!isFinite(targetPrice)) return MAX_TICK;
 
-	const decimalAdjustment = Math.pow(10, opts.token0Decimals - opts.token1Decimals);
+	const decimalAdjustment = Math.pow(10, opts.baseDecimals - opts.quoteDecimals);
 	const rawPrice = targetPrice / decimalAdjustment;
 	const rawTick = Math.log(rawPrice) / Math.log(1.0001);
 

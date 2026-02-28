@@ -52,8 +52,8 @@
     mode?: DisplayMode;
 
     // For pool mode - token symbols
-    token0Symbol?: string;
-    token1Symbol?: string;
+    baseSymbol?: string;
+    quoteSymbol?: string;
 
     // For pool mode - price inversion
     isReversed?: boolean;
@@ -68,12 +68,12 @@
     // Pool liquidity chart data (for pool mode with liquidity view)
     poolDepthData?: PoolDepthRow[];
     isLoadingDepth?: boolean;
-    token0Decimals?: number;
-    token1Decimals?: number;
-    token0Logo?: string;
-    token1Logo?: string;
-    token0PriceUsd?: bigint | null;
-    token1PriceUsd?: bigint | null;
+    baseDecimals?: number;
+    quoteDecimals?: number;
+    baseLogo?: string;
+    quoteLogo?: string;
+    basePriceUsd?: bigint | null;
+    quotePriceUsd?: bigint | null;
   }
 
   let {
@@ -81,20 +81,20 @@
     fetchFeesData,
     fetchTvlData,
     mode = 'token',
-    token0Symbol = '',
-    token1Symbol = '',
+    baseSymbol = '',
+    quoteSymbol = '',
     isReversed = false,
     currentPrice,
     priceChange,
     baseTokenDecimals = 8,
     poolDepthData = [],
     isLoadingDepth = false,
-    token0Decimals = 8,
-    token1Decimals = 8,
-    token0Logo,
-    token1Logo,
-    token0PriceUsd = null,
-    token1PriceUsd = null,
+    baseDecimals = 8,
+    quoteDecimals = 8,
+    baseLogo,
+    quoteLogo,
+    basePriceUsd = null,
+    quotePriceUsd = null,
   }: Props = $props();
 
   // UI State
@@ -166,8 +166,8 @@
   }
 
   // Derived token display (for pool mode)
-  const displayToken0 = $derived(isReversed ? token1Symbol : token0Symbol);
-  const displayToken1 = $derived(isReversed ? token0Symbol : token1Symbol);
+  const displayBase = $derived(isReversed ? quoteSymbol : baseSymbol);
+  const displayQuote = $derived(isReversed ? baseSymbol : quoteSymbol);
 
   // Transform data based on mode
   const chartData = $derived.by(() => {
@@ -272,7 +272,7 @@
   // Maps data types to display formats:
   // - price: USD price format
   // - volume/liquidity/fees/tvl: volume format (large numbers)
-  // - pool mode with price data: ratio format (token0/token1)
+  // - pool mode with price data: ratio format (base/quote)
   const overlayMode = $derived.by(() => {
     if (dataType === 'volume' || dataType === 'liquidity' || dataType === 'fees' || dataType === 'tvl') {
       return 'volume' as const;
@@ -647,14 +647,14 @@
       <!-- Pool Liquidity Distribution Chart -->
       <LiquidityExploreChart
         pools={poolDepthData}
-        {token0Decimals}
-        {token1Decimals}
-        token0Symbol={displayToken0}
-        token1Symbol={displayToken1}
-        token0Logo={isReversed ? token1Logo : token0Logo}
-        token1Logo={isReversed ? token0Logo : token1Logo}
-        token0PriceUsd={isReversed ? token1PriceUsd : token0PriceUsd}
-        token1PriceUsd={isReversed ? token0PriceUsd : token1PriceUsd}
+        {baseDecimals}
+        {quoteDecimals}
+        baseSymbol={displayBase}
+        quoteSymbol={displayQuote}
+        baseLogo={isReversed ? quoteLogo : baseLogo}
+        quoteLogo={isReversed ? baseLogo : quoteLogo}
+        basePriceUsd={isReversed ? quotePriceUsd : basePriceUsd}
+        quotePriceUsd={isReversed ? basePriceUsd : quotePriceUsd}
         isLoading={isLoadingDepth}
         height="356px"
       />
@@ -664,8 +664,8 @@
         value={displayPrice}
         change={displayChange}
         mode={overlayMode}
-        token0Symbol={displayToken0}
-        token1Symbol={displayToken1}
+        baseSymbol={displayBase}
+        quoteSymbol={displayQuote}
       />
 
       <ChartContainer

@@ -34,13 +34,13 @@
   let isLoading = $state(true);
   let error = $state<string | null>(null);
 
-  let token0LedgerCanisterId = $state<string | null>(null);
-  let token1LedgerCanisterId = $state<string | null>(null);
+  let baseLedgerCanisterId = $state<string | null>(null);
+  let quoteLedgerCanisterId = $state<string | null>(null);
 
-  const token0 = $derived(token0LedgerCanisterId ? entityStore.getToken(token0LedgerCanisterId) : null);
-  const token1 = $derived(token1LedgerCanisterId ? entityStore.getToken(token1LedgerCanisterId) : null);
-  const baseDecimals = $derived(token0?.decimals ?? 8);
-  const quoteDecimals = $derived(token1?.decimals ?? 8);
+  const base = $derived(baseLedgerCanisterId ? entityStore.getToken(baseLedgerCanisterId) : null);
+  const quote = $derived(quoteLedgerCanisterId ? entityStore.getToken(quoteLedgerCanisterId) : null);
+  const baseDecimals = $derived(base?.decimals ?? 8);
+  const quoteDecimals = $derived(quote?.decimals ?? 8);
 
   // ============================================
   // Pool Price Polling
@@ -109,10 +109,10 @@
   // Estimated amounts returned — uses pool tick for accurate split
   const estimatedAmounts = $derived.by(() => {
     if (!position || poolTick === null || liquidityDelta <= 0n) return null;
-    const [amount0, amount1] = getAmountsForLiquidity(
+    const [amountBase, amountQuote] = getAmountsForLiquidity(
       poolTick, position.tick_lower, position.tick_upper, liquidityDelta
     );
-    return { amount0, amount1 };
+    return { amountBase, amountQuote };
   });
 
   // ============================================
@@ -142,8 +142,8 @@
 
         const marketData = entityStore.getMarket(spot.canister_id);
         if (marketData) {
-          token0LedgerCanisterId = marketData.baseToken;
-          token1LedgerCanisterId = marketData.quoteToken;
+          baseLedgerCanisterId = marketData.baseToken;
+          quoteLedgerCanisterId = marketData.quoteToken;
         }
 
         startPolling();
@@ -192,10 +192,10 @@
   }
 
   const positionInfo = $derived.by(() => {
-    if (!position || !token0 || !token1) return null;
+    if (!position || !base || !quote) return null;
     return {
-      token0: { symbol: token0.symbol, displaySymbol: token0.displaySymbol, logo: token0.logo },
-      token1: { symbol: token1.symbol, displaySymbol: token1.displaySymbol, logo: token1.logo },
+      base: { symbol: base.symbol, displaySymbol: base.displaySymbol, logo: base.logo },
+      quote: { symbol: quote.symbol, displaySymbol: quote.displaySymbol, logo: quote.logo },
       fee_pips: position.fee_pips,
       status: inRange === null ? undefined : inRange ? 'in_range' as const : 'out_of_range' as const,
     };
@@ -235,7 +235,7 @@
             <span class="price-label">Current Price</span>
             <span class="price-value">
               {formatSigFig(currentPrice, 6, { subscriptZeros: true })}
-              <span class="price-unit">{token1?.displaySymbol} per {token0?.displaySymbol}</span>
+              <span class="price-unit">{quote?.displaySymbol} per {base?.displaySymbol}</span>
             </span>
           </div>
         {/if}
@@ -270,12 +270,12 @@
           <div class="modal-details">
             <h3 class="modal-details-title">You will receive (estimate)</h3>
             <DetailLineItem
-              label={token0?.displaySymbol ?? 'Token 0'}
-              value={bigIntToString(estimatedAmounts.amount0, baseDecimals)}
+              label={base?.displaySymbol ?? 'Base'}
+              value={bigIntToString(estimatedAmounts.amountBase, baseDecimals)}
             />
             <DetailLineItem
-              label={token1?.displaySymbol ?? 'Token 1'}
-              value={bigIntToString(estimatedAmounts.amount1, quoteDecimals)}
+              label={quote?.displaySymbol ?? 'Quote'}
+              value={bigIntToString(estimatedAmounts.amountQuote, quoteDecimals)}
             />
           </div>
         {/if}
@@ -284,11 +284,11 @@
         <div class="modal-details">
           <DetailLineItem
             label="Min Price"
-            value="{formatSigFig(tickToPrice(position.tick_lower, baseDecimals, quoteDecimals), 5, { subscriptZeros: true })} {token1?.displaySymbol}"
+            value="{formatSigFig(tickToPrice(position.tick_lower, baseDecimals, quoteDecimals), 5, { subscriptZeros: true })} {quote?.displaySymbol}"
           />
           <DetailLineItem
             label="Max Price"
-            value="{formatSigFig(tickToPrice(position.tick_upper, baseDecimals, quoteDecimals), 5, { subscriptZeros: true })} {token1?.displaySymbol}"
+            value="{formatSigFig(tickToPrice(position.tick_upper, baseDecimals, quoteDecimals), 5, { subscriptZeros: true })} {quote?.displaySymbol}"
           />
           {#if percentNum === 100}
             <DetailLineItem

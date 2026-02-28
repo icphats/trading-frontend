@@ -15,8 +15,8 @@
     priceToTick,
     getTickSpacingForTier,
     validateAndAlignTicks,
-    calculateAmount1FromAmount0,
-    calculateAmount0FromAmount1,
+    calculateAmountQuoteFromAmountBase,
+    calculateAmountBaseFromAmountQuote,
     stringToBigInt,
     bigIntToString,
     formatFeePips,
@@ -59,20 +59,20 @@
   // Derived Market Data
   // ============================================
 
-  const token0 = $derived<NormalizedToken | undefined>(
+  const baseToken = $derived<NormalizedToken | undefined>(
     spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : undefined
   );
-  const token1 = $derived<NormalizedToken | undefined>(
+  const quoteToken = $derived<NormalizedToken | undefined>(
     spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : undefined
   );
 
-  const baseDecimals = $derived(token0?.decimals ?? 8);
-  const quoteDecimals = $derived(token1?.decimals ?? 8);
-  const baseSymbol = $derived(token0?.displaySymbol ?? token0?.symbol ?? 'Base');
-  const quoteSymbol = $derived(token1?.displaySymbol ?? token1?.symbol ?? 'Quote');
+  const baseDecimals = $derived(baseToken?.decimals ?? 8);
+  const quoteDecimals = $derived(quoteToken?.decimals ?? 8);
+  const baseSymbol = $derived(baseToken?.displaySymbol ?? baseToken?.symbol ?? 'Base');
+  const quoteSymbol = $derived(quoteToken?.displaySymbol ?? quoteToken?.symbol ?? 'Quote');
 
-  const token0Balance = $derived(spot.availableBase);
-  const token1Balance = $derived(spot.availableQuote);
+  const baseBalance = $derived(spot.availableBase);
+  const quoteBalance = $derived(spot.availableQuote);
 
   // ============================================
   // Pool Overview State
@@ -90,8 +90,8 @@
   let customFeeValue = $state('0.30');
   let tickLower = $state<number>(0);
   let tickUpper = $state<number>(0);
-  let amount0Input = $state<string>('');
-  let amount1Input = $state<string>('');
+  let amountBaseInput = $state<string>('');
+  let amountQuoteInput = $state<string>('');
   let lastEditedToken = $state<0 | 1>(0);
   let confirmModalOpen = $state(false);
   let confirmedTicks = $state<[number, number] | null>(null);
@@ -225,26 +225,26 @@
   );
 
   // One-sided liquidity detection (null tick = new pool, both tokens accepted)
-  const deposit0Disabled = $derived(currentTick !== null && currentTick >= tickUpper);
-  const deposit1Disabled = $derived(currentTick !== null && currentTick <= tickLower);
+  const depositBaseDisabled = $derived(currentTick !== null && currentTick >= tickUpper);
+  const depositQuoteDisabled = $derived(currentTick !== null && currentTick <= tickLower);
 
   // Price display for range inputs
   const minPrice = $derived(tickToPrice(tickLower, baseDecimals, quoteDecimals));
   const maxPrice = $derived(tickToPrice(tickUpper, baseDecimals, quoteDecimals));
 
   // Amount as bigints for calculation
-  const amount0BigInt = $derived(
-    amount0Input ? stringToBigInt(amount0Input, baseDecimals) : 0n
+  const amountBaseBigInt = $derived(
+    amountBaseInput ? stringToBigInt(amountBaseInput, baseDecimals) : 0n
   );
-  const amount1BigInt = $derived(
-    amount1Input ? stringToBigInt(amount1Input, quoteDecimals) : 0n
+  const amountQuoteBigInt = $derived(
+    amountQuoteInput ? stringToBigInt(amountQuoteInput, quoteDecimals) : 0n
   );
 
   // Validation
   const hasValidRange = $derived(tickLower < tickUpper);
-  const hasValidAmount = $derived(amount0BigInt > 0n || amount1BigInt > 0n);
-  const insufficientBase = $derived(amount0BigInt > token0Balance);
-  const insufficientQuote = $derived(amount1BigInt > token1Balance);
+  const hasValidAmount = $derived(amountBaseBigInt > 0n || amountQuoteBigInt > 0n);
+  const insufficientBase = $derived(amountBaseBigInt > baseBalance);
+  const insufficientQuote = $derived(amountQuoteBigInt > quoteBalance);
   const hasError = $derived(insufficientBase || insufficientQuote);
 
   // New pool would need to compete for a top-3 routing slot
@@ -382,52 +382,52 @@
   // ============================================
 
   function handleAmount0Change(value: string) {
-    amount0Input = value;
+    amountBaseInput = value;
     lastEditedToken = 0;
 
-    if (currentTick === null || !hasValidRange || deposit1Disabled) return;
+    if (currentTick === null || !hasValidRange || depositQuoteDisabled) return;
     const amt0 = stringToBigInt(value || '0', baseDecimals);
     if (amt0 <= 0n) {
-      amount1Input = '';
+      amountQuoteInput = '';
       return;
     }
 
-    const amt1 = calculateAmount1FromAmount0(amt0, currentTick, tickLower, tickUpper);
+    const amt1 = calculateAmountQuoteFromAmountBase(amt0, currentTick, tickLower, tickUpper);
     if (amt1 > 0n) {
-      amount1Input = bigIntToString(amt1, quoteDecimals);
+      amountQuoteInput = bigIntToString(amt1, quoteDecimals);
     } else {
-      amount1Input = '';
+      amountQuoteInput = '';
     }
   }
 
   function handleAmount1Change(value: string) {
-    amount1Input = value;
+    amountQuoteInput = value;
     lastEditedToken = 1;
 
-    if (currentTick === null || !hasValidRange || deposit0Disabled) return;
+    if (currentTick === null || !hasValidRange || depositBaseDisabled) return;
     const amt1 = stringToBigInt(value || '0', quoteDecimals);
     if (amt1 <= 0n) {
-      amount0Input = '';
+      amountBaseInput = '';
       return;
     }
 
-    const amt0 = calculateAmount0FromAmount1(amt1, currentTick, tickLower, tickUpper);
+    const amt0 = calculateAmountBaseFromAmountQuote(amt1, currentTick, tickLower, tickUpper);
     if (amt0 > 0n) {
-      amount0Input = bigIntToString(amt0, baseDecimals);
+      amountBaseInput = bigIntToString(amt0, baseDecimals);
     } else {
-      amount0Input = '';
+      amountBaseInput = '';
     }
   }
 
   function recalculateLinkedAmount() {
     if (currentTick === null || !hasValidRange) return;
 
-    if (lastEditedToken === 0 && amount0BigInt > 0n && !deposit1Disabled) {
-      const amt1 = calculateAmount1FromAmount0(amount0BigInt, currentTick, tickLower, tickUpper);
-      amount1Input = amt1 > 0n ? bigIntToString(amt1, quoteDecimals) : '';
-    } else if (lastEditedToken === 1 && amount1BigInt > 0n && !deposit0Disabled) {
-      const amt0 = calculateAmount0FromAmount1(amount1BigInt, currentTick, tickLower, tickUpper);
-      amount0Input = amt0 > 0n ? bigIntToString(amt0, baseDecimals) : '';
+    if (lastEditedToken === 0 && amountBaseBigInt > 0n && !depositQuoteDisabled) {
+      const amt1 = calculateAmountQuoteFromAmountBase(amountBaseBigInt, currentTick, tickLower, tickUpper);
+      amountQuoteInput = amt1 > 0n ? bigIntToString(amt1, quoteDecimals) : '';
+    } else if (lastEditedToken === 1 && amountQuoteBigInt > 0n && !depositBaseDisabled) {
+      const amt0 = calculateAmountBaseFromAmountQuote(amountQuoteBigInt, currentTick, tickLower, tickUpper);
+      amountBaseInput = amt0 > 0n ? bigIntToString(amt0, baseDecimals) : '';
     }
   }
 
@@ -469,8 +469,8 @@
   // ============================================
 
   function resetForm() {
-    amount0Input = '';
-    amount1Input = '';
+    amountBaseInput = '';
+    amountQuoteInput = '';
     startingPriceInput = '';
     rangeInitialized = false;
   }
@@ -598,8 +598,8 @@
     <PriceStrategies
       {currentPrice}
       currentTick={currentTick!}
-      token0Decimals={baseDecimals}
-      token1Decimals={quoteDecimals}
+      baseDecimals={baseDecimals}
+      quoteDecimals={quoteDecimals}
       {tickSpacing}
       {minPrice}
       {maxPrice}
@@ -613,8 +613,8 @@
       type="min"
       tick={tickLower}
       {currentPrice}
-      token0Decimals={baseDecimals}
-      token1Decimals={quoteDecimals}
+      baseDecimals={baseDecimals}
+      quoteDecimals={quoteDecimals}
       {quoteSymbol}
       {baseSymbol}
       {tickSpacing}
@@ -625,8 +625,8 @@
       type="max"
       tick={tickUpper}
       {currentPrice}
-      token0Decimals={baseDecimals}
-      token1Decimals={quoteDecimals}
+      baseDecimals={baseDecimals}
+      quoteDecimals={quoteDecimals}
       {quoteSymbol}
       {baseSymbol}
       {tickSpacing}
@@ -639,10 +639,10 @@
   <div class="amounts">
     <TokenAmountInput
       label={baseSymbol}
-      value={amount0Input}
-      token={token0}
-      balance={token0Balance}
-      disabled={deposit0Disabled}
+      value={amountBaseInput}
+      token={baseToken}
+      balance={baseBalance}
+      disabled={depositBaseDisabled}
       onValueChange={handleAmount0Change}
       size="sm"
       showBalance
@@ -650,10 +650,10 @@
     />
     <TokenAmountInput
       label={quoteSymbol}
-      value={amount1Input}
-      token={token1}
-      balance={token1Balance}
-      disabled={deposit1Disabled}
+      value={amountQuoteInput}
+      token={quoteToken}
+      balance={quoteBalance}
+      disabled={depositQuoteDisabled}
       onValueChange={handleAmount1Change}
       size="sm"
       showBalance
@@ -714,13 +714,13 @@
   <AddLiquidityConfirmModal
     bind:open={confirmModalOpen}
     {spot}
-    {token0}
-    {token1}
+    base={baseToken}
+    quote={quoteToken}
     feePips={selectedFeePips}
     tickLower={confirmedTicks[0]}
     tickUpper={confirmedTicks[1]}
-    amount0={amount0BigInt}
-    amount1={amount1BigInt}
+    amountBase={amountBaseBigInt}
+    amountQuote={amountQuoteBigInt}
     initialTick={needsStartingPrice ? startingTick ?? undefined : undefined}
     {lockUntilMs}
     {isNewPool}

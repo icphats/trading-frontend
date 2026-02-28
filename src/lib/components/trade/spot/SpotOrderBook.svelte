@@ -44,8 +44,8 @@
   });
 
   // Get token states from registry for logos and symbols
-  let token0 = $derived(spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : null);
-  let token1 = $derived(spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
+  let base = $derived(spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : null);
+  let quote = $derived(spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : null);
 
   // Bucket size selector (in basis points)
   // Use $derived to always reflect the market's current bucket size
@@ -53,8 +53,8 @@
   let bucketSizeBps = $derived(spot.orderBookBucketSize);
 
   // Token display selector
-  type TokenDisplay = "token0" | "token1";
-  let selectedToken = $state<TokenDisplay>("token1"); // Default to token1 (ICP)
+  type TokenDisplay = "base" | "quote";
+  let selectedToken = $state<TokenDisplay>("quote"); // Default to quote (ICP)
 
   // AMM pool depth chart toggle
   let showPoolDepth = $state(false);
@@ -83,14 +83,14 @@
   // Token options (derived from actual tokens)
   let tokenOptions = $derived<DropdownOption<TokenDisplay>[]>([
     {
-      value: "token0",
-      label: token0?.displaySymbol ?? "Token0",
-      icon: token0IconSnippet,
+      value: "base",
+      label: base?.displaySymbol ?? "Base",
+      icon: baseIconSnippet,
     },
     {
-      value: "token1",
-      label: token1?.displaySymbol ?? "Token1",
-      icon: token1IconSnippet,
+      value: "quote",
+      label: quote?.displaySymbol ?? "Quote",
+      icon: quoteIconSnippet,
     },
   ]);
 
@@ -108,7 +108,7 @@
 
   // Helper to get the correct amount based on token display
   function getAmount(row: typeof rawBook.long[0], token: TokenDisplay): bigint {
-    return token === "token0" ? row.book_token0_amount! : row.book_token1_amount!;
+    return token === "base" ? row.book_base_amount! : row.book_quote_amount!;
   }
 
   // Display limits: desktop shows 10 levels, mobile shows all (20)
@@ -234,10 +234,10 @@
 
   // Derived values for selected token (to pass to OrderBook)
   let selectedTokenData = $derived.by(() => {
-    const token = selectedToken === "token0" ? token0 : token1;
+    const token = selectedToken === "base" ? base : quote;
     return {
       logo: token?.logo ?? undefined,
-      symbol: token?.displaySymbol ?? (selectedToken === "token0" ? "Token0" : "Token1"),
+      symbol: token?.displaySymbol ?? (selectedToken === "base" ? "Base" : "Quote"),
       decimals: token?.decimals ?? 8,
     };
   });
@@ -251,15 +251,15 @@
   }
 </script>
 
-{#snippet token0IconSnippet()}
-  {#if token0}
-    <Logo src={token0.logo ?? undefined} alt={token0.displaySymbol} size="xxs" circle={true} />
+{#snippet baseIconSnippet()}
+  {#if base}
+    <Logo src={base.logo ?? undefined} alt={base.displaySymbol} size="xxs" circle={true} />
   {/if}
 {/snippet}
 
-{#snippet token1IconSnippet()}
-  {#if token1}
-    <Logo src={token1.logo ?? undefined} alt={token1.displaySymbol} size="xxs" circle={true} />
+{#snippet quoteIconSnippet()}
+  {#if quote}
+    <Logo src={quote.logo ?? undefined} alt={quote.displaySymbol} size="xxs" circle={true} />
   {/if}
 {/snippet}
 
@@ -282,10 +282,10 @@
 {/snippet}
 
 {#snippet tokenTrigger({ open }: { open: boolean })}
-  {#if selectedToken === "token0" && token0}
-    <Logo src={token0.logo ?? undefined} alt={token0.displaySymbol} size="xxs" circle={true} />
-  {:else if selectedToken === "token1" && token1}
-    <Logo src={token1.logo ?? undefined} alt={token1.displaySymbol} size="xxs" circle={true} />
+  {#if selectedToken === "base" && base}
+    <Logo src={base.logo ?? undefined} alt={base.displaySymbol} size="xxs" circle={true} />
+  {:else if selectedToken === "quote" && quote}
+    <Logo src={quote.logo ?? undefined} alt={quote.displaySymbol} size="xxs" circle={true} />
   {/if}
   <svg
     xmlns="http://www.w3.org/2000/svg"
@@ -371,15 +371,14 @@
     {#if showPoolDepth}
       <LiquidityOrderBookChart
         pools={filteredPools}
-        token0Decimals={token0?.decimals ?? 8}
-        token1Decimals={token1?.decimals ?? 8}
-        token0Logo={token0?.logo ?? undefined}
-        token1Logo={token1?.logo ?? undefined}
-        token0Symbol={token0?.displaySymbol ?? "Token0"}
-        token1Symbol={token1?.displaySymbol ?? "Token1"}
-        token0PriceUsd={token0?.priceUsd ?? null}
-        token1PriceUsd={token1?.priceUsd ?? null}
-        quoteSymbol={token1?.displaySymbol ?? "Quote"}
+        baseDecimals={base?.decimals ?? 8}
+        quoteDecimals={quote?.decimals ?? 8}
+        baseLogo={base?.logo ?? undefined}
+        quoteLogo={quote?.logo ?? undefined}
+        baseSymbol={base?.displaySymbol ?? "Base"}
+        quoteSymbol={quote?.displaySymbol ?? "Quote"}
+        basePriceUsd={base?.priceUsd ?? null}
+        quotePriceUsd={quote?.priceUsd ?? null}
         referenceTick={rawBook.midTick}
         referencePriceE12={rawBook.referencePriceE12}
         pendingRange={poolPendingRange}
@@ -436,15 +435,14 @@
     {#if showPoolDepth}
       <LiquidityOrderBookChart
         pools={filteredPools}
-        token0Decimals={token0?.decimals ?? 8}
-        token1Decimals={token1?.decimals ?? 8}
-        token0Logo={token0?.logo ?? undefined}
-        token1Logo={token1?.logo ?? undefined}
-        token0Symbol={token0?.displaySymbol ?? "Token0"}
-        token1Symbol={token1?.displaySymbol ?? "Token1"}
-        token0PriceUsd={token0?.priceUsd ?? null}
-        token1PriceUsd={token1?.priceUsd ?? null}
-        quoteSymbol={token1?.displaySymbol ?? "Quote"}
+        baseDecimals={base?.decimals ?? 8}
+        quoteDecimals={quote?.decimals ?? 8}
+        baseLogo={base?.logo ?? undefined}
+        quoteLogo={quote?.logo ?? undefined}
+        baseSymbol={base?.displaySymbol ?? "Base"}
+        quoteSymbol={quote?.displaySymbol ?? "Quote"}
+        basePriceUsd={base?.priceUsd ?? null}
+        quotePriceUsd={quote?.priceUsd ?? null}
         referenceTick={rawBook.midTick}
         referencePriceE12={rawBook.referencePriceE12}
         pendingRange={poolPendingRange}

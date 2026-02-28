@@ -138,7 +138,7 @@
     const quote = quoteExplorerState.quote;
     const inputToken = quoteExplorerState.inputToken;
     const outputToken = quoteExplorerState.outputToken;
-    const baseToken = quoteExplorerState.token0;
+    const baseToken = quoteExplorerState.baseToken;
     if (!quote || !inputToken || !outputToken || !baseToken) return undefined;
 
     const inputDisplay = bigIntToString(quote.input_amount, inputToken.decimals);
@@ -293,11 +293,11 @@
   bind:open={swapModalOpen}
   title="Confirm Swap"
   orderDetail={confirmationDetail}
-  confirmLabel={`${confirmSide} ${quoteExplorerState.token0?.displaySymbol ?? ''}`}
+  confirmLabel={`${confirmSide} ${quoteExplorerState.baseToken?.displaySymbol ?? ''}`}
   variant="primary"
   onConfirm={handleSlowSwap}
   toastMessages={{
-    loading: `${confirmSide === 'Buy' ? 'Buying' : 'Selling'} ${quoteExplorerState.token0?.displaySymbol ?? ''}...`,
+    loading: `${confirmSide === 'Buy' ? 'Buying' : 'Selling'} ${quoteExplorerState.baseToken?.displaySymbol ?? ''}...`,
     success: 'Swap complete',
     error: (err) => err instanceof Error ? err.message : 'Swap failed',
   }}

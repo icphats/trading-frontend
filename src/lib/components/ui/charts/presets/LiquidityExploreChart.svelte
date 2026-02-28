@@ -5,7 +5,7 @@
    * Displays liquidity distribution across price ticks using lightweight-charts
    * with a custom LiquidityBarSeries. Shows:
    * - Liquidity bars colored by position relative to current price
-   * - Stacked bars showing token0/token1 ratio when both present
+   * - Stacked bars showing base/quote ratio when both present
    * - Hover tooltip with price and USD values (fixed top-right)
    * - Price labels overlay on the left side
    * - Current tick highlight
@@ -28,8 +28,8 @@
     getCurrentTickFromPools,
     getMaxTickSpacing,
     calculateTotalAmounts,
-    calculateToken0UsdValue,
-    calculateToken1UsdValue,
+    calculateBaseUsdValue,
+    calculateQuoteUsdValue,
     TICK_WINDOW_HALF,
     TICK_WINDOW_HALF_FULL,
     NUM_BUCKETS,
@@ -44,22 +44,22 @@
     pools: PoolDepthRow[];
     /** Current tick of the most liquid pool */
     currentTick?: number;
-    /** Token0 decimals for calculations */
-    token0Decimals: number;
-    /** Token1 decimals for calculations */
-    token1Decimals: number;
-    /** Token0 symbol for tooltip */
-    token0Symbol?: string;
-    /** Token1 symbol for tooltip */
-    token1Symbol?: string;
-    /** Token0 logo URL */
-    token0Logo?: string;
-    /** Token1 logo URL */
-    token1Logo?: string;
-    /** Token0 USD price in E12 format */
-    token0PriceUsd?: bigint | null;
-    /** Token1 USD price in E12 format */
-    token1PriceUsd?: bigint | null;
+    /** Base token decimals for calculations */
+    baseDecimals: number;
+    /** Quote token decimals for calculations */
+    quoteDecimals: number;
+    /** Base token symbol for tooltip */
+    baseSymbol?: string;
+    /** Quote token symbol for tooltip */
+    quoteSymbol?: string;
+    /** Base token logo URL */
+    baseLogo?: string;
+    /** Quote token logo URL */
+    quoteLogo?: string;
+    /** Base token USD price in E12 format */
+    basePriceUsd?: bigint | null;
+    /** Quote token USD price in E12 format */
+    quotePriceUsd?: bigint | null;
     /** Loading state */
     isLoading?: boolean;
     /** Chart height */
@@ -69,14 +69,14 @@
   let {
     pools,
     currentTick,
-    token0Decimals,
-    token1Decimals,
-    token0Symbol = 'Token0',
-    token1Symbol = 'Token1',
-    token0Logo,
-    token1Logo,
-    token0PriceUsd = null,
-    token1PriceUsd = null,
+    baseDecimals,
+    quoteDecimals,
+    baseSymbol = 'Base',
+    quoteSymbol = 'Quote',
+    baseLogo,
+    quoteLogo,
+    basePriceUsd = null,
+    quotePriceUsd = null,
     isLoading = false,
     height = '356px',
   }: Props = $props();
@@ -108,14 +108,14 @@
   // Derived: Active tick from pools or prop
   const activeTick = $derived(currentTick ?? getCurrentTickFromPools(pools));
 
-  // Helper: Calculate USD value for token0 amount
-  function getToken0UsdValue(amount: bigint): number {
-    return calculateToken0UsdValue(amount, token0Decimals, token0PriceUsd);
+  // Helper: Calculate USD value for base token amount
+  function getBaseUsdValue(amount: bigint): number {
+    return calculateBaseUsdValue(amount, baseDecimals, basePriceUsd);
   }
 
-  // Helper: Calculate USD value for token1 amount
-  function getToken1UsdValue(amount: bigint): number {
-    return calculateToken1UsdValue(amount, token1Decimals, token1PriceUsd);
+  // Helper: Calculate USD value for quote token amount
+  function getQuoteUsdValue(amount: bigint): number {
+    return calculateQuoteUsdValue(amount, quoteDecimals, quotePriceUsd);
   }
 
   // Derived: Aggregate buckets from pool data (full range for zoom out capability)
@@ -133,10 +133,10 @@
       tickRange,
       bucketSize,
       currentTick: tick,
-      token0Decimals,
-      token1Decimals,
-      token0PriceUsd,
-      token1PriceUsd,
+      baseDecimals,
+      quoteDecimals,
+      basePriceUsd,
+      quotePriceUsd,
     });
   });
 
@@ -166,22 +166,22 @@
     const sortedByTick = [...liquidityBuckets].sort((a, b) => a.tick - b.tick);
 
     return sortedByTick.map((bucket, index) => {
-      const amount0 = Number(fromDecimals(bucket.amount0Locked, token0Decimals));
-      const amount1 = Number(fromDecimals(bucket.amount1Locked, token1Decimals));
-      const usd0 = getToken0UsdValue(bucket.amount0Locked);
-      const usd1 = getToken1UsdValue(bucket.amount1Locked);
-      const totalUsd = usd0 + usd1;
-      const token0Ratio = totalUsd > 0 ? usd0 / totalUsd : 0;
+      const amountBase = Number(fromDecimals(bucket.amountBaseLocked, baseDecimals));
+      const amountQuote = Number(fromDecimals(bucket.amountQuoteLocked, quoteDecimals));
+      const usdBase = getBaseUsdValue(bucket.amountBaseLocked);
+      const usdQuote = getQuoteUsdValue(bucket.amountQuoteLocked);
+      const totalUsd = usdBase + usdQuote;
+      const baseRatio = totalUsd > 0 ? usdBase / totalUsd : 0;
 
       return {
         time: index as UTCTimestamp,
         tick: bucket.tick,
         liquidity: bucket.usdValueLocked,
-        amount0Locked: amount0,
-        amount1Locked: amount1,
-        usd0Locked: usd0,
-        usd1Locked: usd1,
-        token0Ratio,
+        amountBaseLocked: amountBase,
+        amountQuoteLocked: amountQuote,
+        usdBaseLocked: usdBase,
+        usdQuoteLocked: usdQuote,
+        baseRatio,
         price: bucket.price,
         isCurrentTick: bucket.isCurrentTick,
       };
@@ -191,14 +191,14 @@
   // Derived: Total amounts for summary display
   const totals = $derived.by(() => {
     if (liquidityBuckets.length === 0) {
-      return { amount0: 0n, amount1: 0n, usd0: 0, usd1: 0, totalUsd: 0 };
+      return { amountBase: 0n, amountQuote: 0n, usdBase: 0, usdQuote: 0, totalUsd: 0 };
     }
     return calculateTotalAmounts(
       liquidityBuckets,
-      token0Decimals,
-      token1Decimals,
-      token0PriceUsd,
-      token1PriceUsd
+      baseDecimals,
+      quoteDecimals,
+      basePriceUsd,
+      quotePriceUsd
     );
   });
 
@@ -426,7 +426,7 @@
 
   // Format price for display
   function formatPriceDisplay(tick: number): string {
-    const price = tickToPrice(tick, token0Decimals, token1Decimals);
+    const price = tickToPrice(tick, baseDecimals, quoteDecimals);
     return formatSigFig(price, 4, { subscriptZeros: true });
   }
 </script>
@@ -439,10 +439,10 @@
   <!-- Price overlay showing dual price ratios (updates on hover) -->
   <div class="price-overlay">
     <div class="price-ratio">
-      <span class="price-ratio-value">1 {token0Symbol} = {formatPriceRatio(displayPrice)} {token1Symbol}</span>
+      <span class="price-ratio-value">1 {baseSymbol} = {formatPriceRatio(displayPrice)} {quoteSymbol}</span>
     </div>
     <div class="price-ratio">
-      <span class="price-ratio-value">1 {token1Symbol} = {formatPriceRatio(displayPrice > 0 ? 1 / displayPrice : 0)} {token0Symbol}</span>
+      <span class="price-ratio-value">1 {quoteSymbol} = {formatPriceRatio(displayPrice > 0 ? 1 / displayPrice : 0)} {baseSymbol}</span>
     </div>
     {#if isShowingActiveTick && activeTickBucket}
       <span class="active-range-label">Active Range</span>
@@ -466,35 +466,35 @@
 
   <!-- Tooltip (follows cursor) -->
   {#if showTooltip && hoveredBucket}
-    {@const token0Usd = getToken0UsdValue(hoveredBucket.amount0Locked)}
-    {@const token1Usd = getToken1UsdValue(hoveredBucket.amount1Locked)}
-    {@const totalUsd = token0Usd + token1Usd}
-    {@const token0Pct = totalUsd > 0 ? (token0Usd / totalUsd) * 100 : 0}
-    {@const token1Pct = totalUsd > 0 ? (token1Usd / totalUsd) * 100 : 0}
-    {@const hasToken0 = hoveredBucket.amount0Locked > 0n}
-    {@const hasToken1 = hoveredBucket.amount1Locked > 0n}
+    {@const baseUsd = getBaseUsdValue(hoveredBucket.amountBaseLocked)}
+    {@const quoteUsd = getQuoteUsdValue(hoveredBucket.amountQuoteLocked)}
+    {@const totalUsd = baseUsd + quoteUsd}
+    {@const basePct = totalUsd > 0 ? (baseUsd / totalUsd) * 100 : 0}
+    {@const quotePct = totalUsd > 0 ? (quoteUsd / totalUsd) * 100 : 0}
+    {@const hasBase = hoveredBucket.amountBaseLocked > 0n}
+    {@const hasQuote = hoveredBucket.amountQuoteLocked > 0n}
     <div class="tooltip" style="left: {mouseX + 16}px; top: {mouseY - 16}px;">
-      {#if hasToken0}
+      {#if hasBase}
         <div class="tooltip-row">
           <div class="tooltip-token">
-            <Logo src={token0Logo} alt={token0Symbol} size="xxs" circle={true} />
-            <span class="tooltip-symbol">{token0Symbol}</span>
+            <Logo src={baseLogo} alt={baseSymbol} size="xxs" circle={true} />
+            <span class="tooltip-symbol">{baseSymbol}</span>
           </div>
           <div class="tooltip-values">
-            <span class="tooltip-usd">{formatCompactUSD(token0Usd)}</span>
-            <span class="tooltip-pct">{token0Pct.toFixed(0)}%</span>
+            <span class="tooltip-usd">{formatCompactUSD(baseUsd)}</span>
+            <span class="tooltip-pct">{basePct.toFixed(0)}%</span>
           </div>
         </div>
       {/if}
-      {#if hasToken1}
+      {#if hasQuote}
         <div class="tooltip-row">
           <div class="tooltip-token">
-            <Logo src={token1Logo} alt={token1Symbol} size="xxs" circle={true} />
-            <span class="tooltip-symbol">{token1Symbol}</span>
+            <Logo src={quoteLogo} alt={quoteSymbol} size="xxs" circle={true} />
+            <span class="tooltip-symbol">{quoteSymbol}</span>
           </div>
           <div class="tooltip-values">
-            <span class="tooltip-usd">{formatCompactUSD(token1Usd)}</span>
-            <span class="tooltip-pct">{token1Pct.toFixed(0)}%</span>
+            <span class="tooltip-usd">{formatCompactUSD(quoteUsd)}</span>
+            <span class="tooltip-pct">{quotePct.toFixed(0)}%</span>
           </div>
         </div>
       {/if}

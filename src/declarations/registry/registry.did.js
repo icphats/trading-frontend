@@ -51,10 +51,12 @@ export const idlFactory = ({ IDL }) => {
     'set_icp_ledger_creation_fee' : IDL.Opt(IDL.Nat),
     'set_oracle_principal' : IDL.Opt(IDL.Principal),
     'set_cycles_threshold' : IDL.Opt(IDL.Nat),
+    'set_ledger_creation_cycles' : IDL.Opt(IDL.Nat),
     'reset_topup_backoff' : IDL.Opt(IDL.Bool),
     'set_indexer_principal' : IDL.Opt(IDL.Principal),
     'set_icp_spot_creation_fee' : IDL.Opt(IDL.Nat),
     'add_admins' : IDL.Opt(IDL.Vec(IDL.Principal)),
+    'set_spot_creation_cycles' : IDL.Opt(IDL.Nat),
   });
   const WasmUploadResult = IDL.Variant({ 'ok' : IDL.Bool, 'err' : ApiError });
   const ApiResult_1 = IDL.Variant({ 'ok' : IDL.Nat, 'err' : ApiError });
@@ -113,14 +115,14 @@ export const idlFactory = ({ IDL }) => {
   });
   const SpotMarketMetadata = IDL.Record({
     'internal' : InternalCanisterMetadata,
-    'token0_ledger' : IDL.Principal,
+    'quote_name' : IDL.Text,
     'canister_id' : IDL.Principal,
-    'token1_ledger' : IDL.Principal,
-    'token0_name' : IDL.Text,
-    'token0_symbol' : IDL.Text,
+    'quote_ledger' : IDL.Principal,
+    'base_name' : IDL.Text,
+    'base_ledger' : IDL.Principal,
     'registry_principal' : IDL.Principal,
-    'token1_symbol' : IDL.Text,
-    'token1_name' : IDL.Text,
+    'quote_symbol' : IDL.Text,
+    'base_symbol' : IDL.Text,
   });
   const SpotMarketResult = IDL.Variant({
     'ok' : SpotMarketMetadata,
@@ -131,12 +133,15 @@ export const idlFactory = ({ IDL }) => {
     'icp_spot_creation_fee' : IDL.Nat,
     'icp_ledger_creation_fee' : IDL.Nat,
     'treasury_allowance_set' : IDL.Bool,
+    'timer_running' : IDL.Bool,
+    'spot_creation_cycles' : IDL.Nat,
     'oracle_principal' : IDL.Principal,
     'cycles_threshold' : IDL.Nat,
     'icp_transfer_fee' : IDL.Nat,
     'treasury_principal' : IDL.Opt(IDL.Principal),
     'indexer_principal' : IDL.Opt(IDL.Principal),
     'this_principal' : IDL.Principal,
+    'ledger_creation_cycles' : IDL.Nat,
     'admin_principals' : IDL.Vec(IDL.Principal),
   });
   const CreationFees = IDL.Record({ 'spot' : IDL.Nat, 'ledger' : IDL.Nat });

@@ -3,15 +3,15 @@
   import type { LogoSize } from "$lib/types/components";
 
   interface Props {
-    token0Logo?: string;
-    token1Logo?: string;
-    token0Symbol: string;
-    token1Symbol: string;
+    baseLogo?: string;
+    quoteLogo?: string;
+    baseSymbol: string;
+    quoteSymbol: string;
     size?: LogoSize;
     ring?: boolean;
   }
 
-  let { token0Logo, token1Logo, token0Symbol, token1Symbol, size = "xs", ring = false }: Props = $props();
+  let { baseLogo, quoteLogo, baseSymbol, quoteSymbol, size = "xs", ring = false }: Props = $props();
 
   // Size mapping for proper overlap
   const sizeConfig = {
@@ -37,8 +37,8 @@
     style="left: 0;"
   >
     <Logo
-      src={token0Logo}
-      alt={token0Symbol}
+      src={baseLogo}
+      alt={baseSymbol}
       {size}
       {ring}
     />
@@ -50,8 +50,8 @@
     style="left: {config.offset}px;"
   >
     <Logo
-      src={token1Logo}
-      alt={token1Symbol}
+      src={quoteLogo}
+      alt={quoteSymbol}
       {size}
       {ring}
     />

@@ -17,20 +17,20 @@
     overrideTokenSymbol?: string;
     overrideTokenDecimals?: number;
     /** Which token's amounts are displayed (for USD calculation) */
-    selectedTokenType?: 'token0' | 'token1';
+    selectedTokenType?: 'base' | 'quote';
   }
 
-  let { book, market, overrideTokenLogo, overrideTokenSymbol, overrideTokenDecimals, selectedTokenType = 'token0' }: Props = $props();
+  let { book, market, overrideTokenLogo, overrideTokenSymbol, overrideTokenDecimals, selectedTokenType = 'base' }: Props = $props();
 
-  // Derive token0 and token1 for spot markets
-  let token0 = $derived.by(() => {
+  // Derive base and quote for spot markets
+  let base = $derived.by(() => {
     if (market.tokens?.[0]) {
       return entityStore.getToken(market.tokens[0].toString());
     }
     return undefined;
   });
 
-  let token1 = $derived.by(() => {
+  let quote = $derived.by(() => {
     if (market.tokens?.[1]) {
       return entityStore.getToken(market.tokens[1].toString());
     }
@@ -44,7 +44,7 @@
       return overrideTokenLogo;
     }
     // Use canonical logo from token (data URL or file path)
-    return token0?.logo ?? undefined;
+    return base?.logo ?? undefined;
   });
 
   // Get token symbol for size column header
@@ -53,7 +53,7 @@
     if (overrideTokenSymbol !== undefined) {
       return overrideTokenSymbol;
     }
-    return token0?.displaySymbol ?? "";
+    return base?.displaySymbol ?? "";
   });
 
   // Get token decimals for proper formatting
@@ -62,7 +62,7 @@
     if (overrideTokenDecimals !== undefined) {
       return overrideTokenDecimals;
     }
-    return token0?.decimals ?? 8;
+    return base?.decimals ?? 8;
   });
 
   // Get token price for USD conversion using midpoint and quote token

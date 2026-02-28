@@ -18,31 +18,31 @@
 
   const LEVELS = 8;
 
-  // Display in token1 (quote token) — matches SpotOrderBook default
-  // Derive token1 for decimals (same pattern as SpotOrderBook)
-  let token1 = $derived.by(() => {
+  // Display in quote token — matches SpotOrderBook default
+  // Derive quote token for decimals (same pattern as SpotOrderBook)
+  let quoteToken = $derived.by(() => {
     if (market?.tokens?.[1]) {
       return entityStore.getToken(market.tokens[1].toString());
     }
     return undefined;
   });
 
-  let tokenDecimals = $derived(token1?.decimals ?? 8);
+  let tokenDecimals = $derived(quoteToken?.decimals ?? 8);
   let baseDecimals = $derived(market?.baseTokenDecimals ?? 8);
   let quoteDecimals = $derived(market?.quoteTokenDecimals ?? 8);
 
-  // Remap row amounts to token1 (quote) — same as SpotOrderBook.getAmount(row, "token1")
+  // Remap row amounts to quote — same as SpotOrderBook.getAmount(row, "quote")
   // This ensures both bids and asks use the same unit for amounts, depth, and USD calc
   let remappedBook = $derived.by(() => {
     if (!book) return null;
     return {
       long: book.long.slice(0, LEVELS).map((row) => ({
         ...row,
-        amount: row.book_token1_amount ?? row.amount,
+        amount: row.book_quote_amount ?? row.amount,
       })),
       short: book.short.slice(0, LEVELS).map((row) => ({
         ...row,
-        amount: row.book_token1_amount ?? row.amount,
+        amount: row.book_quote_amount ?? row.amount,
       })),
       referencePriceE12: book.referencePriceE12,
     };
@@ -84,7 +84,7 @@
     return Number(remappedBook.referencePriceE12) / 1e12;
   });
 
-  // Get token1 (quote) USD price — matches SpotOrderBook's selectedTokenType="token1"
+  // Get quote USD price — matches SpotOrderBook's selectedTokenType="quote"
   let tokenUsdPrice = $derived.by(() => {
     // Read reactive ICP price FIRST (establishes dependency)
     const icpPrice = pricingService.icpUsdPrice;
@@ -92,7 +92,7 @@
     if (!midpoint || midpoint === 0 || !market) return 0n;
 
     const usdPrice = getOrderBookTokenUsdPrice(
-      'token1',
+      'quote',
       midpoint,
       market.activeQuoteToken,
       icpPrice

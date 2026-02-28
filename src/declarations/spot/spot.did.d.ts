@@ -185,17 +185,17 @@ export type ClaimTokenId = { 'base' : null } |
 export type CloseAllPositionsResult = {
     'ok' : {
       'closed' : number,
-      'amount0' : bigint,
-      'amount1' : bigint,
+      'amount_quote' : bigint,
+      'amount_base' : bigint,
       'versions' : PollVersions,
     }
   } |
   { 'err' : ApiError };
 export type CollectFeesResult = {
     'ok' : {
-      'collected_amt0' : bigint,
-      'collected_amt1' : bigint,
+      'collected_amt_base' : bigint,
       'versions' : PollVersions,
+      'collected_amt_quote' : bigint,
     }
   } |
   { 'err' : ApiError };
@@ -225,7 +225,11 @@ export type CreateTriggersResult = {
   } |
   { 'err' : ApiError };
 export type DecreaseLiquidityResult = {
-    'ok' : { 'amount0' : bigint, 'amount1' : bigint, 'versions' : PollVersions }
+    'ok' : {
+      'amount_quote' : bigint,
+      'amount_base' : bigint,
+      'versions' : PollVersions,
+    }
   } |
   { 'err' : ApiError };
 export type DepositResult = {
@@ -279,15 +283,17 @@ export interface FrozenControl {
   'pool_protocol_fee_pips' : bigint,
   'maker_fee_pips' : number,
   'system_state' : SystemState,
+  'min_pool_quote_liquidity_e6' : bigint,
+  'base' : { 'fee' : bigint, 'decimals' : number, 'ledger' : Principal },
   'instruction_budget' : bigint,
+  'quote' : { 'fee' : bigint, 'decimals' : number, 'ledger' : Principal },
   'timer_running' : boolean,
+  'max_route_pool_inputs' : bigint,
   'taker_fee_pips' : number,
   'market_initialized' : boolean,
   'oracle_principal' : Principal,
   'cycles_threshold' : bigint,
   'max_positions_per_user' : bigint,
-  'token0' : { 'fee' : bigint, 'decimals' : number, 'ledger' : Principal },
-  'token1' : { 'fee' : bigint, 'decimals' : number, 'ledger' : Principal },
   'treasury_principal' : [] | [Principal],
   'maker_rebate_pips' : number,
   'users' : bigint,
@@ -297,6 +303,7 @@ export interface FrozenControl {
   'registry_principal' : Principal,
   'positions' : bigint,
   'this_principal' : Principal,
+  'min_usd_value' : bigint,
   'orders_live' : bigint,
   'max_orders_per_user' : bigint,
   'admin_principals' : Array<Principal>,
@@ -323,9 +330,9 @@ export interface HydrateResponse {
 }
 export type IncreaseLiquidityResult = {
     'ok' : {
+      'actual_amt_quote' : bigint,
+      'actual_amt_base' : bigint,
       'liquidity_delta' : bigint,
-      'actual_amt0' : bigint,
-      'actual_amt1' : bigint,
       'versions' : PollVersions,
     }
   } |
@@ -366,16 +373,12 @@ export interface IndexerTokenData {
   'volume_7d_usd_e6' : bigint,
 }
 export interface InitArgs {
-  'maker_fee_pips' : [] | [number],
-  'taker_fee_pips' : [] | [number],
+  'base' : TokenMetadata,
+  'quote' : TokenMetadata,
   'oracle_principal' : Principal,
-  'token0' : TokenMetadata,
-  'token1' : TokenMetadata,
   'treasury_principal' : [] | [Principal],
-  'maker_rebate_pips' : [] | [number],
   'indexer_principal' : Principal,
   'registry_principal' : Principal,
-  'admin_principals' : Array<Principal>,
 }
 export interface KillAllResult {
   'orders' : bigint,
@@ -422,8 +425,8 @@ export interface LiquidityLockSummary {
 }
 export type LiquidityResult = {
     'ok' : {
-      'actual_amt0' : bigint,
-      'actual_amt1' : bigint,
+      'actual_amt_quote' : bigint,
+      'actual_amt_base' : bigint,
       'versions' : PollVersions,
       'position_id' : PositionId,
     }
@@ -637,14 +640,14 @@ export interface PoolSnapshotsResponse {
 export interface PoolState {
   'sqrt_price_x96' : SqrtPriceX96,
   'tvl_usd_e6' : bigint,
+  'base_reserve' : bigint,
   'tick' : Tick,
   'liquidity' : bigint,
   'volume_24h_usd_e6' : bigint,
   'fees_24h_usd_e6' : bigint,
-  'token1_reserve' : bigint,
   'apr_bps' : bigint,
-  'token0_reserve' : bigint,
   'fee_pips' : number,
+  'quote_reserve' : bigint,
   'initialized_ticks' : Array<TickLiquidityData>,
   'tick_spacing' : bigint,
 }
@@ -659,8 +662,8 @@ export interface PositionDebugEntry {
   'liquidity' : bigint,
   'fee_pips' : number,
   'tick_lower' : bigint,
-  'tokens_owed_0' : bigint,
-  'tokens_owed_1' : bigint,
+  'tokens_owed_base' : bigint,
+  'tokens_owed_quote' : bigint,
   'tick_upper' : bigint,
 }
 export type PositionId = bigint;
@@ -678,12 +681,12 @@ export interface PositionView {
   'uncollected_fees_base' : bigint,
   'owner' : Principal,
   'uncollected_fees_quote' : bigint,
-  'fee_growth_inside_1_last_x128' : bigint,
   'liquidity' : Liquidity,
+  'fee_growth_inside_quote_last_x128' : bigint,
+  'fee_growth_inside_base_last_x128' : bigint,
   'fee_pips' : number,
   'locked_until' : [] | [bigint],
   'tick_lower' : Tick,
-  'fee_growth_inside_0_last_x128' : bigint,
   'tick_upper' : Tick,
   'position_id' : PositionId,
 }
@@ -726,11 +729,11 @@ export interface QuoteResult {
 }
 export interface RoutingPoolState {
   'sqrt_price_x96' : SqrtPriceX96,
+  'base_reserve' : bigint,
   'tick' : Tick,
   'liquidity' : bigint,
-  'token1_reserve' : bigint,
-  'token0_reserve' : bigint,
   'fee_pips' : number,
+  'quote_reserve' : bigint,
   'initialized_ticks' : Array<TickLiquidityData>,
   'tick_spacing' : bigint,
 }
@@ -739,10 +742,10 @@ export interface RoutingState {
   'reference_tick' : [] | [Tick],
   'system_state' : SystemState,
   'last_book_tick' : [] | [Tick],
+  'base' : RoutingTokenInfo,
   'book' : BookLevelsResponse,
+  'quote' : RoutingTokenInfo,
   'taker_fee_pips' : number,
-  'token0' : RoutingTokenInfo,
-  'token1' : RoutingTokenInfo,
   'last_trade_sqrt_price_x96' : [] | [SqrtPriceX96],
   'pools' : Array<RoutingPoolState>,
   'last_trade_tick' : [] | [Tick],
@@ -1151,6 +1154,7 @@ export type UpdateOrderResult = {
   { 'err' : ApiError };
 export interface UpgradeArgs {
   'rate_limit_cleanup_tier2_ms' : [] | [bigint],
+  'set_min_usd_value' : [] | [bigint],
   'remove_admins' : [] | [Array<Principal>],
   'set_treasury_principal' : [] | [Principal],
   'rate_limit_cleanup_tier01_ms' : [] | [bigint],
@@ -1166,9 +1170,11 @@ export interface UpgradeArgs {
   'max_triggers_per_user' : [] | [bigint],
   'add_admins' : [] | [Array<Principal>],
   'set_pool_protocol_fee_pips' : [] | [bigint],
+  'set_min_pool_quote_liquidity_e6' : [] | [bigint],
   'rate_limit_soft_block_threshold' : [] | [bigint],
   'rate_limit_hard_block_threshold' : [] | [bigint],
   'rate_limit_degrade_delta' : [] | [bigint],
+  'set_max_route_pool_inputs' : [] | [bigint],
   'set_instruction_budget' : [] | [bigint],
   'set_taker_fee_pips' : [] | [number],
   'max_orders_per_user' : [] | [bigint],

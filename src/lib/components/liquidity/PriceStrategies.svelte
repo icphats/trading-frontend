@@ -28,9 +28,9 @@
     /** Current tick */
     currentTick: number;
     /** Token0 decimals */
-    token0Decimals?: number;
+    baseDecimals?: number;
     /** Token1 decimals */
-    token1Decimals?: number;
+    quoteDecimals?: number;
     /** Tick spacing */
     tickSpacing?: number;
     /** Currently selected min price */
@@ -48,8 +48,8 @@
   let {
     currentPrice,
     currentTick,
-    token0Decimals = 8,
-    token1Decimals = 8,
+    baseDecimals = 8,
+    quoteDecimals = 8,
     tickSpacing = 60,
     minPrice,
     maxPrice,
@@ -101,8 +101,8 @@
         const tickLower = currentTick - (tickSpacing * 3);
         const tickUpper = currentTick + (tickSpacing * 3);
         return {
-          minPrice: tickToPrice(tickLower, token0Decimals, token1Decimals),
-          maxPrice: tickToPrice(tickUpper, token0Decimals, token1Decimals)
+          minPrice: tickToPrice(tickLower, baseDecimals, quoteDecimals),
+          maxPrice: tickToPrice(tickUpper, baseDecimals, quoteDecimals)
         };
       }
       case PriceStrategy.WIDE:
@@ -115,22 +115,22 @@
         const tickBelowCurrent = currentTick - tickSpacing;
         return {
           minPrice: currentPrice * 0.5,
-          maxPrice: tickToPrice(tickBelowCurrent, token0Decimals, token1Decimals)
+          maxPrice: tickToPrice(tickBelowCurrent, baseDecimals, quoteDecimals)
         };
       }
       case PriceStrategy.ONE_SIDED_UPPER: {
         // From just above current to +100%
         const tickAboveCurrent = currentTick + tickSpacing;
         return {
-          minPrice: tickToPrice(tickAboveCurrent, token0Decimals, token1Decimals),
+          minPrice: tickToPrice(tickAboveCurrent, baseDecimals, quoteDecimals),
           maxPrice: currentPrice * 2
         };
       }
       case PriceStrategy.FULL_RANGE: {
         const bounds = getTickBoundsForSpacing(tickSpacing);
         return {
-          minPrice: tickToPrice(bounds.min, token0Decimals, token1Decimals),
-          maxPrice: tickToPrice(bounds.max, token0Decimals, token1Decimals)
+          minPrice: tickToPrice(bounds.min, baseDecimals, quoteDecimals),
+          maxPrice: tickToPrice(bounds.max, baseDecimals, quoteDecimals)
         };
       }
       default:
@@ -162,8 +162,8 @@
     if (strategy === detectedStrategy) return;
 
     const prices = calculateStrategyPrices(strategy);
-    const tickLower = priceToTick(prices.minPrice, token0Decimals, token1Decimals, tickSpacing);
-    const tickUpper = priceToTick(prices.maxPrice, token0Decimals, token1Decimals, tickSpacing);
+    const tickLower = priceToTick(prices.minPrice, baseDecimals, quoteDecimals, tickSpacing);
+    const tickUpper = priceToTick(prices.maxPrice, baseDecimals, quoteDecimals, tickSpacing);
 
     onStrategySelect(tickLower, tickUpper, strategy);
   }

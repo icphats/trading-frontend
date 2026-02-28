@@ -18,19 +18,19 @@
   let selectedToken = $state<ClaimTokenId>({ quote: null });
 
   // Get token metadata from entityStore
-  let token0 = $derived.by(() =>
+  let base = $derived.by(() =>
     spot?.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : null
   );
-  let token1 = $derived.by(() =>
+  let quote = $derived.by(() =>
     spot?.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : null
   );
 
   // Format available balances
   let formattedAvailableBase = $derived.by(() =>
-    token0 && spot ? bigIntToString(spot.availableBase, token0.decimals) : "0"
+    base && spot ? bigIntToString(spot.availableBase, base.decimals) : "0"
   );
   let formattedAvailableQuote = $derived.by(() =>
-    token1 && spot ? bigIntToString(spot.availableQuote, token1.decimals) : "0"
+    quote && spot ? bigIntToString(spot.availableQuote, quote.decimals) : "0"
   );
 
   // Calculate USD values
@@ -50,14 +50,14 @@
   }
 
   let baseUsdValue = $derived.by(() => {
-    if (!spot || !token0) return "";
-    const value = calculateUsdValue(spot.availableBase, token0.priceUsd, token0.decimals);
+    if (!spot || !base) return "";
+    const value = calculateUsdValue(spot.availableBase, base.priceUsd, base.decimals);
     return formatUsd(value);
   });
 
   let quoteUsdValue = $derived.by(() => {
-    if (!spot || !token1) return "";
-    const value = calculateUsdValue(spot.availableQuote, token1.priceUsd, token1.decimals);
+    if (!spot || !quote) return "";
+    const value = calculateUsdValue(spot.availableQuote, quote.priceUsd, quote.decimals);
     return formatUsd(value);
   });
 
@@ -82,17 +82,17 @@
       <!-- Balance Rows -->
       <div class="balance-rows">
         <TokenBalanceRow
-          symbol={token0?.displaySymbol ?? 'BASE'}
+          symbol={base?.displaySymbol ?? 'BASE'}
           balance={formattedAvailableBase}
           usdValue={baseUsdValue || undefined}
-          logo={token0?.logo ?? undefined}
+          logo={base?.logo ?? undefined}
           onclick={() => handleRowClick("base")}
         />
         <TokenBalanceRow
-          symbol={token1?.displaySymbol ?? 'QUOTE'}
+          symbol={quote?.displaySymbol ?? 'QUOTE'}
           balance={formattedAvailableQuote}
           usdValue={quoteUsdValue || undefined}
-          logo={token1?.logo ?? undefined}
+          logo={quote?.logo ?? undefined}
           onclick={() => handleRowClick("quote")}
         />
       </div>

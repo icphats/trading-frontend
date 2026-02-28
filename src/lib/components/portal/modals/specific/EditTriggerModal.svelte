@@ -57,16 +57,16 @@
   let tickSpacing = $derived(spot.tickSpacing);
 
   // Token data from entityStore
-  let token0 = $derived<NormalizedToken | undefined>(
+  let base = $derived<NormalizedToken | undefined>(
     spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : undefined
   );
-  let token1 = $derived<NormalizedToken | undefined>(
+  let quote = $derived<NormalizedToken | undefined>(
     spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : undefined
   );
 
   // Trading balances (deposited in spot canister, available for orders)
-  let token0Balance = $derived<bigint>(spot.availableBase);
-  let token1Balance = $derived<bigint>(spot.availableQuote);
+  let baseBalance = $derived<bigint>(spot.availableBase);
+  let quoteBalance = $derived<bigint>(spot.availableQuote);
 
   // ============================================
   // Toggle Options
@@ -94,8 +94,8 @@
 
       // Set amount from trigger (input_amount: quote for BUY, base for SELL)
       const inputDecimals = 'buy' in trigger.side
-        ? (token1?.decimals ?? 8)
-        : (token0?.decimals ?? 8);
+        ? (quote?.decimals ?? 8)
+        : (base?.decimals ?? 8);
       localAmount = bigIntToString(trigger.input_amount, inputDecimals);
     }
   });
@@ -120,18 +120,18 @@
   const originalTriggerTypeLabel = $derived(trigger ? getTriggerLabel(trigger.side, trigger.trigger_type) : '');
 
   const originalTriggerSummary = $derived.by(() => {
-    if (!trigger || !token0 || !token1) return '';
+    if (!trigger || !base || !quote) return '';
     const originalPrice = formatSigFig(tickToPrice(trigger.trigger_tick, spot.baseTokenDecimals, spot.quoteTokenDecimals));
     // input_amount: quote for BUY, base for SELL
-    const inputToken = 'buy' in trigger.side ? token1 : token0;
+    const inputToken = 'buy' in trigger.side ? quote : base;
     const originalAmount = bigIntToString(trigger.input_amount, inputToken.decimals);
     return `${originalTriggerTypeLabel} ${originalAmount} ${inputToken.displaySymbol} @ $${originalPrice}`;
   });
 
   const newTriggerSummary = $derived.by(() => {
-    if (!token0 || !token1 || triggerTick === null || !localAmount) return '';
+    if (!base || !quote || triggerTick === null || !localAmount) return '';
     const newPrice = formatSigFig(tickToPrice(triggerTick, spot.baseTokenDecimals, spot.quoteTokenDecimals));
-    const inputSymbol = side === 'Buy' ? token1.displaySymbol : token0.displaySymbol;
+    const inputSymbol = side === 'Buy' ? quote.displaySymbol : base.displaySymbol;
     const orderType = triggerOrderType === 'market' ? 'Market' : 'Limit';
     return `${side} ${localAmount} ${inputSymbol} @ $${newPrice} (${orderType})`;
   });
@@ -168,7 +168,7 @@
   }
 
   async function handleSubmit() {
-    if (!trigger || !token0 || !token1) return;
+    if (!trigger || !base || !quote) return;
 
     // Validate inputs
     if (!localAmount || parseFloat(localAmount) <= 0) {
@@ -197,10 +197,10 @@
     }
 
     // Get input amount (side is immutable — read from trigger)
-    const inputDecimals = side === 'Buy' ? token1.decimals : token0.decimals;
+    const inputDecimals = side === 'Buy' ? quote.decimals : base.decimals;
     const amountBigInt = stringToBigInt(localAmount, inputDecimals);
-    const baseSymbol = token0.displaySymbol;
-    const baseLogo = token0.logo ?? undefined;
+    const baseSymbol = base.displaySymbol;
+    const baseLogo = base.logo ?? undefined;
 
     // Close immediately — toast handles loading/success/error feedback
     open = false;
@@ -254,14 +254,14 @@
     parseFloat(localAmount) > 0 &&
     triggerTick !== null &&
     limitTick !== null &&
-    token0 &&
-    token1
+    base &&
+    quote
   );
 </script>
 
 <Modal bind:open onClose={handleClose} title="Edit Trigger" size="md" compactHeader={true}>
   {#snippet children()}
-    {#if trigger && token0 && token1}
+    {#if trigger && base && quote}
       <div class="modal-body">
         <!-- Side Display (read-only — backend doesn't support side changes) -->
         <div class="side-display">
@@ -276,8 +276,8 @@
             label="Trigger Price"
             tick={triggerTick}
             currentPrice={spotPrice}
-            token0Decimals={token0.decimals}
-            token1Decimals={token1.decimals}
+            baseDecimals={base.decimals}
+            quoteDecimals={quote.decimals}
             {tickSpacing}
 
             onTickChange={handleTriggerTickUpdate}
@@ -304,8 +304,8 @@
               label={triggerOrderType === "limit" ? "Limit Price" : "Max Slippage"}
               tick={limitTick}
               currentPrice={triggerPrice ?? spotPrice}
-              token0Decimals={token0.decimals}
-              token1Decimals={token1.decimals}
+              baseDecimals={base.decimals}
+              quoteDecimals={quote.decimals}
               {tickSpacing}
   
               onTickChange={handleLimitTickUpdate}
@@ -320,9 +320,9 @@
         <!-- Amount Input -->
         <div class="modal-form-section">
           <TokenAmountInput
-            label={`Amount (${side === "Buy" ? token1.displaySymbol : token0.displaySymbol})`}
-            token={side === "Buy" ? token1 : token0}
-            balance={side === "Buy" ? token1Balance : token0Balance}
+            label={`Amount (${side === "Buy" ? quote.displaySymbol : base.displaySymbol})`}
+            token={side === "Buy" ? quote : base}
+            balance={side === "Buy" ? quoteBalance : baseBalance}
             value={localAmount}
             onValueChange={handleAmountChange}
 

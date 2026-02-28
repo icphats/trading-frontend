@@ -11,16 +11,16 @@ export interface LiquidityBarData extends CustomData {
   tick: number;
   /** Liquidity amount - determines bar width (horizontal extent) */
   liquidity: number;
-  /** Amount of token0 locked at this tick (in human-readable units) */
-  amount0Locked: number;
-  /** Amount of token1 locked at this tick (in human-readable units) */
-  amount1Locked: number;
-  /** USD value of token0 locked */
-  usd0Locked: number;
-  /** USD value of token1 locked */
-  usd1Locked: number;
-  /** Ratio of token0 USD value to total USD value (0-1), used for stacked bar rendering */
-  token0Ratio: number;
+  /** Amount of base token locked at this tick (in human-readable units) */
+  amountBaseLocked: number;
+  /** Amount of quote token locked at this tick (in human-readable units) */
+  amountQuoteLocked: number;
+  /** USD value of base token locked */
+  usdBaseLocked: number;
+  /** USD value of quote token locked */
+  usdQuoteLocked: number;
+  /** Ratio of base token USD value to total USD value (0-1), used for stacked bar rendering */
+  baseRatio: number;
   /** Price at this tick - used for tooltip display */
   price: number;
   /** Whether this is the current active tick */
@@ -31,9 +31,9 @@ export interface LiquidityBarData extends CustomData {
  * Configuration options for the liquidity bar series
  */
 export interface LiquidityBarSeriesOptions extends CustomSeriesOptions {
-  /** Color for liquidity above current tick (token0/bearish side) */
+  /** Color for liquidity above current tick (base/bearish side) */
   tokenAboveColor: string;
-  /** Color for liquidity below current tick (token1/bullish side) */
+  /** Color for liquidity below current tick (quote/bullish side) */
   tokenBelowColor: string;
   /** Color for current tick highlight */
   currentTickColor: string;

@@ -14,8 +14,8 @@ import {
     priceToTick,
     sqrtPriceX96ToPrice,
     tickToSqrtPriceX96,
-    getLiquidityForAmount0,
-    getLiquidityForAmount1,
+    getLiquidityForAmountBase,
+    getLiquidityForAmountQuote,
     getAmountsForLiquidity
 } from './math';
 
@@ -267,17 +267,17 @@ export function suggestInitialPrice(minPrice: number, maxPrice: number): number 
 // ============================================================================
 
 /**
- * Calculate amount1 needed given amount0 and price range
- * Useful for reactive UI updates when user edits amount0
+ * Calculate amountQuote needed given amountBase and price range
+ * Useful for reactive UI updates when user edits amountBase
  *
- * @param amount0 - Amount of token0 (as bigint)
+ * @param amountBase - Amount of base token (as bigint)
  * @param currentTick - Current pool tick
  * @param tickLower - Lower tick bound
  * @param tickUpper - Upper tick bound
- * @returns Required amount1 (as bigint)
+ * @returns Required amountQuote (as bigint)
  */
-export function calculateAmount1FromAmount0(
-    amount0: bigint,
+export function calculateAmountQuoteFromAmountBase(
+    amountBase: bigint,
     currentTick: Tick,
     tickLower: Tick,
     tickUpper: Tick
@@ -289,38 +289,38 @@ export function calculateAmount1FromAmount0(
     let liquidity: Liquidity;
 
     if (currentTick < tickLower) {
-        // Price is below range, only token0 needed
-        liquidity = getLiquidityForAmount0(sqrtPriceLower, sqrtPriceUpper, amount0);
+        // Price is below range, only base token needed
+        liquidity = getLiquidityForAmountBase(sqrtPriceLower, sqrtPriceUpper, amountBase);
     } else if (currentTick >= tickUpper) {
-        // Price is above range, only token1 needed
+        // Price is above range, only quote token needed
         return 0n;
     } else {
-        // Price is in range - calculate liquidity from amount0 in upper portion
-        liquidity = getLiquidityForAmount0(sqrtPriceCurrent, sqrtPriceUpper, amount0);
+        // Price is in range - calculate liquidity from amountBase in upper portion
+        liquidity = getLiquidityForAmountBase(sqrtPriceCurrent, sqrtPriceUpper, amountBase);
     }
 
-    const [, amount1] = getAmountsForLiquidity(
+    const [, amountQuote] = getAmountsForLiquidity(
         currentTick,
         tickLower,
         tickUpper,
         liquidity
     );
 
-    return amount1;
+    return amountQuote;
 }
 
 /**
- * Calculate amount0 needed given amount1 and price range
- * Useful for reactive UI updates when user edits amount1
+ * Calculate amountBase needed given amountQuote and price range
+ * Useful for reactive UI updates when user edits amountQuote
  *
- * @param amount1 - Amount of token1 (as bigint)
+ * @param amountQuote - Amount of quote token (as bigint)
  * @param currentTick - Current pool tick
  * @param tickLower - Lower tick bound
  * @param tickUpper - Upper tick bound
- * @returns Required amount0 (as bigint)
+ * @returns Required amountBase (as bigint)
  */
-export function calculateAmount0FromAmount1(
-    amount1: bigint,
+export function calculateAmountBaseFromAmountQuote(
+    amountQuote: bigint,
     currentTick: Tick,
     tickLower: Tick,
     tickUpper: Tick
@@ -332,24 +332,24 @@ export function calculateAmount0FromAmount1(
     let liquidity: Liquidity;
 
     if (currentTick < tickLower) {
-        // Price is below range, only token0 needed
+        // Price is below range, only base token needed
         return 0n;
     } else if (currentTick >= tickUpper) {
-        // Price is above range, all liquidity comes from amount1
-        liquidity = getLiquidityForAmount1(sqrtPriceLower, sqrtPriceUpper, amount1);
+        // Price is above range, all liquidity comes from amountQuote
+        liquidity = getLiquidityForAmountQuote(sqrtPriceLower, sqrtPriceUpper, amountQuote);
     } else {
-        // Price is in range - calculate liquidity from amount1 in lower portion
-        liquidity = getLiquidityForAmount1(sqrtPriceLower, sqrtPriceCurrent, amount1);
+        // Price is in range - calculate liquidity from amountQuote in lower portion
+        liquidity = getLiquidityForAmountQuote(sqrtPriceLower, sqrtPriceCurrent, amountQuote);
     }
 
-    const [amount0] = getAmountsForLiquidity(
+    const [amountBase] = getAmountsForLiquidity(
         currentTick,
         tickLower,
         tickUpper,
         liquidity
     );
 
-    return amount0;
+    return amountBase;
 }
 
 // ============================================================================

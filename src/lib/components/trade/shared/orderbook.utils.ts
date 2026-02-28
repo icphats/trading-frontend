@@ -11,8 +11,8 @@ import type {
 } from "$lib/actors/services/spot.service";
 import {
   tickToPrice,
-  convertToken0ToToken1,
-  convertToken1ToToken0,
+  convertBaseToQuote,
+  convertQuoteToBase,
   sqrtPriceX96ToTick,
   sqrtPriceX96ToPriceE12,
 } from "$lib/domain/markets/utils";
@@ -29,9 +29,9 @@ export interface OrderBookRow {
   /** Total amount at this level (in native token for that side) */
   amount: bigint;
   /** Token0 equivalent amount */
-  token0Amount: bigint;
+  baseAmount: bigint;
   /** Token1 equivalent amount */
-  token1Amount: bigint;
+  quoteAmount: bigint;
   /** Number of orders aggregated at this level */
   orderCount: bigint;
 }
@@ -112,33 +112,33 @@ export function transformMarketDepth(
   const referencePriceE12 = sqrtPriceX96ToPriceE12(depth.last_trade_sqrt_price_x96, baseDecimals, quoteDecimals);
 
   // Transform book bids (buy orders) - backend provides aggregated levels
-  // Bids: users are buying token0, paying with token1 (quote)
-  // Amount is in quote token (token1) - what buyer is offering
+  // Bids: users are buying base, paying with quote
+  // Amount is in quote token - what buyer is offering
   const bookBids: OrderBookRow[] = depth.book_bids.map((level) => {
     const priceE12 = BigInt(Math.floor(tickToPrice(level.tick, baseDecimals, quoteDecimals) * 1e12));
     return {
       priceE12,
       tick: level.tick,
       amount: level.amount,
-      // Convert quote amount to token0 equivalent at reference price
-      token0Amount: convertToken1ToToken0(level.amount, referenceTick),
-      token1Amount: level.amount,
+      // Convert quote amount to base equivalent at reference price
+      baseAmount: convertQuoteToBase(level.amount, referenceTick),
+      quoteAmount: level.amount,
       orderCount: level.order_count,
     };
   });
 
   // Transform book asks (sell orders)
-  // Asks: users are selling token0, receiving token1 (quote)
-  // Amount is in base token (token0) - what seller is offering
+  // Asks: users are selling base, receiving quote
+  // Amount is in base token - what seller is offering
   const bookAsks: OrderBookRow[] = depth.book_asks.map((level) => {
     const priceE12 = BigInt(Math.floor(tickToPrice(level.tick, baseDecimals, quoteDecimals) * 1e12));
     return {
       priceE12,
       tick: level.tick,
       amount: level.amount,
-      token0Amount: level.amount,
-      // Convert token0 amount to quote equivalent at reference price
-      token1Amount: convertToken0ToToken1(level.amount, referenceTick),
+      baseAmount: level.amount,
+      // Convert base amount to quote equivalent at reference price
+      quoteAmount: convertBaseToQuote(level.amount, referenceTick),
       orderCount: level.order_count,
     };
   });
@@ -208,18 +208,18 @@ export interface UnifiedOrderBookRow {
   tick?: number;
   /** Amount/Liquidity (displayed amount - book only now) */
   amount: bigint;
-  /** Total token0 amount */
-  token0_amount?: bigint;
-  /** Total token1 amount */
-  token1_amount?: bigint;
-  /** Book-only token0 amount (limit orders) - same as total now */
-  book_token0_amount?: bigint;
-  /** Book-only token1 amount (limit orders) - same as total now */
-  book_token1_amount?: bigint;
+  /** Total base amount */
+  base_amount?: bigint;
+  /** Total quote amount */
+  quote_amount?: bigint;
+  /** Book-only base amount (limit orders) - same as total now */
+  book_base_amount?: bigint;
+  /** Book-only quote amount (limit orders) - same as total now */
+  book_quote_amount?: bigint;
   /** @deprecated AMM amounts no longer mixed in book response */
-  amm_token0_amount?: bigint;
+  amm_base_amount?: bigint;
   /** @deprecated AMM amounts no longer mixed in book response */
-  amm_token1_amount?: bigint;
+  amm_quote_amount?: bigint;
 }
 
 /**
@@ -261,40 +261,40 @@ export function transformMarketDepthToLegacy(
   const referencePriceE12 = sqrtPriceX96ToPriceE12(depth.last_trade_sqrt_price_x96, baseDecimals, quoteDecimals);
 
   // Transform bids to legacy format
-  // Bids = long (buy side) - amount is in token1 (quote)
+  // Bids = long (buy side) - amount is in quote
   const long: UnifiedOrderBookRow[] = depth.book_bids.map((row) => {
-    const token1Amount = row.amount;
-    const token0Amount = convertToken1ToToken0(token1Amount, referenceTick);
+    const quoteAmount = row.amount;
+    const baseAmount = convertQuoteToBase(quoteAmount, referenceTick);
     return {
       usd_price: BigInt(Math.floor(tickToPrice(row.tick, baseDecimals, quoteDecimals) * 1e12)),
       tick: row.tick,
-      amount: token1Amount,
-      token0_amount: token0Amount,
-      token1_amount: token1Amount,
-      book_token0_amount: token0Amount,
-      book_token1_amount: token1Amount,
+      amount: quoteAmount,
+      base_amount: baseAmount,
+      quote_amount: quoteAmount,
+      book_base_amount: baseAmount,
+      book_quote_amount: quoteAmount,
       // AMM amounts are 0 - they're now in separate pools array
-      amm_token0_amount: 0n,
-      amm_token1_amount: 0n,
+      amm_base_amount: 0n,
+      amm_quote_amount: 0n,
     };
   });
 
   // Transform asks to legacy format
-  // Asks = short (sell side) - amount is in token0 (base)
+  // Asks = short (sell side) - amount is in base
   const short: UnifiedOrderBookRow[] = depth.book_asks.map((row) => {
-    const token0Amount = row.amount;
-    const token1Amount = convertToken0ToToken1(token0Amount, referenceTick);
+    const baseAmount = row.amount;
+    const quoteAmount = convertBaseToQuote(baseAmount, referenceTick);
     return {
       usd_price: BigInt(Math.floor(tickToPrice(row.tick, baseDecimals, quoteDecimals) * 1e12)),
       tick: row.tick,
-      amount: token0Amount,
-      token0_amount: token0Amount,
-      token1_amount: token1Amount,
-      book_token0_amount: token0Amount,
-      book_token1_amount: token1Amount,
+      amount: baseAmount,
+      base_amount: baseAmount,
+      quote_amount: quoteAmount,
+      book_base_amount: baseAmount,
+      book_quote_amount: quoteAmount,
       // AMM amounts are 0 - they're now in separate pools array
-      amm_token0_amount: 0n,
-      amm_token1_amount: 0n,
+      amm_base_amount: 0n,
+      amm_quote_amount: 0n,
     };
   });
 

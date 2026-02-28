@@ -34,16 +34,16 @@
   let tickSpacing = $derived(spot.tickSpacing);
 
   // Token data from entityStore
-  let token0 = $derived<NormalizedToken | undefined>(
+  let base = $derived<NormalizedToken | undefined>(
     spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : undefined
   );
-  let token1 = $derived<NormalizedToken | undefined>(
+  let quote = $derived<NormalizedToken | undefined>(
     spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : undefined
   );
 
   // Trading balances (deposited in spot canister, available for orders)
-  let token0Balance = $derived<bigint>(spot.availableBase);
-  let token1Balance = $derived<bigint>(spot.availableQuote);
+  let baseBalance = $derived<bigint>(spot.availableBase);
+  let quoteBalance = $derived<bigint>(spot.availableQuote);
 
   // Best bid from order book (if available)
   let bestBidTick = $derived<number | undefined>(
@@ -166,7 +166,7 @@
   // ============================================
 
   function handleSubmitClick() {
-    if (!token0 || !token1) return;
+    if (!base || !quote) return;
 
     // Validate inputs
     if (!amount || parseFloat(amount) <= 0) {
@@ -194,10 +194,10 @@
   }
 
   async function executeTriggerOrder() {
-    if (!token0 || !token1) throw new Error("Market not loaded");
+    if (!base || !quote) throw new Error("Market not loaded");
     if (triggerTick === null || limitTick === null) throw new Error("Invalid trigger price");
 
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
     const amountBigInt = stringToBigInt(amount, inputDecimals);
     const sideVariant: Side = side === "Buy" ? { buy: null } : { sell: null };
 
@@ -220,7 +220,7 @@
   }
 
   async function executeTriggerOrderWithToast() {
-    const baseSymbol = token0?.displaySymbol ?? '';
+    const baseSymbol = base?.displaySymbol ?? '';
     isSubmitting = true;
     try {
       await toastState.show({
@@ -236,7 +236,7 @@
           side,
           orderType: 'trigger',
           symbol: baseSymbol,
-          logo: token0?.logo ?? undefined
+          logo: base?.logo ?? undefined
         },
         duration: 3000,
         toastPosition: "bottom-right",
@@ -256,14 +256,14 @@
   });
 
   let confirmationDetail = $derived.by(() => {
-    if (!token0 || !token1) return undefined;
+    if (!base || !quote) return undefined;
     const triggerPriceStr = triggerPrice !== null ? formatSigFig(triggerPrice) : "";
-    const inputToken = side === "Buy" ? token1 : token0;
+    const inputToken = side === "Buy" ? quote : base;
     const directionVerb = triggerDirection === 'above' ? 'rises above' : 'falls below';
     return {
       side,
-      baseSymbol: token0.displaySymbol,
-      baseLogo: token0.logo ?? undefined,
+      baseSymbol: base.displaySymbol,
+      baseLogo: base.logo ?? undefined,
       condition: { text: `When price ${directionVerb} $${triggerPriceStr}`, direction: triggerDirection },
       rows: [
         { label: "Amount", value: amount, logo: inputToken.logo ?? undefined },
@@ -273,7 +273,7 @@
   });
 </script>
 
-{#if !token0 || !token1}
+{#if !base || !quote}
   <div class="p-4">
     <p class="text-muted-foreground text-sm">Loading market data...</p>
   </div>
@@ -298,8 +298,8 @@
         label="Trigger Price"
         tick={triggerTick}
         currentPrice={spotPrice}
-        token0Decimals={token0.decimals}
-        token1Decimals={token1.decimals}
+        baseDecimals={base.decimals}
+        quoteDecimals={quote.decimals}
         {tickSpacing}
         disabled={isSubmitting}
         onTickChange={handleTriggerTickUpdate}
@@ -325,8 +325,8 @@
           label={triggerOrderType === "limit" ? "Limit Price" : "Max Slippage"}
           tick={limitTick}
           currentPrice={triggerPrice ?? spotPrice}
-          token0Decimals={token0.decimals}
-          token1Decimals={token1.decimals}
+          baseDecimals={base.decimals}
+          quoteDecimals={quote.decimals}
           {tickSpacing}
           disabled={isSubmitting}
           onTickChange={handleLimitTickUpdate}
@@ -339,9 +339,9 @@
 
       <!-- Amount Input -->
       <TokenAmountInput
-        label={`Amount (${side === "Buy" ? token1.displaySymbol : token0.displaySymbol})`}
-        token={side === "Buy" ? token1 : token0}
-        balance={side === "Buy" ? token1Balance : token0Balance}
+        label={`Amount (${side === "Buy" ? quote.displaySymbol : base.displaySymbol})`}
+        token={side === "Buy" ? quote : base}
+        balance={side === "Buy" ? quoteBalance : baseBalance}
         value={amount}
         onValueChange={(val) => amount = val}
         disabled={isSubmitting}

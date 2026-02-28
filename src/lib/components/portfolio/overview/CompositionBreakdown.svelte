@@ -86,12 +86,12 @@
     // 2) Pool positions — each pool has two tokens contributing to its value
     for (const pool of userPortfolio.portfolioPools) {
       const market = entityStore.getMarket(pool.canisterId);
-      const token0 = market?.baseToken ? entityStore.getToken(market.baseToken) : null;
-      const token1 = market?.quoteToken ? entityStore.getToken(market.quoteToken) : null;
+      const base = market?.baseToken ? entityStore.getToken(market.baseToken) : null;
+      const quote = market?.quoteToken ? entityStore.getToken(market.quoteToken) : null;
       // Approximate: split pool value 50/50 and apply each token's change
       const halfValue = pool.valueUsd / 2;
-      if (token0) totalChange += dollarChangeFromPercent(halfValue, token0.priceChange24h);
-      if (token1) totalChange += dollarChangeFromPercent(halfValue, token1.priceChange24h);
+      if (base) totalChange += dollarChangeFromPercent(halfValue, base.priceChange24h);
+      if (quote) totalChange += dollarChangeFromPercent(halfValue, quote.priceChange24h);
     }
 
     // 3) Open orders — locked tokens affected by their price change

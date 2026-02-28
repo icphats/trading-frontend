@@ -80,14 +80,14 @@ export const triggerColumns = {
 
 /**
  * SpotTransactions table columns
- * Layout: Side(grow) | Price(grow) | Token0(grow) | Token1(grow) | USD(grow) | Time(grow)
+ * Layout: Side(grow) | Price(grow) | Base(grow) | Quote(grow) | USD(grow) | Time(grow)
  * All columns grow equally for fluid layout
  */
 export const transactionColumns = {
   side: { ...baseColumns.side, grow: true },
   price: { ...baseColumns.price, grow: true },
-  token0: { ...baseColumns.tokenAmount, grow: true },
-  token1: { ...baseColumns.tokenAmount, grow: true },
+  base: { ...baseColumns.tokenAmount, grow: true },
+  quote: { ...baseColumns.tokenAmount, grow: true },
   usd: { ...baseColumns.usd, grow: true },
   time: { ...baseColumns.time, grow: true },
 } as const satisfies Record<string, ColumnPreset>;

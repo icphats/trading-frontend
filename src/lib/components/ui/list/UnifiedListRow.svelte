@@ -27,8 +27,8 @@
    * <UnifiedListRow
    *   type="market"
    *   id={market.canisterId}
-   *   pairLogos={{ token0: logoA, token1: logoB }}
-   *   pairSymbols={{ token0: "PARTY", token1: "ICP" }}
+   *   pairLogos={{ base: logoA, quote: logoB }}
+   *   pairSymbols={{ base: "PARTY", quote: "ICP" }}
    *   primaryLabel="PARTY/ICP"
    *   secondaryLabel="Party Token"
    *   price={12.50}
@@ -54,8 +54,8 @@
 
     // Logo data
     logo?: string | null;
-    pairLogos?: { token0?: string; token1?: string };
-    pairSymbols?: { token0: string; token1: string };
+    pairLogos?: { base?: string; quote?: string };
+    pairSymbols?: { base: string; quote: string };
 
     // Labels
     primaryLabel: string;
@@ -167,10 +167,10 @@
   <div class="row-left">
     {#if type === 'market' && pairLogos && pairSymbols}
       <TokenPairLogo
-        token0Logo={pairLogos.token0}
-        token1Logo={pairLogos.token1}
-        token0Symbol={pairSymbols.token0}
-        token1Symbol={pairSymbols.token1}
+        baseLogo={pairLogos.base}
+        quoteLogo={pairLogos.quote}
+        baseSymbol={pairSymbols.base}
+        quoteSymbol={pairSymbols.quote}
         size={logoSize === 'xs' ? 'xxs' : logoSize === 'sm' ? 'xs' : 'sm'}
       />
     {:else}

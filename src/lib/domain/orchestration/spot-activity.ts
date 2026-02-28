@@ -18,8 +18,8 @@ export interface ParsedTransaction {
   txId: number;
   priceE12: bigint;       // Execution price (E12 precision)
   timestamp: number;      // Unix timestamp in milliseconds
-  amount0: number;
-  amount1: number;
+  amountBase: number;
+  amountQuote: number;
   usdValue: number;
   side: Side;
 }
@@ -32,8 +32,8 @@ function parseTransaction(tx: SpotTransactionResponse): ParsedTransaction {
     txId: Number(tx.id),
     priceE12: tx.price_e12,
     timestamp: Number(tx.timestamp),
-    amount0: Number(tx.base_amount) / 1e8,
-    amount1: Number(tx.quote_amount) / 1e8,
+    amountBase: Number(tx.base_amount) / 1e8,
+    amountQuote: Number(tx.quote_amount) / 1e8,
     usdValue: Number(tx.usd_value_e6) / 1e6,
     side: tx.side,
   };

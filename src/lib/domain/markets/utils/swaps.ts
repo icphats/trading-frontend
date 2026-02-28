@@ -30,36 +30,36 @@ type Side = { buy: null } | { sell: null };
  * For accurate quotes, use the backend quote_swap function
  *
  * @param amountIn - Input amount in input token decimals (raw bigint)
- * @param currentPrice - Price ratio (token1/token0, unitless)
+ * @param currentPrice - Price ratio (quote/base, unitless)
  * @param feeBasisPoints - Pool fee in basis points (e.g., 3000 = 0.3%)
- * @param token0Decimals - Decimals for token0
- * @param token1Decimals - Decimals for token1
- * @param zeroForOne - True if swapping token0→token1, false for token1→token0
+ * @param baseDecimals - Decimals for base token
+ * @param quoteDecimals - Decimals for quote token
+ * @param zeroForOne - True if swapping base→quote, false for quote→base
  * @returns Estimated output amount in output token decimals (raw bigint)
  */
 export function estimateSwapOutput(
     amountIn: bigint,
     currentPrice: number,
     feeBasisPoints: number,
-    token0Decimals: number,
-    token1Decimals: number,
+    baseDecimals: number,
+    quoteDecimals: number,
     zeroForOne: boolean
 ): bigint {
     const feeMultiplier = (Number(BASIS_POINTS_DIVISOR) - feeBasisPoints) / Number(BASIS_POINTS_DIVISOR);
 
     if (zeroForOne) {
-        // Swapping token0 → token1
-        // amountIn is in token0 decimals, output should be in token1 decimals
-        // price = token1/token0, so output = amountIn * price
-        const decimalAdjustment = 10 ** (token1Decimals - token0Decimals);
+        // Swapping base → quote
+        // amountIn is in base decimals, output should be in quote decimals
+        // price = quote/base, so output = amountIn * price
+        const decimalAdjustment = 10 ** (quoteDecimals - baseDecimals);
         const amountInNum = Number(amountIn);
         const outputNum = amountInNum * currentPrice * feeMultiplier * decimalAdjustment;
         return BigInt(Math.floor(outputNum));
     } else {
-        // Swapping token1 → token0
-        // amountIn is in token1 decimals, output should be in token0 decimals
-        // price = token1/token0, so to get token0 output: output = amountIn / price
-        const decimalAdjustment = 10 ** (token0Decimals - token1Decimals);
+        // Swapping quote → base
+        // amountIn is in quote decimals, output should be in base decimals
+        // price = quote/base, so to get base output: output = amountIn / price
+        const decimalAdjustment = 10 ** (baseDecimals - quoteDecimals);
         const amountInNum = Number(amountIn);
         const outputNum = (amountInNum / currentPrice) * feeMultiplier * decimalAdjustment;
         return BigInt(Math.floor(outputNum));
@@ -74,9 +74,9 @@ export function estimateSwapOutput(
  * @param liquidity - Pool liquidity
  * @param currentSqrtPrice - Current sqrt price
  * @param feeBasisPoints - Pool fee in basis points (e.g., 3000 = 0.3%)
- * @param token0Decimals - Decimals for token0
- * @param token1Decimals - Decimals for token1
- * @param zeroForOne - Swap direction (true = token0→token1, false = token1→token0)
+ * @param baseDecimals - Decimals for base token
+ * @param quoteDecimals - Decimals for quote token
+ * @param zeroForOne - Swap direction (true = base→quote, false = quote→base)
  * @returns Estimated output and new sqrt price
  */
 export function estimateSwapWithImpact(
@@ -84,20 +84,20 @@ export function estimateSwapWithImpact(
     liquidity: bigint,
     currentSqrtPrice: SqrtPriceX96,
     feeBasisPoints: number,
-    token0Decimals: number,
-    token1Decimals: number,
+    baseDecimals: number,
+    quoteDecimals: number,
     zeroForOne: boolean
 ): { amountOut: bigint; newSqrtPrice: SqrtPriceX96; priceImpact: number } {
     // This is a simplified estimation
     // For production, always use quote_swap from the backend
 
-    const price = sqrtPriceX96ToPrice(currentSqrtPrice, token0Decimals, token1Decimals);
+    const price = sqrtPriceX96ToPrice(currentSqrtPrice, baseDecimals, quoteDecimals);
     const feeMultiplier = (Number(BASIS_POINTS_DIVISOR) - feeBasisPoints) / Number(BASIS_POINTS_DIVISOR);
 
-    // Normalize amountIn to token0 units for impact calculation
+    // Normalize amountIn to base units for impact calculation
     const amountInNormalized = zeroForOne
-        ? Number(amountIn) / (10 ** token0Decimals)
-        : Number(amountIn) / (10 ** token1Decimals) / price;
+        ? Number(amountIn) / (10 ** baseDecimals)
+        : Number(amountIn) / (10 ** quoteDecimals) / price;
 
     const liquidityNum = Number(liquidity);
     const impact = amountInNormalized / liquidityNum;
@@ -109,13 +109,13 @@ export function estimateSwapWithImpact(
     // Calculate output with proper decimal adjustment
     let amountOut: bigint;
     if (zeroForOne) {
-        // token0 → token1
-        const decimalAdjustment = 10 ** (token1Decimals - token0Decimals);
+        // base → quote
+        const decimalAdjustment = 10 ** (quoteDecimals - baseDecimals);
         const outputNum = Number(amountIn) * avgPrice * feeMultiplier * decimalAdjustment;
         amountOut = BigInt(Math.floor(outputNum));
     } else {
-        // token1 → token0
-        const decimalAdjustment = 10 ** (token0Decimals - token1Decimals);
+        // quote → base
+        const decimalAdjustment = 10 ** (baseDecimals - quoteDecimals);
         const outputNum = (Number(amountIn) / avgPrice) * feeMultiplier * decimalAdjustment;
         amountOut = BigInt(Math.floor(outputNum));
     }
@@ -225,32 +225,32 @@ export function formatSwapQuote(
 
 /**
  * Calculate effective price from swap amounts
- * Returns the actual executed price (token1/token0 ratio)
+ * Returns the actual executed price (quote/base ratio)
  *
  * @param amountIn - Input amount in input token decimals (raw bigint)
  * @param amountOut - Output amount in output token decimals (raw bigint)
- * @param token0Decimals - Decimals for token0
- * @param token1Decimals - Decimals for token1
- * @param zeroForOne - Swap direction (true = token0→token1, false = token1→token0)
- * @returns Effective price ratio (token1/token0, unitless)
+ * @param baseDecimals - Decimals for base token
+ * @param quoteDecimals - Decimals for quote token
+ * @param zeroForOne - Swap direction (true = base→quote, false = quote→base)
+ * @returns Effective price ratio (quote/base, unitless)
  */
 export function calculateEffectivePrice(
     amountIn: bigint,
     amountOut: bigint,
-    token0Decimals: number,
-    token1Decimals: number,
+    baseDecimals: number,
+    quoteDecimals: number,
     zeroForOne: boolean
 ): number {
     if (amountIn === 0n || amountOut === 0n) return 0;
 
     // Normalize both amounts to handle decimal differences
-    const inNormalized = Number(amountIn) / (10 ** (zeroForOne ? token0Decimals : token1Decimals));
-    const outNormalized = Number(amountOut) / (10 ** (zeroForOne ? token1Decimals : token0Decimals));
+    const inNormalized = Number(amountIn) / (10 ** (zeroForOne ? baseDecimals : quoteDecimals));
+    const outNormalized = Number(amountOut) / (10 ** (zeroForOne ? quoteDecimals : baseDecimals));
 
-    // Calculate price as token1/token0
+    // Calculate price as quote/base
     return zeroForOne
-        ? outNormalized / inNormalized  // output token1 / input token0
-        : inNormalized / outNormalized; // input token1 / output token0 -> need to invert
+        ? outNormalized / inNormalized  // output quote / input base
+        : inNormalized / outNormalized; // input quote / output base -> need to invert
 }
 
 // ============================================================================
@@ -261,13 +261,13 @@ export function calculateEffectivePrice(
  * Convert AMM zeroForOne direction to CLOB Side
  *
  * @param zeroForOne - AMM swap direction
- *   - true = swap token0 → token1 (selling token0) → #sell
- *   - false = swap token1 → token0 (buying token0) → #buy
+ *   - true = swap base → quote (selling base) → #sell
+ *   - false = swap quote → base (buying base) → #buy
  * @returns CLOB Side enum
  *
  * @example
- * zeroForOneToSide(true)  // { sell: null } - selling token0 for token1
- * zeroForOneToSide(false) // { buy: null }  - buying token0 with token1
+ * zeroForOneToSide(true)  // { sell: null } - selling base for quote
+ * zeroForOneToSide(false) // { buy: null }  - buying base with quote
  */
 export function zeroForOneToSide(zeroForOne: boolean): Side {
     return zeroForOne ? { sell: null } : { buy: null };
@@ -280,11 +280,11 @@ export function zeroForOneToSide(zeroForOne: boolean): Side {
  * @returns AMM swap direction boolean
  *
  * @example
- * sideToZeroForOne({ sell: null }) // true  - swap token0 → token1
- * sideToZeroForOne({ buy: null })  // false - swap token1 → token0
+ * sideToZeroForOne({ sell: null }) // true  - swap base → quote
+ * sideToZeroForOne({ buy: null })  // false - swap quote → base
  */
 export function sideToZeroForOne(side: Side): boolean {
-    return 'sell' in side; // #sell → true (token0 → token1)
+    return 'sell' in side; // #sell → true (base → quote)
 }
 
 /**

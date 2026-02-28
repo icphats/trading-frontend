@@ -64,15 +64,15 @@
     let total = 0;
     for (const pool of pools) {
       const market = entityStore.getMarket(pool.canisterId);
-      const token0 = market?.baseToken ? entityStore.getToken(market.baseToken) : null;
-      const token1 = market?.quoteToken ? entityStore.getToken(market.quoteToken) : null;
+      const base = market?.baseToken ? entityStore.getToken(market.baseToken) : null;
+      const quote = market?.quoteToken ? entityStore.getToken(market.quoteToken) : null;
       const halfValue = pool.valueUsd / 2;
-      if (token0 && token0.priceChange24h !== 0) {
-        const d = 1 + token0.priceChange24h / 100;
+      if (base && base.priceChange24h !== 0) {
+        const d = 1 + base.priceChange24h / 100;
         if (d > 0) total += halfValue - halfValue / d;
       }
-      if (token1 && token1.priceChange24h !== 0) {
-        const d = 1 + token1.priceChange24h / 100;
+      if (quote && quote.priceChange24h !== 0) {
+        const d = 1 + quote.priceChange24h / 100;
         if (d > 0) total += halfValue - halfValue / d;
       }
     }
@@ -173,14 +173,14 @@
         <div class="pool-card" onclick={() => handleCardClick(pool)}>
           <div class="pool-header">
             <TokenPairLogo
-              token0Logo={pool.token0.logo}
-              token1Logo={pool.token1.logo}
-              token0Symbol={pool.token0.displaySymbol}
-              token1Symbol={pool.token1.displaySymbol}
+              baseLogo={pool.base.logo}
+              quoteLogo={pool.quote.logo}
+              baseSymbol={pool.base.displaySymbol}
+              quoteSymbol={pool.quote.displaySymbol}
               size="sm"
             />
             <div class="pool-title">
-              <span class="pool-pair">{pool.token0.displaySymbol}/{pool.token1.displaySymbol}</span>
+              <span class="pool-pair">{pool.base.displaySymbol}/{pool.quote.displaySymbol}</span>
               <span class="pool-fee">{pool.fee}% fee</span>
             </div>
             {#if pool.lockedUntil !== null && pool.lockedUntil > BigInt(Date.now())}

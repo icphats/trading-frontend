@@ -19,8 +19,8 @@ interface LiquidityBarItem {
   tick: number;
   /** Original liquidity value */
   liquidity: number;
-  /** Ratio of token0 USD value to total (0-1) for stacked rendering */
-  token0Ratio: number;
+  /** Ratio of base token USD value to total (0-1) for stacked rendering */
+  baseRatio: number;
   /** Whether bar has both tokens (for stacked rendering) */
   hasBothTokens: boolean;
   /** Computed column position */
@@ -289,14 +289,14 @@ export class LiquidityBarSeriesRenderer<TData extends LiquidityBarData>
 
     // Build bar items from data
     const bars: LiquidityBarItem[] = this._data.bars.map((bar) => {
-      const { amount0Locked, amount1Locked, token0Ratio } = bar.originalData;
+      const { amountBaseLocked, amountQuoteLocked, baseRatio } = bar.originalData;
       return {
         x: bar.x,
         y: priceToCoordinate(bar.originalData.liquidity) ?? 0,
         tick: bar.originalData.tick,
         liquidity: bar.originalData.liquidity,
-        token0Ratio: token0Ratio ?? 0,
-        hasBothTokens: amount0Locked > 0 && amount1Locked > 0,
+        baseRatio: baseRatio ?? 0,
+        hasBothTokens: amountBaseLocked > 0 && amountQuoteLocked > 0,
       };
     });
 
@@ -379,41 +379,41 @@ export class LiquidityBarSeriesRenderer<TData extends LiquidityBarData>
       }
 
       // Determine if this bar should be stacked (has both tokens)
-      const shouldStack = bar.hasBothTokens && bar.token0Ratio > 0 && bar.token0Ratio < 1;
+      const shouldStack = bar.hasBothTokens && bar.baseRatio > 0 && bar.baseRatio < 1;
 
       if (shouldStack) {
-        // Draw vertically stacked bar: token1 (green/bullish) at bottom, token0 (red/bearish) on top
+        // Draw vertically stacked bar: quote (green/bullish) at bottom, base (red/bearish) on top
         // Use flat edges where segments meet, only round the outer corners
-        const token1Height = totalBox.length * (1 - bar.token0Ratio);
-        const token0Height = totalBox.length * bar.token0Ratio;
+        const quoteHeight = totalBox.length * (1 - bar.baseRatio);
+        const baseHeight = totalBox.length * bar.baseRatio;
 
         const x = column.left + margin;
         const w = widthWithMargin;
 
-        // Token0 portion (above/red) - on top, rounded top corners only
+        // Base portion (above/red) - on top, rounded top corners only
         ctx.fillStyle = tokenAboveColor;
         ctx.beginPath();
         ctx.moveTo(x + radius, totalBox.position);
         ctx.lineTo(x + w - radius, totalBox.position);
         ctx.quadraticCurveTo(x + w, totalBox.position, x + w, totalBox.position + radius);
-        ctx.lineTo(x + w, totalBox.position + Math.max(1, token0Height));
-        ctx.lineTo(x, totalBox.position + Math.max(1, token0Height));
+        ctx.lineTo(x + w, totalBox.position + Math.max(1, baseHeight));
+        ctx.lineTo(x, totalBox.position + Math.max(1, baseHeight));
         ctx.lineTo(x, totalBox.position + radius);
         ctx.quadraticCurveTo(x, totalBox.position, x + radius, totalBox.position);
         ctx.closePath();
         ctx.fill();
 
-        // Token1 portion (below/green) - at bottom, rounded bottom corners only
-        const token1Y = totalBox.position + token0Height;
+        // Quote portion (below/green) - at bottom, rounded bottom corners only
+        const quoteY = totalBox.position + baseHeight;
         ctx.fillStyle = tokenBelowColor;
         ctx.beginPath();
-        ctx.moveTo(x, token1Y);
-        ctx.lineTo(x + w, token1Y);
-        ctx.lineTo(x + w, token1Y + Math.max(1, token1Height) - radius);
-        ctx.quadraticCurveTo(x + w, token1Y + Math.max(1, token1Height), x + w - radius, token1Y + Math.max(1, token1Height));
-        ctx.lineTo(x + radius, token1Y + Math.max(1, token1Height));
-        ctx.quadraticCurveTo(x, token1Y + Math.max(1, token1Height), x, token1Y + Math.max(1, token1Height) - radius);
-        ctx.lineTo(x, token1Y);
+        ctx.moveTo(x, quoteY);
+        ctx.lineTo(x + w, quoteY);
+        ctx.lineTo(x + w, quoteY + Math.max(1, quoteHeight) - radius);
+        ctx.quadraticCurveTo(x + w, quoteY + Math.max(1, quoteHeight), x + w - radius, quoteY + Math.max(1, quoteHeight));
+        ctx.lineTo(x + radius, quoteY + Math.max(1, quoteHeight));
+        ctx.quadraticCurveTo(x, quoteY + Math.max(1, quoteHeight), x, quoteY + Math.max(1, quoteHeight) - radius);
+        ctx.lineTo(x, quoteY);
         ctx.closePath();
         ctx.fill();
       } else {
@@ -424,10 +424,10 @@ export class LiquidityBarSeriesRenderer<TData extends LiquidityBarData>
           // No active tick defined - use neutral color
           ctx.fillStyle = tokenBelowColor;
         } else if (activeTick > bar.tick) {
-          // Bar is below active tick (token1/bullish side)
+          // Bar is below active tick (quote/bullish side)
           ctx.fillStyle = tokenBelowColor;
         } else {
-          // Bar is above active tick (token0/bearish side)
+          // Bar is above active tick (base/bearish side)
           ctx.fillStyle = tokenAboveColor;
         }
 

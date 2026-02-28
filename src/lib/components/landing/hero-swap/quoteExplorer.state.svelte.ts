@@ -110,12 +110,12 @@ class QuoteExplorerStateManager {
   // Token State (derived from market + entityStore)
   // ============================================
 
-  token0 = $derived.by((): NormalizedToken | null => {
+  baseToken = $derived.by((): NormalizedToken | null => {
     if (!this.market?.tokens?.[0]) return null;
     return entityStore.getToken(this.market.tokens[0].toString()) ?? null;
   });
 
-  token1 = $derived.by((): NormalizedToken | null => {
+  quoteToken = $derived.by((): NormalizedToken | null => {
     if (!this.market?.tokens?.[1]) return null;
     return entityStore.getToken(this.market.tokens[1].toString()) ?? null;
   });
@@ -190,11 +190,11 @@ class QuoteExplorerStateManager {
   // ============================================
 
   inputToken = $derived.by((): NormalizedToken | null => {
-    return this.side === 'buy' ? this.token1 : this.token0;
+    return this.side === 'buy' ? this.quoteToken : this.baseToken;
   });
 
   outputToken = $derived.by((): NormalizedToken | null => {
-    return this.side === 'buy' ? this.token0 : this.token1;
+    return this.side === 'buy' ? this.baseToken : this.quoteToken;
   });
 
   inputDecimals = $derived.by((): number => {

@@ -370,7 +370,7 @@
       <div class="activity-section">
         <h2 class="section-title">Recent Activity</h2>
         <!-- TODO: Token appears in multiple markets, need market selector or aggregate activity -->
-        <ActivityTable spotCanisterId={null} token0Ledger={ledger} />
+        <ActivityTable spotCanisterId={null} baseLedger={ledger} />
       </div>
     </div>
   </div>

@@ -69,8 +69,8 @@ export interface PortfolioPool {
   id: string;
   canisterId: string;
   positionId: bigint;
-  token0: { symbol: string; displaySymbol: string; logo?: string };
-  token1: { symbol: string; displaySymbol: string; logo?: string };
+  base: { symbol: string; displaySymbol: string; logo?: string };
+  quote: { symbol: string; displaySymbol: string; logo?: string };
   fee: number;
   liquidity: string;
   valueUsd: number;
@@ -270,8 +270,8 @@ class UserPortfolioState {
       const currentTick = market?.lastTradeTick ?? 0;
 
       // Get token metadata from entityStore
-      const token0 = market?.baseToken ? entityStore.getToken(market.baseToken) : undefined;
-      const token1 = market?.quoteToken ? entityStore.getToken(market.quoteToken) : undefined;
+      const baseToken = market?.baseToken ? entityStore.getToken(market.baseToken) : undefined;
+      const quoteToken = market?.quoteToken ? entityStore.getToken(market.quoteToken) : undefined;
 
       for (const pos of marketData.positions) {
         // Determine if position is in range
@@ -281,15 +281,15 @@ class UserPortfolioState {
           id: `${marketData.spotCanisterId}-${pos.position_id.toString()}`,
           canisterId: marketData.spotCanisterId,
           positionId: pos.position_id,
-          token0: {
-            symbol: token0?.symbol ?? 'TOKEN',
-            displaySymbol: token0?.displaySymbol ?? token0?.symbol ?? 'TOKEN',
-            logo: token0?.logo ?? undefined,
+          base: {
+            symbol: baseToken?.symbol ?? 'TOKEN',
+            displaySymbol: baseToken?.displaySymbol ?? baseToken?.symbol ?? 'TOKEN',
+            logo: baseToken?.logo ?? undefined,
           },
-          token1: {
-            symbol: token1?.symbol ?? 'ICP',
-            displaySymbol: token1?.displaySymbol ?? token1?.symbol ?? 'ICP',
-            logo: token1?.logo ?? undefined,
+          quote: {
+            symbol: quoteToken?.symbol ?? 'ICP',
+            displaySymbol: quoteToken?.displaySymbol ?? quoteToken?.symbol ?? 'ICP',
+            logo: quoteToken?.logo ?? undefined,
           },
           fee: pos.fee_pips / 10000, // pips to percentage
           liquidity: pos.liquidity.toString(),

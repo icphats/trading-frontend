@@ -30,9 +30,9 @@
     /** Upper bound tick for position */
     tickUpper: number;
     /** Token0 decimals for price conversion */
-    token0Decimals?: number;
+    baseDecimals?: number;
     /** Token1 decimals for price conversion */
-    token1Decimals?: number;
+    quoteDecimals?: number;
     /** Quote token symbol */
     quoteSymbol?: string;
     /** Base token symbol */
@@ -52,8 +52,8 @@
     currentTick,
     tickLower,
     tickUpper,
-    token0Decimals = 8,
-    token1Decimals = 8,
+    baseDecimals = 8,
+    quoteDecimals = 8,
     quoteSymbol = 'Quote',
     baseSymbol = 'Base',
     onRangeChange,
@@ -107,7 +107,7 @@
 
   // Get price for a tick (with inversion applied)
   function getTickPrice(tick: number): number {
-    return applyInversion(tickToPrice(tick, token0Decimals, token1Decimals));
+    return applyInversion(tickToPrice(tick, baseDecimals, quoteDecimals));
   }
 
   // Convert ticks to prices (with inversion applied for display)

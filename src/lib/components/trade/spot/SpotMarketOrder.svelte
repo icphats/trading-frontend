@@ -42,16 +42,16 @@
   let tickSpacing = $derived(spot.tickSpacing);
 
   // Token data from entityStore
-  let token0 = $derived<NormalizedToken | undefined>(
+  let base = $derived<NormalizedToken | undefined>(
     spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : undefined
   );
-  let token1 = $derived<NormalizedToken | undefined>(
+  let quote = $derived<NormalizedToken | undefined>(
     spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : undefined
   );
 
   // Trading balances (deposited in spot canister, available for orders)
-  let token0Balance = $derived<bigint>(spot.availableBase);
-  let token1Balance = $derived<bigint>(spot.availableQuote);
+  let baseBalance = $derived<bigint>(spot.availableBase);
+  let quoteBalance = $derived<bigint>(spot.availableQuote);
 
   // ============================================
   // Form State (owned by this component)
@@ -107,7 +107,7 @@
   }
 
   async function calculateQuote() {
-    if (!token0 || !token1) return;
+    if (!base || !quote) return;
 
     // Validate inputs using stringToBigInt (per canon 4.5)
     if (!amount || limitTick === null) {
@@ -118,7 +118,7 @@
     }
 
     // Validate amount format
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
     let amountBigInt: bigint;
     try {
       amountBigInt = stringToBigInt(amount, inputDecimals);
@@ -208,8 +208,8 @@
   // ============================================
 
   let amountOutFormatted = $derived.by(() => {
-    if (!quoteResult || !token0 || !token1) return "0";
-    const outputDecimals = side === "Buy" ? token0.decimals : token1.decimals;
+    if (!quoteResult || !base || !quote) return "0";
+    const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
     return bigIntToString(quoteResult.output_amount, outputDecimals);
   });
 
@@ -245,15 +245,15 @@
 
   /** Get input balance based on side (per canon 4.6) */
   function getInputBalance(): bigint {
-    return side === "Buy" ? token1Balance : token0Balance;
+    return side === "Buy" ? quoteBalance : baseBalance;
   }
 
   /** Validate amount and return bigint (per canon 4.5) */
   function validateAmountInput(): { valid: boolean; error?: string; asBigInt?: bigint } {
-    if (!token0 || !token1) return { valid: false, error: "Market not loaded" };
+    if (!base || !quote) return { valid: false, error: "Market not loaded" };
     if (!amount || amount.trim() === "") return { valid: false, error: "Amount is required" };
 
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
 
     try {
       const asBigInt = stringToBigInt(amount, inputDecimals);
@@ -292,7 +292,7 @@
   }
 
   async function executeWithToast() {
-    const baseSymbol = token0?.displaySymbol ?? '';
+    const baseSymbol = base?.displaySymbol ?? '';
     try {
       await toastState.show({
         async: true,
@@ -307,7 +307,7 @@
           side,
           orderType: 'market',
           symbol: baseSymbol,
-          logo: token0?.logo ?? undefined
+          logo: base?.logo ?? undefined
         },
         duration: 3000,
         toastPosition: 'bottom-right'
@@ -318,7 +318,7 @@
   }
 
   async function handleSubmitMarketOrder() {
-    if (!token0 || !token1) throw new Error("Market not loaded");
+    if (!base || !quote) throw new Error("Market not loaded");
 
     // Pre-flight check 1: Quote exists (per canon 4.3)
     if (!quoteResult) {
@@ -387,11 +387,11 @@
   // ============================================
 
   function buildVenueRouting(quote: QuoteResultType, requestedAmount: bigint) {
-    if (!token0 || !token1) return undefined;
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
-    const outputDecimals = side === "Buy" ? token0.decimals : token1.decimals;
-    const inputToken = side === "Buy" ? token1 : token0;
-    const outputToken = side === "Buy" ? token0 : token1;
+    if (!base || !quote) return undefined;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
+    const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
+    const inputToken = side === "Buy" ? quote : base;
+    const outputToken = side === "Buy" ? base : quote;
 
     const filledFromVenues = quote.venue_breakdown.reduce(
       (sum, v) => sum + Number(v.input_amount), 0
@@ -425,16 +425,16 @@
   }
 
   let confirmationDetail = $derived.by(() => {
-    if (!token0 || !token1) return undefined;
+    if (!base || !quote) return undefined;
     const inputAmt = parseFloat(amount) || 0;
     const rows = side === "Buy"
       ? [
-          { label: "Spend", value: `${inputAmt} ${token1.displaySymbol}` },
-          { label: "Receive", value: `~${amountOutFormatted} ${token0.displaySymbol}` }
+          { label: "Spend", value: `${inputAmt} ${quote.displaySymbol}` },
+          { label: "Receive", value: `~${amountOutFormatted} ${base.displaySymbol}` }
         ]
       : [
-          { label: "Sell", value: `${inputAmt} ${token0.displaySymbol}` },
-          { label: "Receive", value: `~${amountOutFormatted} ${token1.displaySymbol}` }
+          { label: "Sell", value: `${inputAmt} ${base.displaySymbol}` },
+          { label: "Receive", value: `~${amountOutFormatted} ${quote.displaySymbol}` }
         ];
     if (quoteResult) {
       const impactPct = bpsToPercent(quoteResult.price_impact_bps);
@@ -442,12 +442,12 @@
     }
     return {
       side,
-      baseSymbol: token0.displaySymbol,
-      baseLogo: token0.logo ?? undefined,
+      baseSymbol: base.displaySymbol,
+      baseLogo: base.logo ?? undefined,
       rows,
       routing: quoteResult ? buildVenueRouting(quoteResult, (() => {
         try {
-          const inputDecimals = side === "Buy" ? token1!.decimals : token0!.decimals;
+          const inputDecimals = side === "Buy" ? quote!.decimals : base!.decimals;
           return stringToBigInt(amount, inputDecimals);
         } catch { return 0n; }
       })()) : undefined,
@@ -455,7 +455,7 @@
   });
 </script>
 
-{#if !token0 || !token1}
+{#if !base || !quote}
   <div class="p-4">
     <p class="text-muted-foreground text-sm">Loading market data...</p>
   </div>
@@ -466,17 +466,17 @@
       <TradePriceInput
         label="Market Price"
         tick={currentTick}
-        token0Decimals={token0.decimals}
-        token1Decimals={token1.decimals}
+        baseDecimals={base.decimals}
+        quoteDecimals={quote.decimals}
         readonly
-        suffix="{token1.displaySymbol}/{token0.displaySymbol}"
+        suffix="{quote.displaySymbol}/{base.displaySymbol}"
       />
 
-      <!-- Amount Input (token1 for buy, token0 for sell) -->
+      <!-- Amount Input (quote for buy, base for sell) -->
       <TokenAmountInput
         label={side === "Buy" ? `Amount to Spend` : `Amount to Sell`}
-        token={side === "Buy" ? token1 : token0}
-        balance={side === "Buy" ? token1Balance : token0Balance}
+        token={side === "Buy" ? quote : base}
+        balance={side === "Buy" ? quoteBalance : baseBalance}
         value={amount}
         onValueChange={(val) => amount = val}
         disabled={isSubmitting}
@@ -487,10 +487,10 @@
         onDepositClick={side === "Buy" ? openDepositQuote : openDepositBase}
       />
 
-      <!-- Output Display (token0 for buy, token1 for sell) -->
+      <!-- Output Display (base for buy, quote for sell) -->
       <TokenAmountInput
         label="You'll Receive"
-        token={side === "Buy" ? token0 : token1}
+        token={side === "Buy" ? base : quote}
         value={amountOutFormatted}
         loading={isCalculating}
         readonly
@@ -505,8 +505,8 @@
           label="Max Slippage"
           tick={limitTick}
           currentPrice={spotPrice}
-          token0Decimals={token0.decimals}
-          token1Decimals={token1.decimals}
+          baseDecimals={base.decimals}
+          quoteDecimals={quote.decimals}
           {tickSpacing}
           disabled={isSubmitting}
           onTickChange={handleLimitTickChange}
@@ -522,19 +522,19 @@
         {isCalculating}
         {quoteError}
         quote={quoteResult}
-        token0Symbol={token0.displaySymbol}
-        token1Symbol={token1.displaySymbol}
-        token0Decimals={token0.decimals}
-        token1Decimals={token1.decimals}
-        token0Logo={token0.logo ?? undefined}
-        token1Logo={token1.logo ?? undefined}
+        baseSymbol={base.displaySymbol}
+        quoteSymbol={quote.displaySymbol}
+        baseDecimals={base.decimals}
+        quoteDecimals={quote.decimals}
+        baseLogo={base.logo ?? undefined}
+        quoteLogo={quote.logo ?? undefined}
         {side}
         referenceTick={quoteReferenceTick}
         currentTick={currentTick ?? undefined}
         inputAmount={(() => {
-          if (!amount || !token0 || !token1) return undefined;
+          if (!amount || !base || !quote) return undefined;
           try {
-            const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+            const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
             return stringToBigInt(amount, inputDecimals);
           } catch {
             return undefined;
@@ -558,7 +558,7 @@
             !!quoteError
           }
         >
-          {isSubmitting ? "Submitting..." : `${side} ${token0.displaySymbol}`}
+          {isSubmitting ? "Submitting..." : `${side} ${base.displaySymbol}`}
         </Button>
       </div>
     </form>
@@ -568,13 +568,13 @@
       bind:open={showConfirmation}
       title="Confirm Market Order"
       orderDetail={confirmationDetail}
-      confirmLabel={`${side} ${token0.displaySymbol}`}
+      confirmLabel={`${side} ${base.displaySymbol}`}
       variant="primary"
       showSkipOption
       onSkipPreferenceChange={(skip) => userPreferences.setSkipOrderConfirmation(skip)}
       onConfirm={() => handleSubmitMarketOrder()}
       toastMessages={{
-        loading: `${side === 'Buy' ? 'Buying' : 'Selling'} ${token0.displaySymbol}...`,
+        loading: `${side === 'Buy' ? 'Buying' : 'Selling'} ${base.displaySymbol}...`,
         success: (result) => `Order #${result.order_id} filled`,
         error: (err) => err instanceof Error ? err.message : "Failed to execute market order"
       }}

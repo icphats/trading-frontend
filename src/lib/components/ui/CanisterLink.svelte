@@ -44,10 +44,10 @@
   {#snippet tokenContent()}
     {#if isPool && tokenLogos[0] && tokenLogos[1]}
       <TokenPairLogo
-        token0Logo={tokenLogos[0]}
-        token1Logo={tokenLogos[1]}
-        token0Symbol={tokenSymbols[0] ?? ''}
-        token1Symbol={tokenSymbols[1] ?? ''}
+        baseLogo={tokenLogos[0]}
+        quoteLogo={tokenLogos[1]}
+        baseSymbol={tokenSymbols[0] ?? ''}
+        quoteSymbol={tokenSymbols[1] ?? ''}
         size="xxs"
       />
     {:else if tokenLogos[0]}

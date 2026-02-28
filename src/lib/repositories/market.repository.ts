@@ -342,8 +342,8 @@ export class MarketRepository {
     feePips: number,
     tickLower: Tick,
     tickUpper: Tick,
-    amount0Desired: bigint,
-    amount1Desired: bigint,
+    amountBaseDesired: bigint,
+    amountQuoteDesired: bigint,
     initialTick?: Tick,
     lockUntilMs?: bigint
   ): Promise<LiquidityResult> {
@@ -355,8 +355,8 @@ export class MarketRepository {
       feePips,
       tickLower,
       tickUpper,
-      amount0Desired,
-      amount1Desired,
+      amountBaseDesired,
+      amountQuoteDesired,
       initialTickOpt,
       lockUntilMsOpt
     );
@@ -392,14 +392,14 @@ export class MarketRepository {
   async increaseSpotLiquidity(
     canisterId: string,
     positionId: PositionId,
-    amount0Desired: bigint,
-    amount1Desired: bigint
+    amountBaseDesired: bigint,
+    amountQuoteDesired: bigint
   ): Promise<IncreaseLiquidityResult> {
     const actor = this.getSpotActor(canisterId);
     return await actor.increase_liquidity(
       positionId,
-      amount0Desired,
-      amount1Desired
+      amountBaseDesired,
+      amountQuoteDesired
     );
   }
 
@@ -705,8 +705,8 @@ export class MarketRepository {
     liquidity: bigint,
     volume24h: bigint,
     priceChange24h: number,
-    token0?: { canisterId: string; symbol: string; decimals: number },
-    token1?: { canisterId: string; symbol: string; decimals: number }
+    base?: { canisterId: string; symbol: string; decimals: number },
+    quote?: { canisterId: string; symbol: string; decimals: number }
   ): void {
     this.persistMarketState({
       canisterId,
@@ -716,8 +716,8 @@ export class MarketRepository {
       liquidity: liquidity.toString(),
       volume24h: volume24h.toString(),
       priceChange24h,
-      token0: token0 ?? null,
-      token1: token1 ?? null,
+      base: base ?? null,
+      quote: quote ?? null,
       updatedAt: Date.now(),
     });
   }

@@ -52,8 +52,8 @@ export {
 export {
   USD_DECIMALS,
   calculateAmountsLocked,
-  calculateToken0UsdValue,
-  calculateToken1UsdValue,
+  calculateBaseUsdValue,
+  calculateQuoteUsdValue,
   calculateUsdValue,
   calculateTotalAmounts,
   type TotalAmounts,

@@ -380,12 +380,12 @@ const actions: Record<ActionType, ActionFn> = {
     const range = liquidityRange(t.tick!, t.feePips);
     const amounts = liquidityAmounts(t);
     log({ type: 'prompt', text: `add liquidity [${range.tickLower}, ${range.tickUpper}]` });
-    log({ type: 'action', text: `addSpotLiquidity(${t.feePips}, ${range.tickLower}, ${range.tickUpper}, ${fmtNat(amounts.amount0)}, ${fmtNat(amounts.amount1)})` });
+    log({ type: 'action', text: `addSpotLiquidity(${t.feePips}, ${range.tickLower}, ${range.tickUpper}, ${fmtNat(amounts.amountBase)}, ${fmtNat(amounts.amountQuote)})` });
     const start = performance.now();
     try {
       const result = await marketRepository.addSpotLiquidity(
         t.canisterId, t.feePips, range.tickLower, range.tickUpper,
-        amounts.amount0, amounts.amount1,
+        amounts.amountBase, amounts.amountQuote,
       );
       if ('ok' in result) {
         log({ type: 'success', text: `position_id: ${result.ok.position_id}`, durationMs: performance.now() - start });
@@ -404,11 +404,11 @@ const actions: Record<ActionType, ActionFn> = {
     const pos = pickRandom(t.positions);
     const amounts = liquidityAmounts(t);
     log({ type: 'prompt', text: `increase liquidity on position #${pos.position_id}` });
-    log({ type: 'action', text: `increaseSpotLiquidity(${pos.position_id}, ${fmtNat(amounts.amount0)}, ${fmtNat(amounts.amount1)})` });
+    log({ type: 'action', text: `increaseSpotLiquidity(${pos.position_id}, ${fmtNat(amounts.amountBase)}, ${fmtNat(amounts.amountQuote)})` });
     const start = performance.now();
     try {
       const result = await marketRepository.increaseSpotLiquidity(
-        t.canisterId, pos.position_id, amounts.amount0, amounts.amount1,
+        t.canisterId, pos.position_id, amounts.amountBase, amounts.amountQuote,
       );
       if ('ok' in result) {
         log({ type: 'success', text: `liquidity increased on #${pos.position_id}`, durationMs: performance.now() - start });
@@ -434,7 +434,7 @@ const actions: Record<ActionType, ActionFn> = {
     try {
       const result = await marketRepository.decreaseSpotLiquidity(t.canisterId, pos.position_id, delta);
       if ('ok' in result) {
-        log({ type: 'success', text: `removed ${fmtNat(result.ok.amount0)} base + ${fmtNat(result.ok.amount1)} quote`, durationMs: performance.now() - start });
+        log({ type: 'success', text: `removed ${fmtNat(result.ok.amount_base)} base + ${fmtNat(result.ok.amount_quote)} quote`, durationMs: performance.now() - start });
         return { success: true };
       }
       const err = typeof result.err === 'string' ? result.err : JSON.stringify(result.err);

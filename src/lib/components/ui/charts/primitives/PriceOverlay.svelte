@@ -7,16 +7,16 @@
     value: number;
     change: number;
     mode?: DisplayMode;
-    token0Symbol?: string;
-    token1Symbol?: string;
+    baseSymbol?: string;
+    quoteSymbol?: string;
   }
 
   let {
     value,
     change,
     mode = 'price',
-    token0Symbol = '',
-    token1Symbol = '',
+    baseSymbol = '',
+    quoteSymbol = '',
   }: Props = $props();
 
   const formattedValue = $derived(() => {

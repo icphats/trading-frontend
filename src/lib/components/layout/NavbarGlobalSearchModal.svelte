@@ -58,10 +58,10 @@
     name: string;
     marketType: "spot";
     logoSrc: string;
-    token0Logo?: string;
-    token1Logo?: string;
-    token0Symbol?: string;
-    token1Symbol?: string;
+    baseLogo?: string;
+    quoteLogo?: string;
+    baseSymbol?: string;
+    quoteSymbol?: string;
     priceUsd: number;
     priceChange24h: number;
     volume24h: number;
@@ -146,10 +146,10 @@
         name: baseToken?.displayName ?? baseSymbol,
         marketType: "spot" as const,
         logoSrc: baseLogo ?? "",
-        token0Logo: baseLogo,
-        token1Logo: quoteToken?.logo ?? undefined,
-        token0Symbol: baseSymbol,
-        token1Symbol: quoteSymbol,
+        baseLogo: baseLogo,
+        quoteLogo: quoteToken?.logo ?? undefined,
+        baseSymbol: baseSymbol,
+        quoteSymbol: quoteSymbol,
         priceUsd: live?.lastTradePrice ? Number(live.lastTradePrice) / 1e12 : Number(m.last_price_usd_e12) / 1e12,
         priceChange24h: live?.priceChange24h ?? bpsToPercent(m.price_change_24h_bps),
         volume24h: live?.volume24h ? Number(live.volume24h) / 1e6 : Number(m.volume_24h_usd_e6) / 1e6,
@@ -309,10 +309,10 @@
         name: baseToken?.displayName ?? baseSymbol,
         marketType: "spot" as const,
         logoSrc: baseLogo ?? "",
-        token0Logo: baseLogo,
-        token1Logo: quoteToken?.logo ?? undefined,
-        token0Symbol: baseSymbol,
-        token1Symbol: quoteSymbol,
+        baseLogo: baseLogo,
+        quoteLogo: quoteToken?.logo ?? undefined,
+        baseSymbol: baseSymbol,
+        quoteSymbol: quoteSymbol,
         priceUsd: live?.lastTradePrice ? Number(live.lastTradePrice) / 1e12 : Number(m.last_price_usd_e12) / 1e12,
         priceChange24h: live?.priceChange24h ?? bpsToPercent(m.price_change_24h_bps),
         volume24h: live?.volume24h ? Number(live.volume24h) / 1e6 : Number(m.volume_24h_usd_e6) / 1e6,
@@ -561,18 +561,18 @@
                   {:else}
                     <button class="recent-pill" onclick={() => handleMarketSelect(item.data.tradingCanisterId, item.data.symbol)}>
                       <div class="pill-pair-logos">
-                        {#if item.data.token0Logo}
-                          <img src={item.data.token0Logo} alt="" class="pill-logo-small" />
+                        {#if item.data.baseLogo}
+                          <img src={item.data.baseLogo} alt="" class="pill-logo-small" />
                         {:else}
-                          <div class="pill-logo-placeholder-small">{item.data.token0Symbol?.charAt(0) ?? "?"}</div>
+                          <div class="pill-logo-placeholder-small">{item.data.baseSymbol?.charAt(0) ?? "?"}</div>
                         {/if}
-                        {#if item.data.token1Logo}
-                          <img src={item.data.token1Logo} alt="" class="pill-logo-small pill-logo-overlap" />
+                        {#if item.data.quoteLogo}
+                          <img src={item.data.quoteLogo} alt="" class="pill-logo-small pill-logo-overlap" />
                         {:else}
-                          <div class="pill-logo-placeholder-small pill-logo-overlap">{item.data.token1Symbol?.charAt(0) ?? "?"}</div>
+                          <div class="pill-logo-placeholder-small pill-logo-overlap">{item.data.quoteSymbol?.charAt(0) ?? "?"}</div>
                         {/if}
                       </div>
-                      <span class="pill-symbol">{item.data.token0Symbol}/{item.data.token1Symbol}</span>
+                      <span class="pill-symbol">{item.data.baseSymbol}/{item.data.quoteSymbol}</span>
                     </button>
                   {/if}
                 {/each}
@@ -609,9 +609,9 @@
                 <UnifiedListRow
                   type="market"
                   id={market.tradingCanisterId}
-                  pairLogos={{ token0: market.token0Logo, token1: market.token1Logo }}
-                  pairSymbols={{ token0: market.token0Symbol ?? "", token1: market.token1Symbol ?? "" }}
-                  primaryLabel={market.token0Symbol && market.token1Symbol ? `${market.token0Symbol}/${market.token1Symbol}` : market.symbol}
+                  pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
+                  pairSymbols={{ base: market.baseSymbol ?? "", quote: market.quoteSymbol ?? "" }}
+                  primaryLabel={market.baseSymbol && market.quoteSymbol ? `${market.baseSymbol}/${market.quoteSymbol}` : market.symbol}
                   secondaryLabel="Vol {formatVolumeFloat(market.volume24h)}"
                   price={market.priceUsd}
                   priceChange={market.priceChange24h}
@@ -668,9 +668,9 @@
                 <UnifiedListRow
                   type="market"
                   id={market.tradingCanisterId}
-                  pairLogos={{ token0: market.token0Logo, token1: market.token1Logo }}
-                  pairSymbols={{ token0: market.token0Symbol ?? "", token1: market.token1Symbol ?? "" }}
-                  primaryLabel={market.token0Symbol && market.token1Symbol ? `${market.token0Symbol}/${market.token1Symbol}` : market.symbol}
+                  pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
+                  pairSymbols={{ base: market.baseSymbol ?? "", quote: market.quoteSymbol ?? "" }}
+                  primaryLabel={market.baseSymbol && market.quoteSymbol ? `${market.baseSymbol}/${market.quoteSymbol}` : market.symbol}
                   secondaryLabel="Vol {formatVolumeFloat(market.volume24h)}"
                   price={market.priceUsd}
                   priceChange={market.priceChange24h}

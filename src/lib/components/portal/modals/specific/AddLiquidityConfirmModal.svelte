@@ -17,13 +17,13 @@
   interface Props {
     open: boolean;
     spot: SpotMarket;
-    token0?: NormalizedToken;
-    token1?: NormalizedToken;
+    base?: NormalizedToken;
+    quote?: NormalizedToken;
     feePips: number;
     tickLower: number;
     tickUpper: number;
-    amount0: bigint;
-    amount1: bigint;
+    amountBase: bigint;
+    amountQuote: bigint;
     initialTick?: number;
     lockUntilMs?: bigint;
     isNewPool: boolean;
@@ -34,13 +34,13 @@
   let {
     open = $bindable(false),
     spot,
-    token0,
-    token1,
+    base,
+    quote,
     feePips,
     tickLower,
     tickUpper,
-    amount0,
-    amount1,
+    amountBase,
+    amountQuote,
     initialTick,
     lockUntilMs,
     isNewPool,
@@ -48,14 +48,14 @@
     onSuccess,
   }: Props = $props();
 
-  const baseDecimals = $derived(token0?.decimals ?? 8);
-  const quoteDecimals = $derived(token1?.decimals ?? 8);
+  const baseDecimals = $derived(base?.decimals ?? 8);
+  const quoteDecimals = $derived(quote?.decimals ?? 8);
 
   const positionInfo = $derived.by(() => {
-    if (!token0 || !token1) return null;
+    if (!base || !quote) return null;
     return {
-      token0: { symbol: token0.symbol, displaySymbol: token0.displaySymbol, logo: token0.logo },
-      token1: { symbol: token1.symbol, displaySymbol: token1.displaySymbol, logo: token1.logo },
+      base: { symbol: base.symbol, displaySymbol: base.displaySymbol, logo: base.logo },
+      quote: { symbol: quote.symbol, displaySymbol: quote.displaySymbol, logo: quote.logo },
       fee_pips: feePips,
     };
   });
@@ -85,13 +85,13 @@
           feePips,
           tickLower,
           tickUpper,
-          amount0,
-          amount1,
+          amountBase,
+          amountQuote,
           initialTick,
           lockUntilMs,
         ),
         messages: {
-          loading: `Adding ${token0?.displaySymbol ?? ''} liquidity...`,
+          loading: `Adding ${base?.displaySymbol ?? ''} liquidity...`,
           success: (result) => `Position #${result.position_id} created`,
           error: (err: unknown) => err instanceof Error ? err.message : 'Failed to add liquidity',
         },
@@ -128,16 +128,16 @@
 
         <!-- Deposit Amounts -->
         <div class="modal-panel">
-          {#if amount0 > 0n}
+          {#if amountBase > 0n}
             <DetailLineItem
-              label={token0?.displaySymbol ?? 'Token 0'}
-              value={bigIntToString(amount0, baseDecimals)}
+              label={base?.displaySymbol ?? 'Base'}
+              value={bigIntToString(amountBase, baseDecimals)}
             />
           {/if}
-          {#if amount1 > 0n}
+          {#if amountQuote > 0n}
             <DetailLineItem
-              label={token1?.displaySymbol ?? 'Token 1'}
-              value={bigIntToString(amount1, quoteDecimals)}
+              label={quote?.displaySymbol ?? 'Quote'}
+              value={bigIntToString(amountQuote, quoteDecimals)}
             />
           {/if}
         </div>
@@ -146,11 +146,11 @@
         <div class="modal-details">
           <DetailLineItem
             label="Min Price"
-            value="{minPrice} {token1?.displaySymbol ?? ''}"
+            value="{minPrice} {quote?.displaySymbol ?? ''}"
           />
           <DetailLineItem
             label="Max Price"
-            value="{maxPrice} {token1?.displaySymbol ?? ''}"
+            value="{maxPrice} {quote?.displaySymbol ?? ''}"
           />
           <DetailLineItem
             label="Fee Tier"
@@ -161,7 +161,7 @@
         <!-- New Pool Banner -->
         {#if isNewPool && initialPrice}
           <div class="modal-info-banner">
-            Creates a new pool at price {initialPrice} {token1?.displaySymbol ?? ''} per {token0?.displaySymbol ?? ''}
+            Creates a new pool at price {initialPrice} {quote?.displaySymbol ?? ''} per {base?.displaySymbol ?? ''}
           </div>
         {/if}
 

@@ -54,12 +54,15 @@ export interface FrozenControl {
   'icp_spot_creation_fee' : bigint,
   'icp_ledger_creation_fee' : bigint,
   'treasury_allowance_set' : boolean,
+  'timer_running' : boolean,
+  'spot_creation_cycles' : bigint,
   'oracle_principal' : Principal,
   'cycles_threshold' : bigint,
   'icp_transfer_fee' : bigint,
   'treasury_principal' : [] | [Principal],
   'indexer_principal' : [] | [Principal],
   'this_principal' : Principal,
+  'ledger_creation_cycles' : bigint,
   'admin_principals' : Array<Principal>,
 }
 export interface InternalCanisterMetadata {
@@ -108,14 +111,14 @@ export type MetadataValue = { 'Int' : bigint } |
 export interface SpotInitArgs { 'base' : Principal, 'quote' : Principal }
 export interface SpotMarketMetadata {
   'internal' : InternalCanisterMetadata,
-  'token0_ledger' : Principal,
+  'quote_name' : string,
   'canister_id' : Principal,
-  'token1_ledger' : Principal,
-  'token0_name' : string,
-  'token0_symbol' : string,
+  'quote_ledger' : Principal,
+  'base_name' : string,
+  'base_ledger' : Principal,
   'registry_principal' : Principal,
-  'token1_symbol' : string,
-  'token1_name' : string,
+  'quote_symbol' : string,
+  'base_symbol' : string,
 }
 export type SpotMarketResult = { 'ok' : SpotMarketMetadata } |
   { 'err' : ApiError };
@@ -128,10 +131,12 @@ export interface UpgradeArgs {
   'set_icp_ledger_creation_fee' : [] | [bigint],
   'set_oracle_principal' : [] | [Principal],
   'set_cycles_threshold' : [] | [bigint],
+  'set_ledger_creation_cycles' : [] | [bigint],
   'reset_topup_backoff' : [] | [boolean],
   'set_indexer_principal' : [] | [Principal],
   'set_icp_spot_creation_fee' : [] | [bigint],
   'add_admins' : [] | [Array<Principal>],
+  'set_spot_creation_cycles' : [] | [bigint],
 }
 export type WasmType = { 'spot' : null } |
   { 'ledger' : null };

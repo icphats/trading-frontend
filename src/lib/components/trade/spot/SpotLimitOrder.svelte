@@ -43,16 +43,16 @@
   let tickSpacing = $derived(spot.tickSpacing);
 
   // Token data from entityStore
-  let token0 = $derived<NormalizedToken | undefined>(
+  let base = $derived<NormalizedToken | undefined>(
     spot.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : undefined
   );
-  let token1 = $derived<NormalizedToken | undefined>(
+  let quote = $derived<NormalizedToken | undefined>(
     spot.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : undefined
   );
 
   // Trading balances (deposited in spot canister, available for orders)
-  let token0Balance = $derived<bigint>(spot.availableBase);
-  let token1Balance = $derived<bigint>(spot.availableQuote);
+  let baseBalance = $derived<bigint>(spot.availableBase);
+  let quoteBalance = $derived<bigint>(spot.availableQuote);
 
   // Best bid/ask from order book (if available)
   let bestBidTick = $derived<number | undefined>(
@@ -148,7 +148,7 @@
   }
 
   async function calculateQuote() {
-    if (!token0 || !token1) return;
+    if (!base || !quote) return;
 
     // Validate inputs
     if (!localAmount || limitTick === null) {
@@ -158,7 +158,7 @@
     }
 
     // Validate amount format - for limit orders, input is always base amount
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
     const inputValue = side === "Buy" ? localTotal : localAmount;
 
     if (!inputValue || inputValue.trim() === "") {
@@ -270,11 +270,11 @@
 
   // Calculate total from amount when amount changes (only when editing amount)
   $effect(() => {
-    if (lastEditedField !== 'amount' || !token1) return;
+    if (lastEditedField !== 'amount' || !quote) return;
 
     if (displayPrice !== null && displayPrice > 0 && localAmount && parseFloat(localAmount) > 0) {
       const total = parseFloat(localAmount) * displayPrice;
-      localTotal = total.toFixed(token1.decimals).replace(/\.?0+$/, '');
+      localTotal = total.toFixed(quote.decimals).replace(/\.?0+$/, '');
     } else {
       localTotal = "";
     }
@@ -290,15 +290,15 @@
   }
 
   function handleTotalChange(val: string) {
-    if (!token0) return;
+    if (!base) return;
 
     lastEditedField = 'total';
     localTotal = val;
 
     if (displayPrice !== null && displayPrice > 0 && val && parseFloat(val) > 0) {
       const amount = parseFloat(val) / displayPrice;
-      // Limit to token0 decimals to prevent "too many decimals" error
-      const limitedAmount = amount.toFixed(token0.decimals).replace(/\.?0+$/, '');
+      // Limit to base decimals to prevent "too many decimals" error
+      const limitedAmount = amount.toFixed(base.decimals).replace(/\.?0+$/, '');
       localAmount = limitedAmount;
     } else if (!val) {
       localAmount = "";
@@ -315,19 +315,19 @@
 
   /** Get input balance based on side (per canon 4.6) */
   function getInputBalance(): bigint {
-    // For BUY: spending token1 (quote)
-    // For SELL: spending token0 (base)
-    return side === "Buy" ? token1Balance : token0Balance;
+    // For BUY: spending quote
+    // For SELL: spending base
+    return side === "Buy" ? quoteBalance : baseBalance;
   }
 
   /** Validate amount and return bigint (per canon 4.5) */
   function validateAmountInput(): { valid: boolean; error?: string; asBigInt?: bigint } {
-    if (!token0 || !token1) return { valid: false, error: "Market not loaded" };
+    if (!base || !quote) return { valid: false, error: "Market not loaded" };
 
     // For BUY: validate total (quote amount being spent)
     // For SELL: validate amount (base amount being sold)
     const inputValue = side === "Buy" ? localTotal : localAmount;
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
     const inputLabel = side === "Buy" ? "total" : "amount";
 
     if (!inputValue || inputValue.trim() === "") {
@@ -355,14 +355,14 @@
 
   /** Validate base amount for display purposes */
   function validateBaseAmount(): { valid: boolean; error?: string; asBigInt?: bigint } {
-    if (!token0) return { valid: false, error: "Market not loaded" };
+    if (!base) return { valid: false, error: "Market not loaded" };
 
     if (!localAmount || localAmount.trim() === "") {
       return { valid: false, error: "Amount is required" };
     }
 
     try {
-      const asBigInt = stringToBigInt(localAmount, token0.decimals);
+      const asBigInt = stringToBigInt(localAmount, base.decimals);
 
       if (asBigInt <= 0n) {
         return { valid: false, error: "Amount must be greater than zero" };
@@ -379,7 +379,7 @@
   // ============================================
 
   function handleSubmitClick() {
-    if (!token0 || !token1) return;
+    if (!base || !quote) return;
 
     // Pre-flight check 1: Validate limit tick
     if (limitTick === null) {
@@ -410,7 +410,7 @@
   }
 
   async function executeLimitOrder() {
-    if (!token0 || !token1) throw new Error("Market not loaded");
+    if (!base || !quote) throw new Error("Market not loaded");
     if (limitTick === null) throw new Error("Invalid price");
 
     const validation = validateAmountInput();
@@ -420,14 +420,14 @@
     const sideVariant: Side = side === "Buy" ? { buy: null } : { sell: null };
 
     // Step 1: Get quote to obtain pool_swaps + book_order
-    const quote = await spot.quoteOrder(sideVariant, validation.asBigInt, limitTick);
+    const orderQuote = await spot.quoteOrder(sideVariant, validation.asBigInt, limitTick);
 
     // Step 2: Build specs — override IOC based on time-in-force selection
     const isIOC = timeInForce === "IOC";
-    const bookOrders = quote.book_order.length > 0
-      ? [{ ...quote.book_order[0]!, immediate_or_cancel: isIOC }]
+    const bookOrders = orderQuote.book_order.length > 0
+      ? [{ ...orderQuote.book_order[0]!, immediate_or_cancel: isIOC }]
       : [];
-    const poolSwaps = quote.pool_swaps;
+    const poolSwaps = orderQuote.pool_swaps;
 
     // Step 3: Create order via unified endpoint
     const result = await spot.createOrders([], bookOrders, poolSwaps);
@@ -446,7 +446,7 @@
   }
 
   async function executeLimitOrderWithToast() {
-    const baseSymbol = token0?.displaySymbol ?? '';
+    const baseSymbol = base?.displaySymbol ?? '';
     isSubmitting = true;
     try {
       await toastState.show({
@@ -462,7 +462,7 @@
           side,
           orderType: 'limit',
           symbol: baseSymbol,
-          logo: token0?.logo ?? undefined
+          logo: base?.logo ?? undefined
         },
         duration: 3000,
         toastPosition: 'bottom-right'
@@ -477,11 +477,11 @@
 
   // Confirmation modal detail
   function buildVenueRouting(quote: QuoteResultType, requestedAmount: bigint) {
-    if (!token0 || !token1) return undefined;
-    const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
-    const outputDecimals = side === "Buy" ? token0.decimals : token1.decimals;
-    const inputToken = side === "Buy" ? token1 : token0;
-    const outputToken = side === "Buy" ? token0 : token1;
+    if (!base || !quote) return undefined;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
+    const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
+    const inputToken = side === "Buy" ? quote : base;
+    const outputToken = side === "Buy" ? base : quote;
 
     const filledFromVenues = quote.venue_breakdown.reduce(
       (sum, v) => sum + Number(v.input_amount), 0
@@ -515,11 +515,11 @@
   }
 
   let confirmationDetail = $derived.by(() => {
-    if (!token0 || !token1) return undefined;
+    if (!base || !quote) return undefined;
     const priceStr = displayPrice !== null ? displayPrice.toFixed(8) : "";
     const rows = [
-      { label: "Amount", value: `${localAmount} ${token0.displaySymbol}` },
-      { label: "Price", value: `${priceStr} ${token1.displaySymbol}` }
+      { label: "Amount", value: `${localAmount} ${base.displaySymbol}` },
+      { label: "Price", value: `${priceStr} ${quote.displaySymbol}` }
     ];
     if (timeInForce === "IOC") {
       rows.push({ label: "Time in Force", value: "IOC" });
@@ -530,12 +530,12 @@
     }
     return {
       side,
-      baseSymbol: token0.displaySymbol,
-      baseLogo: token0.logo ?? undefined,
+      baseSymbol: base.displaySymbol,
+      baseLogo: base.logo ?? undefined,
       rows,
       routing: quoteResult ? buildVenueRouting(quoteResult, (() => {
         try {
-          const inputDecimals = side === "Buy" ? token1!.decimals : token0!.decimals;
+          const inputDecimals = side === "Buy" ? quote!.decimals : base!.decimals;
           const inputValue = side === "Buy" ? localTotal : localAmount;
           return inputValue ? stringToBigInt(inputValue, inputDecimals) : 0n;
         } catch { return 0n; }
@@ -544,7 +544,7 @@
   });
 </script>
 
-{#if !token0 || !token1}
+{#if !base || !quote}
   <div class="p-4">
     <p class="text-muted-foreground text-sm">Loading market data...</p>
   </div>
@@ -556,18 +556,18 @@
         label="Limit Price"
         tick={limitTick}
         currentPrice={spotPrice}
-        token0Decimals={token0.decimals}
-        token1Decimals={token1.decimals}
+        baseDecimals={base.decimals}
+        quoteDecimals={quote.decimals}
         {tickSpacing}
         disabled={isSubmitting}
         onTickChange={handleLimitTickUpdate}
       />
 
-      <!-- Amount Input (token0 - base) -->
+      <!-- Amount Input (base) -->
       <TokenAmountInput
-        label={`Amount (${token0.displaySymbol})`}
-        token={token0}
-        balance={token0Balance}
+        label={`Amount (${base.displaySymbol})`}
+        token={base}
+        balance={baseBalance}
         value={localAmount}
         onValueChange={handleAmountChange}
         disabled={isSubmitting}
@@ -576,11 +576,11 @@
         onDepositClick={side === "Sell" ? openDepositBase : undefined}
       />
 
-      <!-- Total Input (token1 - quote) -->
+      <!-- Total Input (quote) -->
       <TokenAmountInput
-        label={`Total (${token1.displaySymbol})`}
-        token={token1}
-        balance={token1Balance}
+        label={`Total (${quote.displaySymbol})`}
+        token={quote}
+        balance={quoteBalance}
         value={localTotal}
         onValueChange={handleTotalChange}
         disabled={isSubmitting}
@@ -595,18 +595,18 @@
         {isCalculating}
         {quoteError}
         quote={quoteResult}
-        token0Symbol={token0.displaySymbol}
-        token1Symbol={token1.displaySymbol}
-        token0Decimals={token0.decimals}
-        token1Decimals={token1.decimals}
-        token0Logo={token0.logo ?? undefined}
-        token1Logo={token1.logo ?? undefined}
+        baseSymbol={base.displaySymbol}
+        quoteSymbol={quote.displaySymbol}
+        baseDecimals={base.decimals}
+        quoteDecimals={quote.decimals}
+        baseLogo={base.logo ?? undefined}
+        quoteLogo={quote.logo ?? undefined}
         {side}
         referenceTick={quoteReferenceTick}
         currentTick={currentTick ?? undefined}
         inputAmount={(() => {
-          if (!token0 || !token1) return undefined;
-          const inputDecimals = side === "Buy" ? token1.decimals : token0.decimals;
+          if (!base || !quote) return undefined;
+          const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
           const inputValue = side === "Buy" ? localTotal : localAmount;
           if (!inputValue || inputValue.trim() === "") return undefined;
           try {
@@ -649,7 +649,7 @@
         }
         onclick={handleSubmitClick}
       >
-        {isSubmitting ? "Submitting..." : `${side} ${token0.displaySymbol}`}
+        {isSubmitting ? "Submitting..." : `${side} ${base.displaySymbol}`}
       </Button>
     </form>
 
@@ -658,7 +658,7 @@
       bind:open={showConfirmation}
       title="Confirm Limit Order"
       orderDetail={confirmationDetail}
-      confirmLabel={`${side} ${token0.displaySymbol}`}
+      confirmLabel={`${side} ${base.displaySymbol}`}
       variant="primary"
       showSkipOption
       onSkipPreferenceChange={(skip) => userPreferences.setSkipOrderConfirmation(skip)}

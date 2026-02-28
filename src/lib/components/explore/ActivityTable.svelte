@@ -9,20 +9,20 @@
   interface Props {
     spotCanisterId: string | null;
     // Token identification - either by ledger or symbol
-    token0Ledger?: string;
-    token1Ledger?: string;
-    token0Symbol?: string;
-    token1Symbol?: string;
+    baseLedger?: string;
+    quoteLedger?: string;
+    baseSymbol?: string;
+    quoteSymbol?: string;
     // Optional limit (default 20)
     limit?: number;
   }
 
   let {
     spotCanisterId,
-    token0Ledger,
-    token1Ledger,
-    token0Symbol,
-    token1Symbol,
+    baseLedger,
+    quoteLedger,
+    baseSymbol,
+    quoteSymbol,
     limit = 20,
   }: Props = $props();
 
@@ -35,22 +35,22 @@
   let fetchedCanisterId = $state<string | null>(null);
 
   // Get token metadata - prefer ledger lookup, fallback to symbol
-  const token0 = $derived.by(() => {
-    if (token0Ledger) return entityStore.getToken(token0Ledger);
-    if (token0Symbol) return entityStore.getTokenBySymbol(token0Symbol);
+  const baseToken = $derived.by(() => {
+    if (baseLedger) return entityStore.getToken(baseLedger);
+    if (baseSymbol) return entityStore.getTokenBySymbol(baseSymbol);
     return null;
   });
 
-  const token1 = $derived.by(() => {
-    if (token1Ledger) return entityStore.getToken(token1Ledger);
-    if (token1Symbol) return entityStore.getTokenBySymbol(token1Symbol);
-    // Default to ICP if no token1 specified
+  const quoteToken = $derived.by(() => {
+    if (quoteLedger) return entityStore.getToken(quoteLedger);
+    if (quoteSymbol) return entityStore.getTokenBySymbol(quoteSymbol);
+    // Default to ICP if no quote token specified
     return entityStore.getToken('ryjl3-tyaaa-aaaaa-aaaba-cai');
   });
 
   // Display symbols
-  const displayToken0Symbol = $derived(token0?.displaySymbol ?? token0Symbol ?? 'Base');
-  const displayToken1Symbol = $derived(token1?.displaySymbol ?? token1Symbol ?? 'Quote');
+  const displayBaseSymbol = $derived(baseToken?.displaySymbol ?? baseSymbol ?? 'Base');
+  const displayQuoteSymbol = $derived(quoteToken?.displaySymbol ?? quoteSymbol ?? 'Quote');
 
   async function fetchTransactions(canisterId: string) {
     isLoading = true;
@@ -107,8 +107,8 @@
       <HeaderCell align="left" width={80}>Time</HeaderCell>
       <HeaderCell align="center" width={60}>Side</HeaderCell>
       <HeaderCell align="right" grow>Price</HeaderCell>
-      <HeaderCell align="right" grow>{displayToken0Symbol}</HeaderCell>
-      <HeaderCell align="right" grow>{displayToken1Symbol}</HeaderCell>
+      <HeaderCell align="right" grow>{displayBaseSymbol}</HeaderCell>
+      <HeaderCell align="right" grow>{displayQuoteSymbol}</HeaderCell>
       <HeaderCell align="right" grow>USD</HeaderCell>
     {/snippet}
 
@@ -126,20 +126,20 @@
       <TableCell align="right" grow>
         <div class="amount-cell">
           <span class={buy ? 'text-bullish' : 'text-bearish'}>
-            {buy ? '+' : '-'}{formatAmount(tx.amount0)}
+            {buy ? '+' : '-'}{formatAmount(tx.amountBase)}
           </span>
-          {#if token0}
-            <Logo src={token0.logo ?? undefined} alt={token0.symbol} size="xxs" circle={true} />
+          {#if baseToken}
+            <Logo src={baseToken.logo ?? undefined} alt={baseToken.symbol} size="xxs" circle={true} />
           {/if}
         </div>
       </TableCell>
       <TableCell align="right" grow>
         <div class="amount-cell">
           <span class="text-muted">
-            {formatAmount(tx.amount1)}
+            {formatAmount(tx.amountQuote)}
           </span>
-          {#if token1}
-            <Logo src={token1.logo ?? undefined} alt={token1.symbol} size="xxs" circle={true} />
+          {#if quoteToken}
+            <Logo src={quoteToken.logo ?? undefined} alt={quoteToken.symbol} size="xxs" circle={true} />
           {/if}
         </div>
       </TableCell>

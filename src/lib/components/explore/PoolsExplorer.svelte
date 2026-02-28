@@ -219,10 +219,10 @@
       <TableCell width={COL_POOL} align="left" pinned pinnedOffset={COL_INDEX} lastPinned grow>
         <div class="pool-info">
           <TokenPairLogo
-            token0Logo={pool.baseLogo}
-            token1Logo={pool.quoteLogo}
-            token0Symbol={pool.baseSymbol}
-            token1Symbol={pool.quoteSymbol}
+            baseLogo={pool.baseLogo}
+            quoteLogo={pool.quoteLogo}
+            baseSymbol={pool.baseSymbol}
+            quoteSymbol={pool.quoteSymbol}
             size="xs"
           />
           <span class="pool-name">{pool.symbol}</span>

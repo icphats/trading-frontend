@@ -22,10 +22,10 @@
     canisterId: string;
     symbol: string;
     name: string;
-    token0Logo?: string;
-    token1Logo?: string;
-    token0Symbol: string;
-    token1Symbol: string;
+    baseLogo?: string;
+    quoteLogo?: string;
+    baseSymbol: string;
+    quoteSymbol: string;
   };
 
   let allMarkets = $derived.by((): UIMarketRow[] => {
@@ -41,10 +41,10 @@
         canisterId,
         symbol: `${baseSymbol}/${quoteSymbol}`,
         name: baseToken?.displayName ?? baseSymbol,
-        token0Logo: baseToken?.logo ?? undefined,
-        token1Logo: quoteToken?.logo ?? undefined,
-        token0Symbol: baseSymbol,
-        token1Symbol: quoteSymbol,
+        baseLogo: baseToken?.logo ?? undefined,
+        quoteLogo: quoteToken?.logo ?? undefined,
+        baseSymbol: baseSymbol,
+        quoteSymbol: quoteSymbol,
       };
     });
   });
@@ -87,8 +87,8 @@
             <UnifiedListRow
               type="market"
               id={market.canisterId}
-              pairLogos={{ token0: market.token0Logo, token1: market.token1Logo }}
-              pairSymbols={{ token0: market.token0Symbol, token1: market.token1Symbol }}
+              pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
+              pairSymbols={{ base: market.baseSymbol, quote: market.quoteSymbol }}
               primaryLabel={market.symbol}
               secondaryLabel={market.name}
               isSelected={market.canisterId === currentMarketId}

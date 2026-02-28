@@ -3,20 +3,20 @@
   import Badge from '$lib/components/ui/Badge.svelte';
 
   interface Props {
-    token0Symbol: string;
-    token1Symbol: string;
-    token0Logo?: string;
-    token1Logo?: string;
+    baseSymbol: string;
+    quoteSymbol: string;
+    baseLogo?: string;
+    quoteLogo?: string;
     feePips: number;
     isLoading?: boolean;
     onToggleReversed?: () => void;
   }
 
   let {
-    token0Symbol,
-    token1Symbol,
-    token0Logo,
-    token1Logo,
+    baseSymbol,
+    quoteSymbol,
+    baseLogo,
+    quoteLogo,
     feePips,
     isLoading = false,
     onToggleReversed
@@ -37,17 +37,17 @@
   {:else}
     <div class="pool-identity">
       <TokenPairLogo
-        {token0Logo}
-        {token1Logo}
-        {token0Symbol}
-        {token1Symbol}
+        {baseLogo}
+        {quoteLogo}
+        {baseSymbol}
+        {quoteSymbol}
         size="sm"
       />
       <div class="pool-name-row">
         <h1 class="pool-name">
-          <span class="token-link">{token0Symbol}</span>
+          <span class="token-link">{baseSymbol}</span>
           <span class="separator">/</span>
-          <span class="token-link">{token1Symbol}</span>
+          <span class="token-link">{quoteSymbol}</span>
         </h1>
         <Badge variant="gray" size="sm">{feePercent}%</Badge>
         {#if onToggleReversed}

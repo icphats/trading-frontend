@@ -124,10 +124,10 @@ export interface SpotUserPosition extends UserPosition {
   liquidity: bigint;
   tickLower: number;
   tickUpper: number;
-  amount0: bigint;
-  amount1: bigint;
-  feesAccrued0: bigint;
-  feesAccrued1: bigint;
+  amountBase: bigint;
+  amountQuote: bigint;
+  feesAccruedBase: bigint;
+  feesAccruedQuote: bigint;
 }
 
 // ============================================

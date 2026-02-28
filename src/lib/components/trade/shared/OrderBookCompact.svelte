@@ -11,7 +11,7 @@
     overrideTokenLogo?: string;
     overrideTokenSymbol?: string;
     overrideTokenDecimals?: number;
-    selectedTokenType?: "token0" | "token1";
+    selectedTokenType?: "base" | "quote";
   }
 
   let {
@@ -20,18 +20,18 @@
     overrideTokenLogo,
     overrideTokenSymbol,
     overrideTokenDecimals,
-    selectedTokenType = "token0",
+    selectedTokenType = "base",
   }: Props = $props();
 
-  // Derive token0 and token1 for spot markets
-  let token0 = $derived.by(() => {
+  // Derive base and quote for spot markets
+  let base = $derived.by(() => {
     if (market.tokens?.[0]) {
       return entityStore.getToken(market.tokens[0].toString());
     }
     return undefined;
   });
 
-  let token1 = $derived.by(() => {
+  let quote = $derived.by(() => {
     if (market.tokens?.[1]) {
       return entityStore.getToken(market.tokens[1].toString());
     }
@@ -43,7 +43,7 @@
     if (overrideTokenSymbol !== undefined) {
       return overrideTokenSymbol;
     }
-    return token0?.displaySymbol ?? "";
+    return base?.displaySymbol ?? "";
   });
 
   // Get token decimals for proper formatting
@@ -51,7 +51,7 @@
     if (overrideTokenDecimals !== undefined) {
       return overrideTokenDecimals;
     }
-    return token0?.decimals ?? 8;
+    return base?.decimals ?? 8;
   });
 
   // Price header label

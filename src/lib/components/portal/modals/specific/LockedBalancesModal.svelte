@@ -13,10 +13,10 @@
   let { open = $bindable(false), spot, onClose }: Props = $props();
 
   // Get token metadata from entityStore
-  let token0 = $derived.by(() =>
+  let base = $derived.by(() =>
     spot?.tokens?.[0] ? entityStore.getToken(spot.tokens[0].toString()) : null
   );
-  let token1 = $derived.by(() =>
+  let quote = $derived.by(() =>
     spot?.tokens?.[1] ? entityStore.getToken(spot.tokens[1].toString()) : null
   );
 
@@ -36,43 +36,43 @@
     return `$${value.toFixed(2)}`;
   }
 
-  function getUsd(balance: bigint, token: typeof token0): string {
+  function getUsd(balance: bigint, token: typeof base): string {
     if (!token) return "";
     return formatUsd(calculateUsdValue(balance, token.priceUsd, token.decimals));
   }
 
   // Format available balances
   let availableBase = $derived.by(() =>
-    token0 && spot ? bigIntToString(spot.availableBase, token0.decimals) : "0"
+    base && spot ? bigIntToString(spot.availableBase, base.decimals) : "0"
   );
   let availableQuote = $derived.by(() =>
-    token1 && spot ? bigIntToString(spot.availableQuote, token1.decimals) : "0"
+    quote && spot ? bigIntToString(spot.availableQuote, quote.decimals) : "0"
   );
 
   // Format locked balances by type
   let ordersBase = $derived.by(() =>
-    token0 && spot ? bigIntToString(spot.ordersLockedBase, token0.decimals) : "0"
+    base && spot ? bigIntToString(spot.ordersLockedBase, base.decimals) : "0"
   );
   let ordersQuote = $derived.by(() =>
-    token1 && spot ? bigIntToString(spot.ordersLockedQuote, token1.decimals) : "0"
+    quote && spot ? bigIntToString(spot.ordersLockedQuote, quote.decimals) : "0"
   );
   let triggersBase = $derived.by(() =>
-    token0 && spot ? bigIntToString(spot.triggersLockedBase, token0.decimals) : "0"
+    base && spot ? bigIntToString(spot.triggersLockedBase, base.decimals) : "0"
   );
   let triggersQuote = $derived.by(() =>
-    token1 && spot ? bigIntToString(spot.triggersLockedQuote, token1.decimals) : "0"
+    quote && spot ? bigIntToString(spot.triggersLockedQuote, quote.decimals) : "0"
   );
   let positionsBase = $derived.by(() =>
-    token0 && spot ? bigIntToString(spot.positionsLockedBase, token0.decimals) : "0"
+    base && spot ? bigIntToString(spot.positionsLockedBase, base.decimals) : "0"
   );
   let positionsQuote = $derived.by(() =>
-    token1 && spot ? bigIntToString(spot.positionsLockedQuote, token1.decimals) : "0"
+    quote && spot ? bigIntToString(spot.positionsLockedQuote, quote.decimals) : "0"
   );
   let feesBase = $derived.by(() =>
-    token0 && spot ? bigIntToString(spot.feesBase, token0.decimals) : "0"
+    base && spot ? bigIntToString(spot.feesBase, base.decimals) : "0"
   );
   let feesQuote = $derived.by(() =>
-    token1 && spot ? bigIntToString(spot.feesQuote, token1.decimals) : "0"
+    quote && spot ? bigIntToString(spot.feesQuote, quote.decimals) : "0"
   );
 
   // Calculate totals
@@ -85,12 +85,12 @@
     return spot.availableQuote + spot.ordersLockedQuote + spot.triggersLockedQuote + spot.positionsLockedQuote + spot.feesQuote;
   });
   let totalBase = $derived.by(() => {
-    if (!token0) return "0";
-    return bigIntToString(totalBaseBigInt, token0.decimals);
+    if (!base) return "0";
+    return bigIntToString(totalBaseBigInt, base.decimals);
   });
   let totalQuote = $derived.by(() => {
-    if (!token1) return "0";
-    return bigIntToString(totalQuoteBigInt, token1.decimals);
+    if (!quote) return "0";
+    return bigIntToString(totalQuoteBigInt, quote.decimals);
   });
 
 </script>
@@ -102,8 +102,8 @@
         <!-- Header -->
         <div class="table-header">
           <span class="header-label"></span>
-          <span class="header-token">{token0?.displaySymbol ?? 'BASE'}</span>
-          <span class="header-token">{token1?.displaySymbol ?? 'QUOTE'}</span>
+          <span class="header-token">{base?.displaySymbol ?? 'BASE'}</span>
+          <span class="header-token">{quote?.displaySymbol ?? 'QUOTE'}</span>
         </div>
 
         <!-- Available -->
@@ -111,11 +111,11 @@
           <span class="row-label">Available</span>
           <div class="row-value">
             <span class="balance">{availableBase}</span>
-            <span class="usd">{getUsd(spot.availableBase, token0)}</span>
+            <span class="usd">{getUsd(spot.availableBase, base)}</span>
           </div>
           <div class="row-value">
             <span class="balance">{availableQuote}</span>
-            <span class="usd">{getUsd(spot.availableQuote, token1)}</span>
+            <span class="usd">{getUsd(spot.availableQuote, quote)}</span>
           </div>
         </div>
 
@@ -124,11 +124,11 @@
           <span class="row-label">In Orders</span>
           <div class="row-value">
             <span class="balance">{ordersBase}</span>
-            <span class="usd">{getUsd(spot.ordersLockedBase, token0)}</span>
+            <span class="usd">{getUsd(spot.ordersLockedBase, base)}</span>
           </div>
           <div class="row-value">
             <span class="balance">{ordersQuote}</span>
-            <span class="usd">{getUsd(spot.ordersLockedQuote, token1)}</span>
+            <span class="usd">{getUsd(spot.ordersLockedQuote, quote)}</span>
           </div>
         </div>
 
@@ -136,11 +136,11 @@
           <span class="row-label">In Triggers</span>
           <div class="row-value">
             <span class="balance">{triggersBase}</span>
-            <span class="usd">{getUsd(spot.triggersLockedBase, token0)}</span>
+            <span class="usd">{getUsd(spot.triggersLockedBase, base)}</span>
           </div>
           <div class="row-value">
             <span class="balance">{triggersQuote}</span>
-            <span class="usd">{getUsd(spot.triggersLockedQuote, token1)}</span>
+            <span class="usd">{getUsd(spot.triggersLockedQuote, quote)}</span>
           </div>
         </div>
 
@@ -148,11 +148,11 @@
           <span class="row-label">In Positions</span>
           <div class="row-value">
             <span class="balance">{positionsBase}</span>
-            <span class="usd">{getUsd(spot.positionsLockedBase, token0)}</span>
+            <span class="usd">{getUsd(spot.positionsLockedBase, base)}</span>
           </div>
           <div class="row-value">
             <span class="balance">{positionsQuote}</span>
-            <span class="usd">{getUsd(spot.positionsLockedQuote, token1)}</span>
+            <span class="usd">{getUsd(spot.positionsLockedQuote, quote)}</span>
           </div>
         </div>
 
@@ -160,11 +160,11 @@
           <span class="row-label">Uncollected Fees</span>
           <div class="row-value">
             <span class="balance" class:highlight={spot.feesBase > 0n}>{feesBase}</span>
-            <span class="usd">{getUsd(spot.feesBase, token0)}</span>
+            <span class="usd">{getUsd(spot.feesBase, base)}</span>
           </div>
           <div class="row-value">
             <span class="balance" class:highlight={spot.feesQuote > 0n}>{feesQuote}</span>
-            <span class="usd">{getUsd(spot.feesQuote, token1)}</span>
+            <span class="usd">{getUsd(spot.feesQuote, quote)}</span>
           </div>
         </div>
 
@@ -173,11 +173,11 @@
           <span class="row-label">Total</span>
           <div class="row-value">
             <span class="balance">{totalBase}</span>
-            <span class="usd">{getUsd(totalBaseBigInt, token0)}</span>
+            <span class="usd">{getUsd(totalBaseBigInt, base)}</span>
           </div>
           <div class="row-value">
             <span class="balance">{totalQuote}</span>
-            <span class="usd">{getUsd(totalQuoteBigInt, token1)}</span>
+            <span class="usd">{getUsd(totalQuoteBigInt, quote)}</span>
           </div>
         </div>
       </div>

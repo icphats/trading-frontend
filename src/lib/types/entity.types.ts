@@ -112,8 +112,8 @@ export interface NormalizedPool {
 
   // Pair info
   symbol: string;
-  token0: string;
-  token1: string;
+  base: string;
+  quote: string;
   feePips: number; // Fee in pips (100-10000, where 100 = 0.01%, 10000 = 1.00%)
 
   // Pool state
@@ -125,8 +125,8 @@ export interface NormalizedPool {
   apr: number;              // Estimated APR as percentage
 
   // Token reserves (from spot canister's get_pool - actual pool balances)
-  token0Reserve: bigint | null;  // Raw token0 amount (null = not yet fetched from spot canister)
-  token1Reserve: bigint | null;  // Raw token1 amount (null = not yet fetched from spot canister)
+  baseReserve: bigint | null;  // Raw base token amount (null = not yet fetched from spot canister)
+  quoteReserve: bigint | null;  // Raw quote token amount (null = not yet fetched from spot canister)
 
   // Metadata
   source: EntitySource;

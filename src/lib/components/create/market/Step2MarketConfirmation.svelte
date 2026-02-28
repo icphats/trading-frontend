@@ -3,6 +3,8 @@
   import Logo from "$lib/components/ui/Logo.svelte";
   import { marketCreation } from "$lib/domain/markets";
   import { createMarket, isRegistryAvailable, type SpotMarketMetadata } from "$lib/domain/orchestration";
+  import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
+  import { userPortfolio } from "$lib/domain/user";
   import { toastState } from "$lib/state/portal/toast.state.svelte";
   import { Principal } from "@dfinity/principal";
   import { api } from "$lib/actors/api.svelte";
@@ -31,11 +33,22 @@
     });
   });
 
+  // ICP balance check
+  const icpToken = $derived(entityStore.getTokenBySymbol("ICP"));
+  const icpBalance = $derived(
+    icpToken
+      ? (userPortfolio.allTokens.find((t) => t.canisterId === icpToken.canisterId)?.balance ?? 0n)
+      : 0n
+  );
+  const insufficientBalance = $derived(
+    creationFeeE8s !== null && icpBalance < creationFeeE8s
+  );
+
   /**
    * Create spot market for selected token pair
    */
   async function handleCreateMarket() {
-    if (!marketCreation.selectedToken || !marketCreation.selectedQuoteToken || isCreating || !isRegistryAvailable()) return;
+    if (!marketCreation.selectedToken || !marketCreation.selectedQuoteToken || isCreating || !isRegistryAvailable() || insufficientBalance) return;
 
     onCreatingChange(true);
     onErrorChange("");
@@ -156,10 +169,17 @@
       </div>
     {/if}
 
+    <!-- Insufficient Balance Warning -->
+    {#if insufficientBalance}
+      <div class="bg-red-500/10 border border-red-500/20 rounded-[var(--radius-md)] p-4">
+        <p class="text-sm font-semibold text-red-500">Insufficient ICP balance to cover the creation fee.</p>
+      </div>
+    {/if}
+
     <!-- Footer: Action Buttons -->
     <div class="flex items-center justify-between gap-4 mt-6">
       <ButtonV2 variant="secondary" size="xl" onclick={onBack} disabled={isCreating}>Back</ButtonV2>
-      <ButtonV2 variant="primary" size="xl" onclick={handleCreateMarket} disabled={isCreating}>
+      <ButtonV2 variant="primary" size="xl" onclick={handleCreateMarket} disabled={isCreating || insufficientBalance}>
         {isCreating ? "Creating Market..." : "Create Market"}
       </ButtonV2>
     </div>

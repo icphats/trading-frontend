@@ -55,10 +55,10 @@
     tick: number | null;
     /** Current price (for percentage calculations) */
     currentPrice?: number;
-    /** Token0 decimals */
-    token0Decimals?: number;
-    /** Token1 decimals */
-    token1Decimals?: number;
+    /** Base token decimals */
+    baseDecimals?: number;
+    /** Quote token decimals */
+    quoteDecimals?: number;
     /** Tick spacing for the market */
     tickSpacing?: number;
     /** Number of significant figures to display (default: 5) */
@@ -98,8 +98,8 @@
     label,
     tick,
     currentPrice,
-    token0Decimals = 8,
-    token1Decimals = 8,
+    baseDecimals = 8,
+    quoteDecimals = 8,
     tickSpacing = 60,
     significantFigures = 5,
     disabled = false,
@@ -129,8 +129,8 @@
 
   function priceToTickDirectional(targetPrice: number): number {
     return _priceToTickDirectional(targetPrice, {
-      token0Decimals,
-      token1Decimals,
+      baseDecimals,
+      quoteDecimals,
       tickSpacing,
       directional: !allowNegativeSlippage && !!side,
       side,
@@ -201,7 +201,7 @@
   const isAtBound = $derived(isMinTick(effectiveTick) || isMaxTick(effectiveTick));
 
   // Derived price from tick
-  const price = $derived(tickToPrice(effectiveTick, token0Decimals, token1Decimals));
+  const price = $derived(tickToPrice(effectiveTick, baseDecimals, quoteDecimals));
 
   // Calculate percentage difference from current price (slippage)
   const percentageDiff = $derived.by(() => {
@@ -390,7 +390,7 @@
       onTickChange?.(priceToTickDirectional(targetPrice));
     } else {
       // Limit price mode or no initial slippage: reset to market price
-      const centerTick = priceToTick(currentPrice, token0Decimals, token1Decimals, tickSpacing);
+      const centerTick = priceToTick(currentPrice, baseDecimals, quoteDecimals, tickSpacing);
       onTickChange?.(centerTick);
     }
   }

@@ -17,7 +17,9 @@ type UpgradeArgs =
    set_icp_ledger_creation_fee: opt nat;
    set_icp_spot_creation_fee: opt nat;
    set_indexer_principal: opt principal;
+   set_ledger_creation_cycles: opt nat;
    set_oracle_principal: opt principal;
+   set_spot_creation_cycles: opt nat;
    set_treasury_principal: opt principal;
  };
 type SystemState = 
@@ -33,15 +35,15 @@ type SpotMarketResult =
  };
 type SpotMarketMetadata = 
  record {
+   base_ledger: principal;
+   base_name: text;
+   base_symbol: text;
    canister_id: principal;
    internal: InternalCanisterMetadata;
+   quote_ledger: principal;
+   quote_name: text;
+   quote_symbol: text;
    registry_principal: principal;
-   token0_ledger: principal;
-   token0_name: text;
-   token0_symbol: text;
-   token1_ledger: principal;
-   token1_name: text;
-   token1_symbol: text;
  };
 type SpotInitArgs = 
  record {
@@ -121,9 +123,12 @@ type FrozenControl =
    icp_spot_creation_fee: nat;
    icp_transfer_fee: nat;
    indexer_principal: opt principal;
+   ledger_creation_cycles: nat;
    oracle_principal: principal;
+   spot_creation_cycles: nat;
    system_state: SystemState;
    this_principal: principal;
+   timer_running: bool;
    treasury_allowance_set: bool;
    treasury_principal: opt principal;
  };

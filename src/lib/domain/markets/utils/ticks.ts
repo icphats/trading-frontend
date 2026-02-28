@@ -340,20 +340,20 @@ export function isValidTick(tick: number, tickSpacing: number = 60): boolean {
  * @param tickLower - Lower tick bound
  * @param tickUpper - Upper tick bound
  * @param currentTick - Current pool tick
- * @param token0Decimals - Decimals of base token (default: 8)
- * @param token1Decimals - Decimals of quote token (default: 8)
+ * @param baseDecimals - Decimals of base token (default: 8)
+ * @param quoteDecimals - Decimals of quote token (default: 8)
  * @returns Object with lowerPercent and upperPercent (can be negative)
  */
 export function getPriceRangePercent(
     tickLower: number,
     tickUpper: number,
     currentTick: number,
-    token0Decimals: number = 8,
-    token1Decimals: number = 8
+    baseDecimals: number = 8,
+    quoteDecimals: number = 8
 ): { lowerPercent: number; upperPercent: number } {
-    const currentPrice = tickToPrice(currentTick, token0Decimals, token1Decimals);
-    const lowerPrice = tickToPrice(tickLower, token0Decimals, token1Decimals);
-    const upperPrice = tickToPrice(tickUpper, token0Decimals, token1Decimals);
+    const currentPrice = tickToPrice(currentTick, baseDecimals, quoteDecimals);
+    const lowerPrice = tickToPrice(tickLower, baseDecimals, quoteDecimals);
+    const upperPrice = tickToPrice(tickUpper, baseDecimals, quoteDecimals);
 
     const lowerPercent = ((lowerPrice - currentPrice) / currentPrice) * 100;
     const upperPercent = ((upperPrice - currentPrice) / currentPrice) * 100;
@@ -370,22 +370,22 @@ export function getPriceRangePercent(
  * Handles full range bounds by displaying "0" and "∞"
  *
  * @param tick - Tick to format
- * @param token0Decimals - Decimals of base token (default: 8)
- * @param token1Decimals - Decimals of quote token (default: 8)
+ * @param baseDecimals - Decimals of base token (default: 8)
+ * @param quoteDecimals - Decimals of quote token (default: 8)
  * @param maxDecimals - Maximum decimal places to show (default: 6)
  * @returns Formatted price string
  */
 export function formatTickPrice(
     tick: number,
-    token0Decimals: number = 8,
-    token1Decimals: number = 8,
+    baseDecimals: number = 8,
+    quoteDecimals: number = 8,
     maxDecimals: number = 6
 ): string {
     // Handle full range bounds specially
     if (isMinTick(tick)) return '0';
     if (isMaxTick(tick)) return '∞';
 
-    const price = tickToPrice(tick, token0Decimals, token1Decimals);
+    const price = tickToPrice(tick, baseDecimals, quoteDecimals);
 
     // Use more decimals for very small prices
     if (price < 0.0001) return price.toExponential(4);

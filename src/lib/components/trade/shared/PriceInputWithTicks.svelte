@@ -16,8 +16,8 @@
     tickSpacing: number;
     currentTick: number;
     spotPrice: number;
-    token0Symbol: string; // Base token symbol
-    token1Symbol: string; // Quote token symbol
+    baseSymbol: string; // Base token symbol
+    quoteSymbol: string; // Quote token symbol
     disabled: boolean;
     onUpdate: (tick: number | null) => void;
     label?: string;
@@ -30,8 +30,8 @@
     tickSpacing,
     currentTick,
     spotPrice,
-    token0Symbol,
-    token1Symbol,
+    baseSymbol,
+    quoteSymbol,
     disabled = false,
     onUpdate,
     label = "Limit Price",
@@ -152,7 +152,7 @@
   <label for="limit-price" class="block text-xs text-muted-foreground mb-1">
     {label}
     <span class="text-[10px] text-muted-foreground/70">
-      (Tick: ≈{getTickIncrement().toFixed(8)} {token1Symbol})
+      (Tick: ≈{getTickIncrement().toFixed(8)} {quoteSymbol})
     </span>
   </label>
   <div class="flex gap-1">
@@ -197,7 +197,7 @@
         class="w-full px-2 py-1.5 pr-20 bg-transparent border border-border text-foreground text-sm rounded-sm placeholder-muted-foreground focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary transition-colors font-numeric disabled:opacity-50 min-h-[36px]"
       />
       <div class="absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none text-xs text-muted-foreground">
-        {token1Symbol}/{token0Symbol}
+        {quoteSymbol}/{baseSymbol}
       </div>
     </div>
 
@@ -218,7 +218,7 @@
     <div class="flex justify-between items-center mt-1">
       {#if showCurrentPrice}
         <p class="text-xs text-muted-foreground">
-          Current: {spotPrice.toFixed(6)} {token1Symbol}
+          Current: {spotPrice.toFixed(6)} {quoteSymbol}
         </p>
       {/if}
       {#if showPriceDifference && priceDifference !== null}

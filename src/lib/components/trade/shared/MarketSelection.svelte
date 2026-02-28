@@ -465,10 +465,10 @@
     >
       <div class="flex items-center gap-2 market-select-inner">
         <TokenPairLogo
-          token0Logo={currentMarketUI.baseLogo}
-          token1Logo={currentMarketUI.quoteLogo}
-          token0Symbol={currentMarketUI.baseSymbol}
-          token1Symbol={currentMarketUI.quoteSymbol}
+          baseLogo={currentMarketUI.baseLogo}
+          quoteLogo={currentMarketUI.quoteLogo}
+          baseSymbol={currentMarketUI.baseSymbol}
+          quoteSymbol={currentMarketUI.quoteSymbol}
           size="xs"
         />
         <span class="font-semibold text-base market-select-pair">{currentMarketUI.pairSymbol}</span>
@@ -593,10 +593,10 @@
               <TableCell width={COL_PAIR} align="left" compact grow>
                 <div class="cell-pair">
                   <TokenPairLogo
-                    token0Logo={market.baseLogo}
-                    token1Logo={market.quoteLogo}
-                    token0Symbol={market.baseSymbol}
-                    token1Symbol={market.quoteSymbol}
+                    baseLogo={market.baseLogo}
+                    quoteLogo={market.quoteLogo}
+                    baseSymbol={market.baseSymbol}
+                    quoteSymbol={market.quoteSymbol}
                     size="xxs"
                   />
                   <span class="pair-symbol">{market.pairSymbol}</span>

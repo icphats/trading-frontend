@@ -8,8 +8,8 @@
   }
 
   interface PositionInfo {
-    token0: TokenInfo;
-    token1: TokenInfo;
+    base: TokenInfo;
+    quote: TokenInfo;
     fee_pips: number;
     status?: 'in_range' | 'out_of_range' | 'closed';
   }
@@ -38,17 +38,17 @@
 <div class="position-info" class:mini={size === 'mini'}>
   <div class="token-logos">
     <div class="logo-wrapper">
-      <Logo src={position.token0.logo ?? undefined} alt={position.token0.displaySymbol} size="md" circle={true} />
+      <Logo src={position.base.logo ?? undefined} alt={position.base.displaySymbol} size="md" circle={true} />
     </div>
     <div class="logo-wrapper overlap">
-      <Logo src={position.token1.logo ?? undefined} alt={position.token1.displaySymbol} size="md" circle={true} />
+      <Logo src={position.quote.logo ?? undefined} alt={position.quote.displaySymbol} size="md" circle={true} />
     </div>
   </div>
 
   <div class="position-details">
     <div class="position-pair">
       <span class="pair-text">
-        {position.token0.displaySymbol} / {position.token1.displaySymbol}
+        {position.base.displaySymbol} / {position.quote.displaySymbol}
       </span>
       <span class="fee-badge">{feePercent}%</span>
     </div>

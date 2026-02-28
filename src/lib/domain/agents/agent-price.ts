@@ -189,12 +189,12 @@ export function liquidityRange(currentTick: number, feePips: number): { tickLowe
   return { tickLower, tickUpper: Math.max(tickUpper, tickLower + spacing) };
 }
 
-export function liquidityAmounts(t: AgentTracker): { amount0: bigint; amount1: bigint } {
+export function liquidityAmounts(t: AgentTracker): { amountBase: bigint; amountQuote: bigint } {
   const priceUsd = basePriceUsd(t.tick!, t.baseDecimals, t.quoteDecimals, t.symbol);
   const quoteUsd = quoteUsdMultiplier(t.symbol);
   return {
-    amount0: randAmount(50, 500, t.baseDecimals, priceUsd),
-    amount1: randAmount(50, 500, t.quoteDecimals, quoteUsd),
+    amountBase: randAmount(50, 500, t.baseDecimals, priceUsd),
+    amountQuote: randAmount(50, 500, t.quoteDecimals, quoteUsd),
   };
 }
 

@@ -8,12 +8,12 @@
     isCalculating: boolean;
     quoteError?: string | null;
     quote: QuoteResultType | null;
-    token0Symbol: string;
-    token1Symbol: string;
-    token0Decimals: number;
-    token1Decimals: number;
-    token0Logo?: string;
-    token1Logo?: string;
+    baseSymbol: string;
+    quoteSymbol: string;
+    baseDecimals: number;
+    quoteDecimals: number;
+    baseLogo?: string;
+    quoteLogo?: string;
     side: "Buy" | "Sell";
     /** User's requested input amount (for calculating fill %) */
     inputAmount?: bigint;
@@ -23,7 +23,7 @@
     currentTick?: number;
   }
 
-  let { isCalculating, quoteError = null, quote, token0Symbol, token1Symbol, token0Decimals, token1Decimals, token0Logo, token1Logo, side, inputAmount, referenceTick, currentTick }: Props = $props();
+  let { isCalculating, quoteError = null, quote, baseSymbol, quoteSymbol, baseDecimals, quoteDecimals, baseLogo, quoteLogo, side, inputAmount, referenceTick, currentTick }: Props = $props();
 
   let isExpanded = $state(false);
 
@@ -65,18 +65,18 @@
   let isVeryHighImpact = $derived(priceImpactPercent >= 3);
 
   // Exchange rate from effective tick
-  let executionPrice = $derived(quote ? tickToPrice(quote.effective_tick, token0Decimals, token1Decimals) : 0);
+  let executionPrice = $derived(quote ? tickToPrice(quote.effective_tick, baseDecimals, quoteDecimals) : 0);
   let priceDecimals = $derived(getDisplayDecimals(executionPrice));
 
   // Token mapping based on side
-  // Buy: spend token1 (quote) → receive token0 (base)
-  // Sell: spend token0 (base) → receive token1 (quote)
-  let inputTokenSymbol = $derived(side === "Buy" ? token1Symbol : token0Symbol);
-  let inputTokenDecimals = $derived(side === "Buy" ? token1Decimals : token0Decimals);
-  let inputTokenLogo = $derived(side === "Buy" ? token1Logo : token0Logo);
-  let outputTokenSymbol = $derived(side === "Buy" ? token0Symbol : token1Symbol);
-  let outputTokenDecimals = $derived(side === "Buy" ? token0Decimals : token1Decimals);
-  let outputTokenLogo = $derived(side === "Buy" ? token0Logo : token1Logo);
+  // Buy: spend quote → receive base
+  // Sell: spend base → receive quote
+  let inputTokenSymbol = $derived(side === "Buy" ? quoteSymbol : baseSymbol);
+  let inputTokenDecimals = $derived(side === "Buy" ? quoteDecimals : baseDecimals);
+  let inputTokenLogo = $derived(side === "Buy" ? quoteLogo : baseLogo);
+  let outputTokenSymbol = $derived(side === "Buy" ? baseSymbol : quoteSymbol);
+  let outputTokenDecimals = $derived(side === "Buy" ? baseDecimals : quoteDecimals);
+  let outputTokenLogo = $derived(side === "Buy" ? baseLogo : quoteLogo);
 
   // Formatted values from quote
   let totalFeesFormatted = $derived(
@@ -170,7 +170,7 @@
           {#if isCalculating}
             <div class="skeleton skeleton-value-lg"></div>
           {:else}
-            <span class="quote-value">1 {token0Symbol} = {executionPrice.toFixed(priceDecimals)} {token1Symbol}</span>
+            <span class="quote-value">1 {baseSymbol} = {executionPrice.toFixed(priceDecimals)} {quoteSymbol}</span>
           {/if}
         </div>
 
