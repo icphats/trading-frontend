@@ -7,11 +7,10 @@
   interface Props {
     steps: Step[];
     currentStep: number;
-    stickyTop?: string;
     onStepClick?: (stepNumber: number) => void;
   }
 
-  let { steps, currentStep, stickyTop = '5rem', onStepClick }: Props = $props();
+  let { steps, currentStep, onStepClick }: Props = $props();
 
   // Find current step info for mobile header
   let currentStepData = $derived(steps.find(s => s.number === currentStep) ?? steps[0]);
@@ -25,7 +24,7 @@
 </script>
 
 <!-- Desktop: Sidebar indicator (hidden below 1024px) -->
-<div class="step-indicator-sidebar" style="top: {stickyTop};">
+<div class="step-indicator-sidebar">
   {#each steps as step, index (step.number)}
     {@const isActive = currentStep === step.number}
     {@const isCompleted = currentStep > step.number}
@@ -99,6 +98,7 @@
     display: none;
     width: 360px;
     position: sticky;
+    top: calc(var(--navbar-height) + 1.5rem);
     border-radius: var(--radius-2xl);
     border: 1px solid var(--border);
     padding: 16px;
@@ -125,10 +125,6 @@
     border: 1px solid var(--border);
     border-radius: var(--radius-2xl);
     order: -1;
-    /* Sticky header on mobile (Uniswap pattern) */
-    position: sticky;
-    top: 64px; /* Below navbar */
-    z-index: 10;
   }
 
   @media (min-width: 1024px) {

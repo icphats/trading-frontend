@@ -19,6 +19,7 @@
   --destructive-foreground: oklch(1.0000 0 0);
   --border: oklch(0.92 0 0);
   --border-hover: oklch(0.80 0 0);
+  --focus-glow: 0 0 12px oklch(from var(--border) l c h / 0.15);
   --ring: var(--primary);
   --control-active: oklch(0.93 0 0);
   --table-header-bg: oklch(0.96 0 0);
@@ -162,6 +163,7 @@
   --destructive-foreground: oklch(1.0000 0 0);
   --border: oklch(0.35 0.04 291);
   --border-hover: oklch(0.48 0.04 291);
+  --focus-glow: 0 0 12px oklch(from var(--border) l c h / 0.15);
   --ring: var(--primary);
   --control-active: oklch(0.24 0.08 291);
   --table-header-bg: oklch(0.24 0.055 291);

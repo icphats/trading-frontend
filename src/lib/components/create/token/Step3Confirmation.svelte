@@ -4,6 +4,8 @@
   import { tokenCreation } from "$lib/domain/tokens";
   import { canisterIds } from "$lib/constants/app.constants";
   import { api } from "$lib/actors/api.svelte";
+  import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
+  import { userPortfolio } from "$lib/domain/user";
 
   interface Props {
     onBack: () => void;
@@ -24,6 +26,17 @@
     creationFeeE8s !== null ? Number(creationFeeE8s) / 1e8 : null
   );
 
+  // ICP balance check (matching market flow pattern)
+  const icpToken = $derived(entityStore.getTokenBySymbol("ICP"));
+  const icpBalance = $derived(
+    icpToken
+      ? (userPortfolio.allTokens.find((t) => t.canisterId === icpToken.canisterId)?.balance ?? 0n)
+      : 0n
+  );
+  const insufficientBalance = $derived(
+    creationFeeE8s !== null && icpBalance < creationFeeE8s
+  );
+
   $effect(() => {
     if (!api.registry) return;
     api.registry.get_creation_fees().then((fees) => {
@@ -33,61 +46,65 @@
 </script>
 
 <div class="space-y-6">
-  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-6 space-y-6 overflow-hidden">
+  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-4 sm:p-6 space-y-6 overflow-hidden">
     <div>
       <h3 class="text-lg font-semibold">Review Token Details</h3>
       <p class="text-sm text-[color:var(--muted-foreground)] mt-1">Please review your token configuration before creation. Once created, these parameters cannot be changed.</p>
     </div>
 
     <!-- Token Summary Card -->
-    <div class="bg-[color:var(--muted)]/30 rounded-[var(--radius-md)] p-6">
-    <div class="flex items-start gap-6">
-      <!-- Logo -->
-      {#if tokenCreation.logoBase64}
-        <div class="w-24 h-24 rounded-full overflow-hidden flex-shrink-0 border-2 border-[color:var(--border)]">
-          <img src={tokenCreation.logoBase64} alt="{tokenCreation.tokenSymbol} logo" class="w-full h-full object-contain bg-[color:var(--background)]" />
-        </div>
-      {/if}
-
-      <!-- Token Info -->
-      <div class="flex-1 space-y-4">
+    <div class="bg-[color:var(--muted)]/30 rounded-[var(--radius-md)] p-4 sm:p-6 space-y-4">
+      <!-- Header: Logo + Name -->
+      <div class="flex items-center gap-4">
+        {#if tokenCreation.logoBase64}
+          <div class="w-14 h-14 sm:w-20 sm:h-20 rounded-full overflow-hidden flex-shrink-0 border-2 border-[color:var(--border)]">
+            <img src={tokenCreation.logoBase64} alt="{tokenCreation.tokenSymbol} logo" class="w-full h-full object-contain bg-[color:var(--background)]" />
+          </div>
+        {/if}
         <div>
-          <div class="text-2xl font-bold">
-            {tokenCreation.tokenName} (<span class="uppercase">{tokenCreation.tokenSymbol}</span>)
+          <div class="text-lg sm:text-2xl font-bold">
+            {tokenCreation.tokenName}
           </div>
-          <div class="text-sm text-[color:var(--muted-foreground)] mt-1">
-            {tokenCreation.decimals} decimals • {tokenCreation.transferFee} <span class="uppercase">{tokenCreation.tokenSymbol}</span> transfer fee
-          </div>
-        </div>
-
-        <div class="grid grid-cols-2 gap-4">
-          <div>
-            <div class="text-xs text-[color:var(--muted-foreground)] mb-1 flex items-center gap-2">
-              <span>Minting Address</span>
-              {#if tokenCreation.isBlackholed}
-                <span class="inline-flex items-center gap-1 px-2 py-0.5 bg-[color:var(--muted)] rounded-full text-[0.625rem] font-semibold uppercase">
-                  <svg class="w-2.5 h-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5">
-                    <circle cx="12" cy="12" r="10" />
-                    <circle cx="12" cy="12" r="3" fill="currentColor" />
-                  </svg>
-                  Blackholed
-                </span>
-              {/if}
-            </div>
-            <CopyableId id={displayMintingAddress || ''} variant="outline" full size="sm" />
-            {#if tokenCreation.isBlackholed}
-              <div class="text-xs text-[color:var(--muted-foreground)] mt-1">Registry canister - no minting possible</div>
-            {/if}
-          </div>
-          <div>
-            <div class="text-xs text-[color:var(--muted-foreground)] mb-1">Total Supply</div>
-            <div class="text-sm font-semibold font-[family-name:var(--font-numeric)] tabular-nums">
-              {tokenCreation.totalSupply} <span class="uppercase">{tokenCreation.tokenSymbol}</span>
-            </div>
+          <div class="text-sm text-[color:var(--muted-foreground)]">
+            <span class="uppercase">{tokenCreation.tokenSymbol}</span>
           </div>
         </div>
       </div>
-    </div>
+
+      <!-- Details Grid -->
+      <div class="grid grid-cols-2 gap-3 sm:gap-4">
+        <div>
+          <div class="text-xs text-[color:var(--muted-foreground)] mb-0.5">Decimals</div>
+          <div class="text-sm font-semibold">{tokenCreation.decimals}</div>
+        </div>
+        <div>
+          <div class="text-xs text-[color:var(--muted-foreground)] mb-0.5">Transfer Fee</div>
+          <div class="text-sm font-semibold font-[family-name:var(--font-numeric)] tabular-nums">
+            {tokenCreation.transferFee} <span class="uppercase text-xs">{tokenCreation.tokenSymbol}</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-[color:var(--muted-foreground)] mb-0.5">Total Supply</div>
+          <div class="text-sm font-semibold font-[family-name:var(--font-numeric)] tabular-nums">
+            {tokenCreation.totalSupply} <span class="uppercase text-xs">{tokenCreation.tokenSymbol}</span>
+          </div>
+        </div>
+        <div>
+          <div class="text-xs text-[color:var(--muted-foreground)] mb-0.5 flex items-center gap-1.5">
+            <span>Minting</span>
+            {#if tokenCreation.isBlackholed}
+              <span class="inline-flex items-center px-1.5 py-0.5 bg-[color:var(--muted)] rounded-full text-[0.625rem] font-semibold uppercase leading-none">Blackholed</span>
+            {/if}
+          </div>
+          <div class="text-sm font-semibold">{tokenCreation.isBlackholed ? "Disabled" : "Custom"}</div>
+        </div>
+      </div>
+
+      <!-- Minting Address -->
+      <div>
+        <div class="text-xs text-[color:var(--muted-foreground)] mb-1">Minting Address</div>
+        <CopyableId id={displayMintingAddress || ''} variant="inline" full size="sm" mono />
+      </div>
     </div>
 
     <!-- Initial Balances List -->
@@ -95,8 +112,8 @@
       <h4 class="text-sm font-semibold mb-3">Initial Supply Distribution</h4>
       <div class="space-y-2">
         {#each tokenCreation.initialBalances as row}
-          <div class="flex items-center justify-between p-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)]">
-            <div class="flex-1 pr-4"><CopyableId id={row.principal} variant="outline" full size="sm" /></div>
+          <div class="p-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] space-y-2 sm:space-y-0 sm:flex sm:items-center sm:justify-between">
+            <div class="min-w-0 sm:flex-1 sm:pr-4"><CopyableId id={row.principal} variant="inline" full size="sm" mono /></div>
             <div class="text-sm font-semibold font-[family-name:var(--font-numeric)] tabular-nums whitespace-nowrap">
               {parseFloat(row.amount).toLocaleString("en-US")} <span class="uppercase text-xs">{tokenCreation.tokenSymbol}</span>
             </div>
@@ -129,10 +146,17 @@
       </div>
     {/if}
 
+    <!-- Insufficient Balance Warning -->
+    {#if insufficientBalance}
+      <div class="bg-red-500/10 border border-red-500/20 rounded-[var(--radius-md)] p-4">
+        <p class="text-sm font-semibold text-red-500">Insufficient ICP balance to cover the creation fee.</p>
+      </div>
+    {/if}
+
     <!-- Footer -->
     <div class="flex items-center justify-between gap-4 mt-6">
-      <ButtonV2 variant="secondary" size="xl" onclick={onBack} disabled={isCreating}>Back</ButtonV2>
-      <ButtonV2 variant="primary" size="xl" onclick={onCreate} disabled={isCreating || !tokenCreation.formValid}>
+      <ButtonV2 variant="secondary" size="lg" onclick={onBack} disabled={isCreating}>Back</ButtonV2>
+      <ButtonV2 variant="primary" size="lg" onclick={onCreate} disabled={isCreating || !tokenCreation.formValid || insufficientBalance}>
         {isCreating ? "Creating Token..." : "Create"}
       </ButtonV2>
     </div>

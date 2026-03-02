@@ -76,7 +76,7 @@
   {/snippet}
 
   {#snippet steps()}
-    <StepIndicator steps={stepsList} {currentStep} stickyTop="2rem" />
+    <StepIndicator steps={stepsList} {currentStep} />
   {/snippet}
 
   {#snippet content()}

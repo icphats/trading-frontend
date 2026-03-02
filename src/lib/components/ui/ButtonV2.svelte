@@ -75,7 +75,7 @@
     justify-content: center;
     font-family: var(--font-sans);
     font-weight: 500;
-    border-radius: 6px;
+    border-radius: var(--radius-md);
     transition: all var(--transition-price);
     outline: none;
     border: none;

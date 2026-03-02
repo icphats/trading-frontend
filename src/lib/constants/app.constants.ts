@@ -4,7 +4,7 @@ export const HOST = IS_LOCAL ? "http://localhost:8080" : "https://ic0.app";
 // Derivation origin for Internet Identity - ensures same principal across domains
 // Toggle comment for staging vs production deployments
 export const DERIVATION_ORIGIN = IS_LOCAL
-    ? 'http://localhost:3000'
+    ? 'https://localhost:3000'
     // : 'https://partyhats.xyz';
     : 'https://icphats.io'; // staging
 

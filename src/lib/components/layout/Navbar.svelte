@@ -381,7 +381,7 @@
   }
 
   .search-bar:hover {
-    border-color: var(--muted-foreground);
+    border-color: var(--border-hover);
   }
 
   .search-bar:focus {

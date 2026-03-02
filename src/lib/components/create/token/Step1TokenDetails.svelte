@@ -66,7 +66,7 @@
 </script>
 
 <div class="space-y-6">
-  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-6 space-y-6 overflow-hidden">
+  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-4 sm:p-6 space-y-6 overflow-hidden">
     <div>
       <h3 class="text-lg font-semibold">Token Information</h3>
       <p class="text-sm text-[color:var(--muted-foreground)] mt-1">Configure your token's basic properties including name, symbol, and logo.</p>
@@ -74,7 +74,7 @@
 
     <div class="space-y-4">
     <!-- Top Row: Image Upload + Token Name/Symbol/Decimals/Transfer Fee -->
-    <div class="grid grid-cols-[140px_1fr] gap-4">
+    <div class="grid grid-cols-1 sm:grid-cols-[140px_1fr] gap-4">
       <!-- Image Upload (Left) -->
       <div>
         <span class="block text-sm font-medium mb-2">Logo</span>
@@ -109,7 +109,7 @@
       </div>
 
       <!-- Right Column: Token Details (2x2 Grid) -->
-      <div class="grid grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <!-- Token Name -->
         <div>
           <label class="block text-sm font-medium mb-2" for="token-name">Token Name</label>
@@ -117,11 +117,25 @@
             id="token-name"
             type="text"
             bind:value={tokenCreation.tokenName}
-            placeholder="My Awesome Token"
+            oninput={(e) => {
+              const input = e.currentTarget;
+              input.value = input.value.replace(/[^A-Za-z0-9 ]/g, '');
+              tokenCreation.tokenName = input.value;
+            }}
+            placeholder="Bitcoin"
             maxlength="20"
-            class="w-full px-4 py-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+            class="w-full px-4 py-3 bg-[color:var(--background)] border rounded-[var(--radius-md)] text-sm form-input"
+            class:border-red-500={!!tokenCreation.tokenNameError}
+            class:border-[color:var(--border)]={!tokenCreation.tokenNameError}
           />
-          <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Full name (1-20 chars)</p>
+          <div class="flex justify-between mt-1">
+            {#if tokenCreation.tokenNameError}
+              <p class="text-xs text-red-500">{tokenCreation.tokenNameError}</p>
+            {:else}
+              <p class="text-xs text-[color:var(--muted-foreground)]">Letters, digits, spaces</p>
+            {/if}
+            <span class="text-xs" class:text-red-500={tokenCreation.tokenName.length >= 20} class:text-[color:var(--muted-foreground)]={tokenCreation.tokenName.length < 20}>{tokenCreation.tokenName.length}/20</span>
+          </div>
         </div>
 
         <!-- Token Symbol -->
@@ -131,12 +145,26 @@
             id="token-symbol"
             type="text"
             bind:value={tokenCreation.tokenSymbol}
-            placeholder="MAT"
+            oninput={(e) => {
+              const input = e.currentTarget;
+              input.value = input.value.toUpperCase().replace(/[^A-Z0-9]/g, '');
+              tokenCreation.tokenSymbol = input.value;
+            }}
+            placeholder="BTC"
             maxlength="8"
-            class="w-full px-4 py-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] uppercase"
+            class="w-full px-4 py-3 bg-[color:var(--background)] border rounded-[var(--radius-md)] text-sm form-input uppercase"
+            class:border-red-500={!!tokenCreation.tokenSymbolError}
+            class:border-[color:var(--border)]={!tokenCreation.tokenSymbolError}
             style="text-transform: uppercase;"
           />
-          <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Ticker (2-8 chars)</p>
+          <div class="flex justify-between mt-1">
+            {#if tokenCreation.tokenSymbolError}
+              <p class="text-xs text-red-500">{tokenCreation.tokenSymbolError}</p>
+            {:else}
+              <p class="text-xs text-[color:var(--muted-foreground)]">Uppercase letters and digits</p>
+            {/if}
+            <span class="text-xs" class:text-red-500={tokenCreation.tokenSymbol.length >= 8} class:text-[color:var(--muted-foreground)]={tokenCreation.tokenSymbol.length < 8}>{tokenCreation.tokenSymbol.length}/8</span>
+          </div>
         </div>
 
         <!-- Decimals (fixed at 8) -->
@@ -147,7 +175,7 @@
             type="text"
             value="8"
             disabled
-            class="w-full px-4 py-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] text-sm disabled:opacity-50 disabled:cursor-not-allowed"
+            class="w-full px-4 py-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] text-sm form-input disabled:opacity-50 disabled:cursor-not-allowed"
           />
           <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Fixed at 8 decimal places</p>
         </div>
@@ -160,14 +188,29 @@
               id="token-transfer-fee"
               type="text"
               bind:value={tokenCreation.transferFee}
+              oninput={(e) => {
+                const input = e.currentTarget;
+                // Allow digits and at most one decimal point
+                let cleaned = input.value.replace(/[^\d.]/g, '');
+                const parts = cleaned.split('.');
+                if (parts.length > 2) cleaned = parts[0] + '.' + parts.slice(1).join('');
+                input.value = cleaned;
+                tokenCreation.transferFee = cleaned;
+              }}
               placeholder="0.0001"
-              class="w-full px-4 py-3 pr-24 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)]"
+              class="w-full px-4 py-3 pr-24 bg-[color:var(--background)] border rounded-[var(--radius-md)] text-sm form-input"
+              class:border-red-500={!!tokenCreation.transferFeeError}
+              class:border-[color:var(--border)]={!tokenCreation.transferFeeError}
             />
             <div class="absolute right-4 top-1/2 -translate-y-1/2 text-xs text-[color:var(--muted-foreground)] font-medium pointer-events-none uppercase">
-              {tokenCreation.tokenSymbol || "TOKENS"}
+              {tokenCreation.tokenSymbol || "BTC"}
             </div>
           </div>
-          <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Fee per transfer</p>
+          {#if tokenCreation.transferFeeError}
+            <p class="text-xs text-red-500 mt-1">{tokenCreation.transferFeeError}</p>
+          {:else}
+            <p class="text-xs text-[color:var(--muted-foreground)] mt-1">Fee per transfer</p>
+          {/if}
         </div>
       </div>
     </div>
@@ -176,33 +219,19 @@
     <div>
       <div class="flex items-center justify-between mb-2">
         <label class="block text-sm font-medium" for="token-minting-address">Minting Address</label>
-        <div class="flex items-center gap-3">
-          <button
-            type="button"
-            onclick={() => (tokenCreation.isBlackholed = !tokenCreation.isBlackholed)}
-            class="mint-toggle"
-            class:blackholed={tokenCreation.isBlackholed}
-            aria-label={tokenCreation.isBlackholed ? "Switch to custom minting address" : "Switch to blackholed (registry canister)"}
-          >
-            {#if tokenCreation.isBlackholed}
-              <!-- Blackhole Icon (locked/disabled) -->
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <circle cx="12" cy="12" r="10" />
-                <circle cx="12" cy="12" r="3" fill="currentColor" />
-                <path d="M12 2v4M12 18v4M2 12h4M18 12h4" />
-              </svg>
-              <span>Blackholed</span>
-            {:else}
-              <!-- Custom Icon (unlocked/editable) -->
-              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                <path d="M12 2v20M2 12h20M6 6l12 12M6 18L18 6" />
-                <circle cx="12" cy="12" r="3" />
-              </svg>
-              <span>Custom</span>
-            {/if}
-          </button>
-          <a href="https://caffeine.ai" target="_blank" rel="noopener noreferrer" class="caffeine-badge"> Try it with Caffeine! </a>
-        </div>
+        <button
+          type="button"
+          role="switch"
+          aria-checked={tokenCreation.isBlackholed}
+          onclick={() => (tokenCreation.isBlackholed = !tokenCreation.isBlackholed)}
+          class="toggle-switch"
+          class:active={tokenCreation.isBlackholed}
+        >
+          <span class="text-xs font-medium">{tokenCreation.isBlackholed ? "Blackholed" : "Custom"}</span>
+          <span class="toggle-track">
+            <span class="toggle-thumb"></span>
+          </span>
+        </button>
       </div>
       <input
         id="token-minting-address"
@@ -210,55 +239,48 @@
         bind:value={tokenCreation.mintingAddress}
         placeholder={tokenCreation.isBlackholed ? "Registry canister (blackholed)" : "Principal ID with minting authority"}
         disabled={tokenCreation.isBlackholed}
-        class="w-full px-4 py-3 bg-[color:var(--background)] border border-[color:var(--border)] rounded-[var(--radius-md)] text-sm focus:outline-none focus:ring-2 focus:ring-[color:var(--ring)] font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+        class="w-full px-4 py-3 bg-[color:var(--background)] border rounded-[var(--radius-md)] text-sm form-input font-mono disabled:opacity-50 disabled:cursor-not-allowed"
+        class:border-red-500={!!tokenCreation.mintingAddressError}
+        class:border-[color:var(--border)]={!tokenCreation.mintingAddressError}
       />
-      <p class="text-xs text-[color:var(--muted-foreground)] mt-1">
-        {#if tokenCreation.isBlackholed}
-          Minting authority is blackholed (assigned to the registry canister). No one can mint new tokens.
-        {:else}
-          This principal will have the authority to mint new tokens after creation.
-        {/if}
-      </p>
+      {#if tokenCreation.mintingAddressError}
+        <p class="text-xs text-red-500 mt-1">{tokenCreation.mintingAddressError}</p>
+      {:else}
+        <p class="text-xs text-[color:var(--muted-foreground)] mt-1">
+          {#if tokenCreation.isBlackholed}
+            Minting authority is blackholed (assigned to the registry canister). No one can mint new tokens.
+          {:else}
+            This principal will have the authority to mint new tokens after creation.
+          {/if}
+        </p>
+      {/if}
     </div>
     </div>
 
     <!-- Footer -->
     <div class="flex items-center justify-between gap-4 mt-6">
-      <ButtonV2 variant="secondary" size="xl" onclick={onCancel}>Cancel</ButtonV2>
-      <ButtonV2 variant="primary" size="xl" onclick={onNext} disabled={!tokenCreation.step1Valid}>Next</ButtonV2>
+      <ButtonV2 variant="secondary" size="lg" onclick={onCancel}>Cancel</ButtonV2>
+      <ButtonV2 variant="primary" size="lg" onclick={onNext} disabled={!tokenCreation.step1Valid}>Next</ButtonV2>
     </div>
   </div>
 </div>
 
 <style>
-  /* Caffeine Badge */
-  .caffeine-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 0.25rem 0.75rem;
-    border-radius: 9999px;
-    background: var(--primary);
-    color: white;
-    font-size: 0.6875rem;
-    font-weight: 600;
-    letter-spacing: 0.025em;
-    text-transform: uppercase;
-    text-decoration: none;
-    box-shadow:
-      0 2px 8px oklch(from var(--primary) l c h / 0.25),
-      inset 0 1px 0 oklch(from var(--primary) calc(l + 0.15) c h / 0.5);
-    transition: all 0.2s ease;
+  /* Form Input — matches SearchInput inline variant pattern */
+  .form-input {
+    outline: none;
+    transition:
+      border-color 200ms ease-out,
+      box-shadow 200ms ease-out;
   }
 
-  .caffeine-badge:hover {
-    transform: translateY(-1px);
-    box-shadow:
-      0 4px 12px oklch(from var(--primary) l c h / 0.35),
-      inset 0 1px 0 oklch(from var(--primary) calc(l + 0.15) c h / 0.5);
+  .form-input:hover:not(:disabled) {
+    border-color: var(--border-hover);
   }
 
-  .caffeine-badge:active {
-    transform: translateY(0);
+  .form-input:focus:not(:disabled) {
+    border-color: var(--border-hover);
+    box-shadow: var(--focus-glow);
   }
 
   /* Logo Upload Styles */
@@ -330,53 +352,50 @@
     background: rgba(239, 68, 68, 0.9);
   }
 
-  /* Mint Toggle Styles */
-  .mint-toggle {
+  /* Toggle Switch Styles */
+  .toggle-switch {
     display: inline-flex;
     align-items: center;
     gap: 0.5rem;
-    padding: 0.375rem 0.875rem;
-    border-radius: var(--radius-md);
-    font-size: 0.75rem;
-    font-weight: 600;
-    text-transform: uppercase;
-    letter-spacing: 0.025em;
-    border: 1.5px solid var(--border);
-    background: var(--background);
-    color: var(--foreground);
     cursor: pointer;
-    transition: all 0.2s ease;
-  }
-
-  .mint-toggle:hover {
-    border-color: var(--foreground);
-    background: var(--muted);
-    color: var(--foreground);
-    transform: translateY(-1px);
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-  }
-
-  .mint-toggle.blackholed {
-    border-color: var(--muted-foreground);
-    background: oklch(from var(--muted-foreground) l c h / 0.05);
+    background: none;
+    border: none;
+    padding: 0;
     color: var(--muted-foreground);
   }
 
-  .mint-toggle.blackholed:hover {
-    border-color: var(--foreground);
+  .toggle-track {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
     background: var(--muted);
-    color: var(--foreground);
+    border: 1.5px solid var(--border);
+    transition: all 0.2s ease;
   }
 
-  .mint-toggle:active {
-    transform: translateY(0);
+  .toggle-thumb {
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: var(--muted-foreground);
+    transition: all 0.2s ease;
   }
 
-  .mint-toggle svg {
-    transition: transform 0.2s ease;
+  .toggle-switch.active .toggle-track {
+    background: var(--foreground);
+    border-color: var(--foreground);
   }
 
-  .mint-toggle:hover svg {
-    transform: rotate(180deg);
+  .toggle-switch.active .toggle-thumb {
+    left: 18px;
+    background: var(--background);
+  }
+
+  .toggle-switch:hover .toggle-track {
+    border-color: var(--foreground);
   }
 </style>

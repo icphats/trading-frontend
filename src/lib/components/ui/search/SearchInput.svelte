@@ -117,7 +117,7 @@
 
   .variant-panel:focus-within {
     border-bottom-color: oklch(from var(--border) l c h / 0.7);
-    box-shadow: 0 0 12px oklch(from var(--border) l c h / 0.15);
+    box-shadow: var(--focus-glow);
   }
 
   /* Inline variant — pill-shaped, full border */

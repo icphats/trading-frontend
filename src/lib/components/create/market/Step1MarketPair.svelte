@@ -59,7 +59,7 @@
 </script>
 
 <div class="space-y-6">
-  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-6 space-y-6 overflow-hidden">
+  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-4 sm:p-6 space-y-6 overflow-hidden">
     <div>
       <h3 class="text-lg font-semibold">Select Token Pair</h3>
       <p class="text-sm text-[color:var(--muted-foreground)] mt-1">
@@ -69,7 +69,7 @@
 
     <!-- Token Pair Selection -->
     <div>
-      <div class="grid grid-cols-2 gap-3">
+      <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
         <!-- Base Token Selection -->
         <button onclick={openTokenModal} class="token-dropdown-button">
           <div class="flex items-center gap-3 flex-1 min-w-0">
@@ -138,8 +138,8 @@
 
     <!-- Footer: Action Buttons -->
     <div class="flex items-center justify-between gap-4 mt-6">
-      <ButtonV2 variant="secondary" size="xl" onclick={onCancel}>Cancel</ButtonV2>
-      <ButtonV2 variant="primary" size="xl" onclick={onNext} disabled={!marketCreation.step1Valid}>Next</ButtonV2>
+      <ButtonV2 variant="secondary" size="lg" onclick={onCancel}>Cancel</ButtonV2>
+      <ButtonV2 variant="primary" size="lg" onclick={onNext} disabled={!marketCreation.step1Valid}>Next</ButtonV2>
     </div>
   </div>
 </div>

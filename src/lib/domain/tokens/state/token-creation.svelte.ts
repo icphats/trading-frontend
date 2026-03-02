@@ -26,6 +26,15 @@ interface InitialBalanceRow {
 // Nat64 maximum value (2^64 - 1)
 const NAT64_MAX = 18_446_744_073_709_551_615n;
 
+// Character validation: letters, digits, spaces (no leading/trailing spaces)
+const VALID_TOKEN_NAME_RE = /^[A-Za-z0-9 ]+$/;
+// Character validation: uppercase letters and digits only
+const VALID_TOKEN_SYMBOL_RE = /^[A-Z0-9]+$/;
+// Transfer fee: digits and at most one decimal point
+const VALID_TRANSFER_FEE_RE = /^\d*\.?\d*$/;
+
+const MAX_INITIAL_BALANCES = 1_000;
+
 class TokenCreationState {
   // ============================================
   // Step 1: Token Details
@@ -87,18 +96,72 @@ class TokenCreationState {
   // Validation
   // ============================================
 
+  // ============================================
+  // Inline Validation Errors (for UI feedback)
+  // ============================================
+
+  /** Token name error message, or empty string if valid. Only shown after user has started typing. */
+  tokenNameError = $derived.by(() => {
+    if (!this.tokenName) return '';
+    if (this.tokenName.startsWith(' ') || this.tokenName.endsWith(' ')) return 'No leading or trailing spaces';
+    if (!VALID_TOKEN_NAME_RE.test(this.tokenName)) return 'Letters, digits, and spaces only';
+    return '';
+  });
+
+  /** Token symbol error message, or empty string if valid. */
+  tokenSymbolError = $derived.by(() => {
+    if (!this.tokenSymbol) return '';
+    const symbol = this.tokenSymbol.toUpperCase();
+    if (!VALID_TOKEN_SYMBOL_RE.test(symbol)) return 'Uppercase letters and digits only';
+    if (symbol.length < 2) return 'Minimum 2 characters';
+    return '';
+  });
+
+  /** Transfer fee error message, or empty string if valid. */
+  transferFeeError = $derived.by(() => {
+    if (!this.transferFee) return '';
+    if (!VALID_TRANSFER_FEE_RE.test(this.transferFee)) return 'Must be a valid number';
+    const feeNum = parseFloat(this.transferFee);
+    if (isNaN(feeNum) || feeNum < 0) return 'Must be 0 or greater';
+    return '';
+  });
+
+  /** Minting address error message, or empty string if valid. */
+  mintingAddressError = $derived.by(() => {
+    if (this.isBlackholed || !this.mintingAddress) return '';
+    try {
+      Principal.fromText(this.mintingAddress);
+      return '';
+    } catch {
+      return 'Invalid principal format';
+    }
+  });
+
   step1Valid = $derived.by(() => {
-    // Token name: 1-20 chars
+    // Token name: 1-20 chars, letters/digits/spaces only, no leading/trailing spaces
     if (!this.tokenName || this.tokenName.length < 1 || this.tokenName.length > 20) {
       return false;
     }
+    if (!VALID_TOKEN_NAME_RE.test(this.tokenName)) {
+      return false;
+    }
+    if (this.tokenName.startsWith(' ') || this.tokenName.endsWith(' ')) {
+      return false;
+    }
 
-    // Token symbol: 2-8 chars
-    if (!this.tokenSymbol || this.tokenSymbol.length < 2 || this.tokenSymbol.length > 8) {
+    // Token symbol: 2-8 chars, uppercase letters and digits only
+    const symbol = this.tokenSymbol.toUpperCase();
+    if (!symbol || symbol.length < 2 || symbol.length > 8) {
+      return false;
+    }
+    if (!VALID_TOKEN_SYMBOL_RE.test(symbol)) {
       return false;
     }
 
     // Transfer fee must be valid number >= 0
+    if (!VALID_TRANSFER_FEE_RE.test(this.transferFee)) {
+      return false;
+    }
     const feeNum = parseFloat(this.transferFee);
     if (isNaN(feeNum) || feeNum < 0) {
       return false;
@@ -189,6 +252,24 @@ class TokenCreationState {
   // ============================================
 
   /**
+   * Check if a principal string is valid
+   */
+  isValidPrincipal(principal: string): boolean {
+    if (!principal) return true; // empty is not invalid, just incomplete
+    try {
+      Principal.fromText(principal);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
+  /**
+   * Check if we've hit the max initial balance rows
+   */
+  atMaxBalances = $derived(this.initialBalances.length >= MAX_INITIAL_BALANCES);
+
+  /**
    * Check if a specific amount exceeds Nat64 max for current decimals
    */
   amountExceedsMax(amount: string): boolean {
@@ -239,6 +320,7 @@ class TokenCreationState {
   // ============================================
 
   addBalanceRow() {
+    if (this.initialBalances.length >= MAX_INITIAL_BALANCES) return;
     this.initialBalances.push({
       id: crypto.randomUUID(),
       principal: '',

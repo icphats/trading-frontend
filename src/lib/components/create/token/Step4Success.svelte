@@ -59,7 +59,7 @@
 
         <div>
           <div class="text-xs text-[color:var(--muted-foreground)] mb-1">Canister ID</div>
-          <CopyableId id={canisterId} variant="outline" full />
+          <CopyableId id={canisterId} variant="inline" full mono />
         </div>
       </div>
     </div>
@@ -67,8 +67,8 @@
 
     <!-- Action Buttons -->
     <div class="flex items-center gap-4 mt-6">
-      <ButtonV2 variant="secondary" size="xl" onclick={handleGoHome}>Go to Home</ButtonV2>
-      <ButtonV2 variant="primary" size="xl" onclick={handleCreateMarket} class="flex-1">
+      <ButtonV2 variant="secondary" size="lg" onclick={handleGoHome}>Go to Home</ButtonV2>
+      <ButtonV2 variant="primary" size="lg" onclick={handleCreateMarket} class="flex-1">
         Create Market for {tokenCreation.tokenSymbol}
       </ButtonV2>
     </div>

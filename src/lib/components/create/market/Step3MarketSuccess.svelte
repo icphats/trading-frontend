@@ -12,7 +12,7 @@
   let { marketCanisterId }: Props = $props();
 </script>
 
-<div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-6">
+<div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-4 sm:p-6">
   <!-- Success Icon -->
   <div class="flex justify-center mb-6">
     <div class="w-16 h-16 rounded-full bg-green-500/20 flex items-center justify-center">

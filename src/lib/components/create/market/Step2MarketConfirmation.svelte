@@ -95,7 +95,7 @@
 </script>
 
 <div class="space-y-6">
-  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-6 space-y-6 overflow-hidden">
+  <div class="bg-[var(--background)] border border-[var(--border)] rounded-3xl p-4 sm:p-6 space-y-6 overflow-hidden">
     <div>
       <h3 class="text-lg font-semibold">Confirm Market Creation</h3>
       <p class="text-sm text-[color:var(--muted-foreground)] mt-1">Review the details below before creating your new spot market.</p>
@@ -107,7 +107,7 @@
       <!-- Base Token -->
       {#if marketCreation.selectedToken}
         <div class="flex flex-col items-center">
-          <Logo src={marketCreation.selectedToken.logo} alt={marketCreation.selectedToken.symbol} size="xl" />
+          <Logo src={marketCreation.selectedToken.logo} alt={marketCreation.selectedToken.symbol} size="lg" />
           <span class="text-lg font-bold mt-2">{marketCreation.selectedToken.symbol}</span>
           <span class="text-xs text-[color:var(--muted-foreground)]">Base Token</span>
         </div>
@@ -119,7 +119,7 @@
       <!-- Quote Token -->
       {#if marketCreation.selectedQuoteToken}
         <div class="flex flex-col items-center">
-          <Logo src={marketCreation.selectedQuoteToken.logo} alt={marketCreation.selectedQuoteToken.symbol} size="xl" />
+          <Logo src={marketCreation.selectedQuoteToken.logo} alt={marketCreation.selectedQuoteToken.symbol} size="lg" />
           <span class="text-lg font-bold mt-2">{marketCreation.selectedQuoteToken.symbol}</span>
           <span class="text-xs text-[color:var(--muted-foreground)]">Quote Token</span>
         </div>
@@ -178,8 +178,8 @@
 
     <!-- Footer: Action Buttons -->
     <div class="flex items-center justify-between gap-4 mt-6">
-      <ButtonV2 variant="secondary" size="xl" onclick={onBack} disabled={isCreating}>Back</ButtonV2>
-      <ButtonV2 variant="primary" size="xl" onclick={handleCreateMarket} disabled={isCreating || insufficientBalance}>
+      <ButtonV2 variant="secondary" size="lg" onclick={onBack} disabled={isCreating}>Back</ButtonV2>
+      <ButtonV2 variant="primary" size="lg" onclick={handleCreateMarket} disabled={isCreating || insufficientBalance}>
         {isCreating ? "Creating Market..." : "Create Market"}
       </ButtonV2>
     </div>
