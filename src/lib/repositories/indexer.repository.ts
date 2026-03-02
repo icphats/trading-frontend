@@ -64,8 +64,8 @@ export function tokenItemToUpsert(item: TokenListItem): TokenUpsert {
     volume7d: item.volume_7d_usd_e6,
     volume30d: item.volume_30d_usd_e6,
     tvl: item.tvl_usd_e6,
-    baseMarkets: item.base_markets.map((p) => p.toString()),
-    quoteMarkets: item.quote_markets.map((p) => p.toString()),
+    baseMarkets: item.base_markets.map((p: { toString(): string }) => p.toString()),
+    quoteMarkets: item.quote_markets.map((p: { toString(): string }) => p.toString()),
     source: 'indexer',
   };
 }

@@ -29,6 +29,7 @@ export interface EventLogPage {
 }
 export interface FrozenControl {
   'system_state' : SystemState,
+  'timer_running' : boolean,
   'cycles_threshold' : bigint,
   'treasury_principal' : [] | [Principal],
   'this_principal' : Principal,

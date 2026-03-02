@@ -262,13 +262,13 @@
       if ('ok' in depthResult) {
         // Transform to PoolDepthRow format
         // Filter to only include the pool for this fee tier if available
-        poolDepthData = depthResult.ok.pools.map((pool) => ({
+        poolDepthData = depthResult.ok.pools.map((pool: { fee_pips: number; current_tick: number; sqrt_price_x96: bigint; liquidity: bigint; tick_spacing: bigint; initialized_ticks: Array<{ tick: number; liquidity_net: bigint; liquidity_gross: bigint }> }) => ({
           feePips: pool.fee_pips,
           currentTick: pool.current_tick,
           sqrtPriceX96: pool.sqrt_price_x96,
           liquidity: pool.liquidity,
           tickSpacing: pool.tick_spacing,
-          initializedTicks: pool.initialized_ticks.map((t) => ({
+          initializedTicks: pool.initialized_ticks.map((t: { tick: number; liquidity_net: bigint; liquidity_gross: bigint }) => ({
             tick: t.tick,
             liquidityNet: t.liquidity_net,
             liquidityGross: t.liquidity_gross,
@@ -343,7 +343,7 @@
     // Transform snapshots to FeeDataPoint format (enriched: fees, volume, TVL)
     // Backend returns oldest-first (ascending) via build_response
     return result.ok.data
-      .map((s) => ({
+      .map((s: { timestamp: bigint; fees_usd_e6: bigint; volume_usd_e6: bigint; base_reserve: bigint; quote_reserve: bigint }) => ({
         timestamp: Math.floor(Number(s.timestamp) / 1000), // Convert ms to seconds for chart
         fees: Number(s.fees_usd_e6) / 1e6,
         volume: Number(s.volume_usd_e6) / 1e6,

@@ -69,6 +69,7 @@ type FrozenControl =
    cycles_threshold: nat;
    system_state: SystemState;
    this_principal: principal;
+   timer_running: bool;
    treasury_principal: opt principal;
  };
 type EventLogPage = 

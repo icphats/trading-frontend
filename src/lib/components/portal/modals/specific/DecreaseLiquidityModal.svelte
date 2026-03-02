@@ -56,7 +56,7 @@
     try {
       const result = await marketRepository.getSpotMarketDepth(spot.canister_id, 1, 10);
       if ('ok' in result) {
-        const pool = result.ok.pools.find(p => p.fee_pips === position!.fee_pips);
+        const pool = result.ok.pools.find((p: { fee_pips: number }) => p.fee_pips === position!.fee_pips);
         if (pool) poolTick = pool.current_tick;
       }
     } catch {

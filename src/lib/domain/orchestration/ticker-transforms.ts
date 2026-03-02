@@ -44,7 +44,7 @@ export function indexerDataToUpserts(
     source: 'canister',
   };
 
-  const pools: PoolUpsert[] = data.pool_data.map((p) => ({
+  const pools: PoolUpsert[] = data.pool_data.map((p: IndexerData['pool_data'][number]) => ({
     poolId: `${spotCanisterId}:${p.fee_pips}`,
     spotCanisterId,
     feePips: p.fee_pips,

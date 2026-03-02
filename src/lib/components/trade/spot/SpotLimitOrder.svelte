@@ -7,6 +7,7 @@
   import type { NormalizedToken } from "$lib/types/entity.types";
   import type { SpotMarket } from "$lib/domain/markets/state/spot-market.svelte";
   import type { Side, QuoteResult as QuoteResultType } from "$lib/actors/services/spot.service";
+  import type { VenueBreakdown } from "declarations/spot/spot.did";
   import {
     tickToPrice,
     alignTickToSpacing,
@@ -205,7 +206,7 @@
         effectivePrice: tickToPrice(result.effective_tick, spot.baseTokenDecimals, spot.quoteTokenDecimals),
         input_amount: result.input_amount.toString(),
         output_amount: result.output_amount.toString(),
-        venue_breakdown: result.venue_breakdown.map(v => ({
+        venue_breakdown: result.venue_breakdown.map((v: VenueBreakdown) => ({
           venue: v.venue_id,
           input: v.input_amount.toString(),
           output: v.output_amount.toString()
@@ -476,25 +477,25 @@
   }
 
   // Confirmation modal detail
-  function buildVenueRouting(quote: QuoteResultType, requestedAmount: bigint) {
+  function buildVenueRouting(quoteResult: QuoteResultType, requestedAmount: bigint) {
     if (!base || !quote) return undefined;
     const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
     const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
     const inputToken = side === "Buy" ? quote : base;
     const outputToken = side === "Buy" ? base : quote;
 
-    const filledFromVenues = quote.venue_breakdown.reduce(
-      (sum, v) => sum + Number(v.input_amount), 0
+    const filledFromVenues = quoteResult.venue_breakdown.reduce(
+      (sum: number, v: VenueBreakdown) => sum + Number(v.input_amount), 0
     );
     const fillPercent = requestedAmount > 0n
       ? Math.min(100, (filledFromVenues / Number(requestedAmount)) * 100)
       : 0;
 
     return {
-      venues: quote.venue_breakdown
-        .toSorted((a, b) => Number(b.input_amount) - Number(a.input_amount))
-        .map(v => {
-          const pct = Math.round((Number(v.input_amount) / Number(quote.input_amount)) * 100);
+      venues: quoteResult.venue_breakdown
+        .toSorted((a: VenueBreakdown, b: VenueBreakdown) => Number(b.input_amount) - Number(a.input_amount))
+        .map((v: VenueBreakdown) => {
+          const pct = Math.round((Number(v.input_amount) / Number(quoteResult.input_amount)) * 100);
           const isBook = 'book' in v.venue_id;
           return {
             type: isBook ? 'book' as const : 'pool' as const,
@@ -506,7 +507,7 @@
           };
         }),
       fillPercent,
-      totalFees: bigIntToString(quote.total_fees, inputDecimals),
+      totalFees: bigIntToString(quoteResult.total_fees, inputDecimals),
       inputSymbol: inputToken.displaySymbol,
       inputLogo: inputToken.logo ?? undefined,
       outputSymbol: outputToken.displaySymbol,

@@ -104,7 +104,7 @@ export class MarketRepository {
    */
   async fetchPollVersions(
     canisterId: string
-  ): Promise<Result<import('../../../../declarations/spot/spot.did').PollVersions>> {
+  ): Promise<Result<import('declarations/spot/spot.did').PollVersions>> {
     try {
       const actor = this.getSpotActor(canisterId);
       const result = await actor.get_versions();
@@ -199,7 +199,7 @@ export class MarketRepository {
     interval: SpotChartInterval = { hour1: null },
     limit: number = 300,
     beforeTs?: bigint
-  ): Promise<Result<import('../../../../declarations/spot/spot.did').SpotCandle[]>> {
+  ): Promise<Result<import('declarations/spot/spot.did').SpotCandle[]>> {
     try {
       const actor = this.getSpotActor(canisterId);
       const beforeTsOpt: [] | [bigint] = beforeTs !== undefined ? [beforeTs] : [];
@@ -215,7 +215,7 @@ export class MarketRepository {
    */
   async fetchUserData(
     canisterId: string
-  ): Promise<Result<import('../../../../declarations/spot/spot.did').UserData>> {
+  ): Promise<Result<import('declarations/spot/spot.did').UserData>> {
     try {
       const actor = this.getSpotActor(canisterId);
       const result = await actor.get_user();
@@ -449,7 +449,7 @@ export class MarketRepository {
    */
   async fetchPoolsOverview(
     canisterId: string
-  ): Promise<Result<import('../../../../declarations/spot/spot.did').PoolOverview[]>> {
+  ): Promise<Result<import('declarations/spot/spot.did').PoolOverview[]>> {
     try {
       const actor = this.getSpotActor(canisterId);
       const result = await actor.get_pools_overview();
@@ -468,7 +468,7 @@ export class MarketRepository {
     beforeTimestamp?: bigint,
     limit: number = 100,
     intervalHours: number = 1
-  ): Promise<Result<import('../../../../declarations/spot/spot.did').MarketSnapshotsResponse>> {
+  ): Promise<Result<import('declarations/spot/spot.did').MarketSnapshotsResponse>> {
     try {
       const actor = this.getSpotActor(canisterId);
       const beforeOpt: [] | [bigint] = beforeTimestamp !== undefined ? [beforeTimestamp] : [];

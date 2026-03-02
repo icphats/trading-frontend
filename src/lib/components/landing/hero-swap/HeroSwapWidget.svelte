@@ -14,7 +14,7 @@
   import { bigIntToString, bpsToPercent } from '$lib/domain/markets/utils';
   import { checkAndApprove } from '$lib/utils/allowance.utils';
   import { user } from '$lib/domain/user/auth.svelte';
-  import type { VenueId } from 'declarations/spot/spot.did';
+  import type { VenueId, VenueBreakdown } from 'declarations/spot/spot.did';
   import { api } from '$lib/actors/api.svelte';
   import { onDestroy } from 'svelte';
 
@@ -55,7 +55,7 @@
 
   let sortedVenues = $derived(
     quoteExplorerState.quote?.venue_breakdown.toSorted(
-      (a, b) => Number(b.input_amount) - Number(a.input_amount)
+      (a: VenueBreakdown, b: VenueBreakdown) => Number(b.input_amount) - Number(a.input_amount)
     ) ?? []
   );
 
@@ -105,15 +105,15 @@
     if (!inputToken || !outputToken) return undefined;
 
     const filledFromVenues = quote.venue_breakdown.reduce(
-      (sum, v) => sum + Number(v.input_amount), 0
+      (sum: number, v: VenueBreakdown) => sum + Number(v.input_amount), 0
     );
     const requested = Number(quote.input_amount);
     const fillPercent = requested > 0 ? Math.min(100, (filledFromVenues / requested) * 100) : 0;
 
     return {
       venues: quote.venue_breakdown
-        .toSorted((a, b) => Number(b.input_amount) - Number(a.input_amount))
-        .map(v => {
+        .toSorted((a: VenueBreakdown, b: VenueBreakdown) => Number(b.input_amount) - Number(a.input_amount))
+        .map((v: VenueBreakdown) => {
           const pct = Math.round((Number(v.input_amount) / Number(quote.input_amount)) * 100);
           const isBook = 'book' in v.venue_id;
           return {

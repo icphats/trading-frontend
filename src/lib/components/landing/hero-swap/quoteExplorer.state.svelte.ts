@@ -257,7 +257,7 @@ class QuoteExplorerStateManager {
       market.tokens = [marketItem.base_token, marketItem.quote_token];
       market.lastTradeSqrtPriceX96 = depth.last_trade_sqrt_price_x96;
       market.lastTradeTick = market.lastTradeSqrtPriceX96 > 0n ? sqrtPriceX96ToTick(market.lastTradeSqrtPriceX96) : 0;
-      market.liquidity = depth.pools.reduce((sum, p) => sum + p.liquidity, 0n);
+      market.liquidity = depth.pools.reduce((sum: bigint, p: { liquidity: bigint }) => sum + p.liquidity, 0n);
       market.marketDepth = depth;
 
       // Register tokens in entityStore (needed for UI display)

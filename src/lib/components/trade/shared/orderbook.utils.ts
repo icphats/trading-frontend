@@ -114,7 +114,7 @@ export function transformMarketDepth(
   // Transform book bids (buy orders) - backend provides aggregated levels
   // Bids: users are buying base, paying with quote
   // Amount is in quote token - what buyer is offering
-  const bookBids: OrderBookRow[] = depth.book_bids.map((level) => {
+  const bookBids: OrderBookRow[] = depth.book_bids.map((level: BookLevelAggregated) => {
     const priceE12 = BigInt(Math.floor(tickToPrice(level.tick, baseDecimals, quoteDecimals) * 1e12));
     return {
       priceE12,
@@ -130,7 +130,7 @@ export function transformMarketDepth(
   // Transform book asks (sell orders)
   // Asks: users are selling base, receiving quote
   // Amount is in base token - what seller is offering
-  const bookAsks: OrderBookRow[] = depth.book_asks.map((level) => {
+  const bookAsks: OrderBookRow[] = depth.book_asks.map((level: BookLevelAggregated) => {
     const priceE12 = BigInt(Math.floor(tickToPrice(level.tick, baseDecimals, quoteDecimals) * 1e12));
     return {
       priceE12,
@@ -144,13 +144,13 @@ export function transformMarketDepth(
   });
 
   // Transform pool depth data
-  const pools: PoolDepthRow[] = depth.pools.map((pool) => ({
+  const pools: PoolDepthRow[] = depth.pools.map((pool: PoolDepthData) => ({
     feePips: pool.fee_pips,
     currentTick: pool.current_tick,
     sqrtPriceX96: pool.sqrt_price_x96,
     liquidity: pool.liquidity,
     tickSpacing: pool.tick_spacing,
-    initializedTicks: pool.initialized_ticks.map((t) => ({
+    initializedTicks: pool.initialized_ticks.map((t: PoolDepthData['initialized_ticks'][number]) => ({
       tick: t.tick,
       liquidityNet: t.liquidity_net,
       liquidityGross: t.liquidity_gross,
@@ -262,7 +262,7 @@ export function transformMarketDepthToLegacy(
 
   // Transform bids to legacy format
   // Bids = long (buy side) - amount is in quote
-  const long: UnifiedOrderBookRow[] = depth.book_bids.map((row) => {
+  const long: UnifiedOrderBookRow[] = depth.book_bids.map((row: BookLevelAggregated) => {
     const quoteAmount = row.amount;
     const baseAmount = convertQuoteToBase(quoteAmount, referenceTick);
     return {
@@ -281,7 +281,7 @@ export function transformMarketDepthToLegacy(
 
   // Transform asks to legacy format
   // Asks = short (sell side) - amount is in base
-  const short: UnifiedOrderBookRow[] = depth.book_asks.map((row) => {
+  const short: UnifiedOrderBookRow[] = depth.book_asks.map((row: BookLevelAggregated) => {
     const baseAmount = row.amount;
     const quoteAmount = convertBaseToQuote(baseAmount, referenceTick);
     return {

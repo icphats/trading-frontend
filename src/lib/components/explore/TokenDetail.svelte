@@ -127,7 +127,7 @@
       return [];
     }
 
-    return result.ok.data.map((snap) => ({
+    return result.ok.data.map((snap: { timestamp: bigint; fees_usd_e6: bigint; volume_usd_e6: bigint; tvl_usd_e6: bigint }) => ({
       timestamp: Math.floor(Number(snap.timestamp) / 1000), // ms → unix seconds
       fees: Number(snap.fees_usd_e6) / 1e6,
       volume: Number(snap.volume_usd_e6) / 1e6,

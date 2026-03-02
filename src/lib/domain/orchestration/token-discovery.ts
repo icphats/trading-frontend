@@ -138,7 +138,7 @@ export async function getMarketsForSearch(
   // Note: Backend uses E12 for prices, E6 for volume
   if (items.length > 0) {
     entityStore.upsertMarkets(
-      items.map(item => ({
+      items.map((item: MarketListItem) => ({
         canisterId: item.canister_id.toString(),
         symbol: item.symbol,
         baseToken: item.base_token.toString(),
@@ -189,7 +189,7 @@ export async function getPopularTokens(
   // Note: Backend uses E12 for prices, E6 for USD accumulators
   if (items.length > 0) {
     entityStore.upsertTokens(
-      items.map(item => ({
+      items.map((item: TokenListItem) => ({
         canisterId: item.token_ledger.toString(),
         symbol: item.symbol,
         name: item.name,

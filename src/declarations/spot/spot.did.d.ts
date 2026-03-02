@@ -25,7 +25,6 @@ export type ActivityType = { 'trigger_fired' : null } |
   { 'order_filled' : null } |
   { 'lp_locked' : null } |
   { 'order_partial' : null } |
-  { 'transfer_out_failed' : null } |
   { 'order_modified' : null };
 export interface ActivityView {
   'activity_type' : ActivityType,

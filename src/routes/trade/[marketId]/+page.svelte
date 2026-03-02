@@ -33,7 +33,7 @@
       }
 
       const response = await api.indexer.get_markets({ limit: 100n, cursor: [] });
-      const market = response.data.find(m => m.canister_id.toString() === marketId);
+      const market = response.data.find((m: { canister_id: { toString(): string } }) => m.canister_id.toString() === marketId);
 
       if (!market) {
         error = "Market not found";

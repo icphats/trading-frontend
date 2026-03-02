@@ -52,6 +52,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const FrozenControl = IDL.Record({
     'system_state' : SystemState,
+    'timer_running' : IDL.Bool,
     'cycles_threshold' : IDL.Nat,
     'treasury_principal' : IDL.Opt(IDL.Principal),
     'this_principal' : IDL.Principal,
@@ -85,6 +86,8 @@ export const idlFactory = ({ IDL }) => {
   const PlatformSnapshotView = IDL.Record({
     'triggers_live' : IDL.Nat32,
     'tvl_usd_e6' : IDL.Nat64,
+    'total_users' : IDL.Nat32,
+    'total_user_market_pairs' : IDL.Nat32,
     'book_fees_usd_e6' : IDL.Nat64,
     'timestamp' : IDL.Nat64,
     'book_open_interest_usd_e6' : IDL.Nat64,
@@ -104,18 +107,18 @@ export const idlFactory = ({ IDL }) => {
   const FrozenPlatformStats = IDL.Record({
     'pool_fees_cumulative_usd_e6' : IDL.Nat64,
     'triggers_live' : IDL.Nat32,
-    'volume_change_24h_bps' : IDL.Int,
+    'total_users' : IDL.Nat32,
     'total_tvl_usd_e6' : IDL.Nat64,
     'volume_24h_usd_e6' : IDL.Nat64,
     'last_updated' : IDL.Nat64,
     'book_fees_24h_usd_e6' : IDL.Nat64,
+    'total_user_market_pairs' : IDL.Nat32,
     'pool_fees_24h_usd_e6' : IDL.Nat64,
     'book_fees_cumulative_usd_e6' : IDL.Nat64,
     'total_transactions' : IDL.Nat64,
     'book_volume_cumulative_usd_e6' : IDL.Nat64,
     'book_open_interest_usd_e6' : IDL.Nat64,
     'snapshot_count' : IDL.Nat,
-    'tvl_change_24h_bps' : IDL.Int,
     'trigger_locked_usd_e6' : IDL.Nat64,
     'active_markets' : IDL.Nat32,
     'pool_volume_cumulative_usd_e6' : IDL.Nat64,

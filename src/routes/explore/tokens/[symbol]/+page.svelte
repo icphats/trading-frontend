@@ -73,7 +73,7 @@
       const result = await indexerRepository.search(denormalized, 10n, { tokens: null });
       if ('ok' in result) {
         const match = result.ok.tokens.find(
-          (t) => t.symbol.toLowerCase() === denormalized.toLowerCase()
+          (t: { symbol: string }) => t.symbol.toLowerCase() === denormalized.toLowerCase()
         );
         if (match) {
           entityStore.upsertToken(tokenItemToUpsert(match));

@@ -59,7 +59,7 @@ export class OracleRepository {
 
           if (result !== null && result.data.length > 0) {
             await priceArchiveCache.putMany(
-              result.data.map(entry => ({
+              result.data.map((entry: { timestamp: bigint; price_e12: bigint }) => ({
                 symbol,
                 timestamp: entry.timestamp,
                 price_e12: entry.price_e12,

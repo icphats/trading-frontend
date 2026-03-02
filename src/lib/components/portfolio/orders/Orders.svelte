@@ -1,5 +1,6 @@
 <script lang="ts">
   import type { OrderView, Side, QuoteResult } from "$lib/actors/services/spot.service";
+  import type { VenueBreakdown } from "declarations/spot/spot.did";
   import { tickToPrice, priceToTick, bigIntToString, bpsToPercent } from "$lib/domain/markets/utils";
   import { formatToken, formatSigFig, formatTimestamp } from "$lib/utils/format.utils";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
@@ -324,13 +325,13 @@
 
     let routing = undefined;
     if (cachedQuote) {
-      const filledFromVenues = cachedQuote.venue_breakdown.reduce((sum, v) => sum + Number(v.input_amount), 0);
+      const filledFromVenues = cachedQuote.venue_breakdown.reduce((sum: number, v: VenueBreakdown) => sum + Number(v.input_amount), 0);
       const fillPercent = remaining > 0n ? Math.min(100, (filledFromVenues / Number(remaining)) * 100) : 0;
 
       routing = {
         venues: cachedQuote.venue_breakdown
-          .toSorted((a, b) => Number(b.input_amount) - Number(a.input_amount))
-          .map(v => {
+          .toSorted((a: VenueBreakdown, b: VenueBreakdown) => Number(b.input_amount) - Number(a.input_amount))
+          .map((v: VenueBreakdown) => {
             const pct = Math.round((Number(v.input_amount) / Number(cachedQuote!.input_amount)) * 100);
             const isBook = 'book' in v.venue_id;
             return {

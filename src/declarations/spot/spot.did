@@ -1358,7 +1358,6 @@ type ActivityType =
    transfer_in;
    transfer_in_failed;
    transfer_out;
-   transfer_out_failed;
    trigger_cancelled;
    trigger_failed;
    trigger_fired;

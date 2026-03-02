@@ -53,6 +53,7 @@ export const idlFactory = ({ IDL }) => {
   });
   const FrozenControl = IDL.Record({
     'system_state' : SystemState,
+    'timer_running' : IDL.Bool,
     'cycles_threshold' : IDL.Nat,
     'treasury_principal' : IDL.Opt(IDL.Principal),
     'this_principal' : IDL.Principal,

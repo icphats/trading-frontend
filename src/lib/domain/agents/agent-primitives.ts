@@ -9,6 +9,7 @@ import type { SpotMarket } from '$lib/domain/markets/state/spot-market.svelte';
 import { marketRepository } from '$lib/repositories/market.repository';
 import { checkAndApprove } from '$lib/utils/allowance.utils';
 import type { AgentTracker, ActionResult, ActionType, AgentConfig, AgentLogEntry } from './agent.types';
+import type { OrderResultItem } from 'declarations/spot/spot.did';
 import {
   buyOrderTick, sellOrderTick, orderAmount, swapAmount, triggerAmount,
   buyTriggerTicks, sellTriggerTicks, bracketBuy, bracketSell,
@@ -338,8 +339,8 @@ const actions: Record<ActionType, ActionFn> = {
       log({ type: 'action', text: `createOrders([], ${count} buy orders, [])` });
       const result = await market.createOrders([], bookOrders, []);
       const ids = result.order_results
-        .filter(r => 'ok' in r.result)
-        .map(r => ('ok' in r.result ? r.result.ok.order_id : 0n));
+        .filter((r: OrderResultItem) => 'ok' in r.result)
+        .map((r: OrderResultItem) => ('ok' in r.result ? r.result.ok.order_id : 0n));
       log({ type: 'success', text: `grid placed [${ids.join(', ')}]`, durationMs: performance.now() - start });
       return { success: true };
     } catch (e: any) {
@@ -364,8 +365,8 @@ const actions: Record<ActionType, ActionFn> = {
       log({ type: 'action', text: `createOrders([], ${count} sell orders, [])` });
       const result = await market.createOrders([], bookOrders, []);
       const ids = result.order_results
-        .filter(r => 'ok' in r.result)
-        .map(r => ('ok' in r.result ? r.result.ok.order_id : 0n));
+        .filter((r: OrderResultItem) => 'ok' in r.result)
+        .map((r: OrderResultItem) => ('ok' in r.result ? r.result.ok.order_id : 0n));
       log({ type: 'success', text: `grid placed [${ids.join(', ')}]`, durationMs: performance.now() - start });
       return { success: true };
     } catch (e: any) {

@@ -832,7 +832,6 @@ export const idlFactory = ({ IDL }) => {
     'order_filled' : IDL.Null,
     'lp_locked' : IDL.Null,
     'order_partial' : IDL.Null,
-    'transfer_out_failed' : IDL.Null,
     'order_modified' : IDL.Null,
   });
   const TriggerActivityDetails = IDL.Record({

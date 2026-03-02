@@ -40,7 +40,7 @@ export function formatApiError(apiError: ApiError): string {
   // Add metadata if present
   if (apiError.metadata && apiError.metadata.length > 0 && apiError.metadata[0]) {
     const metadataStr = apiError.metadata[0]
-      .map(([key, value]) => `${key}: ${value}`)
+      .map(([key, value]: [string, string]) => `${key}: ${value}`)
       .join(', ');
     parts.push(`\nDetails: ${metadataStr}`);
   }

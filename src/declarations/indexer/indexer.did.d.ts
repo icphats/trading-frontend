@@ -27,6 +27,7 @@ export interface EventLogPage {
 }
 export interface FrozenControl {
   'system_state' : SystemState,
+  'timer_running' : boolean,
   'cycles_threshold' : bigint,
   'treasury_principal' : [] | [Principal],
   'this_principal' : Principal,
@@ -35,18 +36,18 @@ export interface FrozenControl {
 export interface FrozenPlatformStats {
   'pool_fees_cumulative_usd_e6' : bigint,
   'triggers_live' : number,
-  'volume_change_24h_bps' : bigint,
+  'total_users' : number,
   'total_tvl_usd_e6' : bigint,
   'volume_24h_usd_e6' : bigint,
   'last_updated' : bigint,
   'book_fees_24h_usd_e6' : bigint,
+  'total_user_market_pairs' : number,
   'pool_fees_24h_usd_e6' : bigint,
   'book_fees_cumulative_usd_e6' : bigint,
   'total_transactions' : bigint,
   'book_volume_cumulative_usd_e6' : bigint,
   'book_open_interest_usd_e6' : bigint,
   'snapshot_count' : bigint,
-  'tvl_change_24h_bps' : bigint,
   'trigger_locked_usd_e6' : bigint,
   'active_markets' : number,
   'pool_volume_cumulative_usd_e6' : bigint,
@@ -117,6 +118,8 @@ export interface MarketMetricsUpdate {
 export interface PlatformSnapshotView {
   'triggers_live' : number,
   'tvl_usd_e6' : bigint,
+  'total_users' : number,
+  'total_user_market_pairs' : number,
   'book_fees_usd_e6' : bigint,
   'timestamp' : bigint,
   'book_open_interest_usd_e6' : bigint,

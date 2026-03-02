@@ -63,6 +63,7 @@ export const idlFactory = ({ IDL }) => {
   const FrozenControl = IDL.Record({
     'live_tokens' : IDL.Vec(IDL.Text),
     'system_state' : SystemState,
+    'timer_running' : IDL.Bool,
     'cycles_threshold' : IDL.Nat,
     'treasury_principal' : IDL.Opt(IDL.Principal),
     'this_principal' : IDL.Principal,

@@ -148,13 +148,13 @@
     const marketDepth = spot.marketDepth;
     if (!marketDepth || !marketDepth.pools) return [];
 
-    return marketDepth.pools.map((pool) => ({
+    return marketDepth.pools.map((pool: { fee_pips: number; current_tick: number; sqrt_price_x96: bigint; liquidity: bigint; tick_spacing: bigint; initialized_ticks: Array<{ tick: number; liquidity_net: bigint; liquidity_gross: bigint }> }) => ({
       feePips: pool.fee_pips,
       currentTick: pool.current_tick,
       sqrtPriceX96: pool.sqrt_price_x96,
       liquidity: pool.liquidity,
       tickSpacing: pool.tick_spacing,
-      initializedTicks: pool.initialized_ticks.map((t) => ({
+      initializedTicks: pool.initialized_ticks.map((t: { tick: number; liquidity_net: bigint; liquidity_gross: bigint }) => ({
         tick: t.tick,
         liquidityNet: t.liquidity_net,
         liquidityGross: t.liquidity_gross,

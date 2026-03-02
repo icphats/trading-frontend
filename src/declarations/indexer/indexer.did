@@ -142,6 +142,8 @@ type PlatformSnapshotView =
    pool_reserve_usd_e6: nat64;
    timestamp: nat64;
    total_positions: nat32;
+   total_user_market_pairs: nat32;
+   total_users: nat32;
    transactions: nat64;
    trigger_locked_usd_e6: nat64;
    triggers_live: nat32;
@@ -242,11 +244,11 @@ type FrozenPlatformStats =
    total_positions: nat32;
    total_transactions: nat64;
    total_tvl_usd_e6: nat64;
+   total_user_market_pairs: nat32;
+   total_users: nat32;
    trigger_locked_usd_e6: nat64;
    triggers_live: nat32;
-   tvl_change_24h_bps: int;
    volume_24h_usd_e6: nat64;
-   volume_change_24h_bps: int;
  };
 type FrozenControl = 
  record {
@@ -254,6 +256,7 @@ type FrozenControl =
    cycles_threshold: nat;
    system_state: SystemState;
    this_principal: principal;
+   timer_running: bool;
    treasury_principal: opt principal;
  };
 type EventLogPage = 

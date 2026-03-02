@@ -28,7 +28,7 @@
 
   $effect(() => {
     if (!api.registry) return;
-    api.registry.get_creation_fees().then((fees) => {
+    api.registry.get_creation_fees().then((fees: { spot: bigint; ledger: bigint }) => {
       creationFeeE8s = fees.spot;
     });
   });

@@ -57,6 +57,7 @@ type FrozenControl =
    live_tokens: vec text;
    system_state: SystemState;
    this_principal: principal;
+   timer_running: bool;
    treasury_principal: opt principal;
  };
 type EventLogPage = 

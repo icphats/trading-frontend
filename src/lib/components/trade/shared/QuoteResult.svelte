@@ -35,7 +35,7 @@
 
     // Sum input_amount from all venues in breakdown - this is what actually fills immediately
     const filledFromVenues = quote.venue_breakdown.reduce(
-      (sum, venue) => sum + Number(venue.input_amount),
+      (sum: number, venue: VenueBreakdown) => sum + Number(venue.input_amount),
       0
     );
 
@@ -109,7 +109,7 @@
 
   // Venues sorted by allocation % (highest first)
   let sortedVenues = $derived(
-    quote?.venue_breakdown.toSorted((a, b) => Number(b.input_amount) - Number(a.input_amount)) ?? []
+    quote?.venue_breakdown.toSorted((a: VenueBreakdown, b: VenueBreakdown) => Number(b.input_amount) - Number(a.input_amount)) ?? []
   );
 </script>
 

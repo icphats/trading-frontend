@@ -12,6 +12,7 @@ import { marketRegistry } from '../markets/state/market-registry.svelte';
 import { entityStore } from './entity-store.svelte';
 import { indexerRepository } from '$lib/repositories/indexer.repository';
 import type { MarketMetadata } from '../markets/market.types';
+import type { MarketListItem } from 'declarations/indexer/indexer.did';
 import { api } from '$lib/actors/api.svelte';
 import { canisterIds } from '$lib/constants/app.constants';
 
@@ -54,7 +55,7 @@ export async function discoverAndLoadMarkets(): Promise<{
     // ✅ STEP 1.5: Seed entityStore with lightweight market previews (instant)
     // This gives components baseToken/quoteToken immediately without waiting for full hydration
     entityStore.upsertMarkets(
-      markets.map((m) => ({
+      markets.map((m: MarketListItem) => ({
         canisterId: m.canister_id.toString(),
         symbol: m.symbol,
         baseToken: m.base_token.toString(),
@@ -67,7 +68,7 @@ export async function discoverAndLoadMarkets(): Promise<{
 
     // ✅ STEP 2: Hydrate markets from individual canisters (full data) — in parallel
     const hydrationResults = await Promise.allSettled(
-      markets.map(async (preview) => {
+      markets.map(async (preview: MarketListItem) => {
         const canisterId = preview.canister_id.toString();
         const marketSymbol = preview.symbol;
 
