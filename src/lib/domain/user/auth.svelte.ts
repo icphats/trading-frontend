@@ -1,12 +1,13 @@
 import type { Principal } from '@icp-sdk/core/principal';
 import type { Identity, Agent } from '@icp-sdk/core/agent';
 import { AnonymousIdentity } from '@icp-sdk/core/agent';
+import { Principal as DfinityPrincipal } from '@dfinity/principal';
 import { AccountIdentifier } from '@dfinity/ledger-icp';
 import { createAgent } from '@dfinity/utils';
 import { HOST, IS_LOCAL } from '$lib/constants/app.constants';
 import { globalPreferences } from '$lib/repositories/storage/local-storage';
 import { notifyIdentityChange } from './identity-events';
-import { isIIWallet, getIIProvider, type WalletId, type IIWalletId } from './wallet-config';
+import { isIIWallet, isOisyWallet, getIIProvider, type WalletId, type IIWalletId } from './wallet-config';
 import {
 	connectWithII,
 	restoreIISession,
@@ -14,8 +15,35 @@ import {
 	hasStoredIISession,
 	type IISignerResult
 } from './ii-signer';
+import {
+	connectWithOisy,
+	disconnectOisy,
+	type OisySignerResult
+} from './oisy-signer';
+
 /** Authentication type - determines how actors are created */
-export type AuthType = 'anonymous' | 'ii-signer';
+export type AuthType = 'anonymous' | 'ii-signer' | 'oisy-signer';
+
+/**
+ * Wrapper identity that provides Principal access
+ * Used for signers that don't expose raw Identity (e.g., Oisy)
+ */
+class PrincipalIdentityWrapper {
+	private _principal: Principal;
+
+	constructor(principalText: string) {
+		this._principal = DfinityPrincipal.fromText(principalText) as unknown as Principal;
+	}
+
+	getPrincipal(): Principal {
+		return this._principal;
+	}
+
+	// Minimal Identity interface support
+	transformRequest(): Promise<unknown> {
+		throw new Error('This identity wrapper does not support direct request transformation');
+	}
+}
 
 export class User {
 	// Core state - preserved for backward compatibility
@@ -103,9 +131,14 @@ export class User {
 				const iiResult = await connectWithII(provider);
 				this.updateStateFromIISigner(iiResult);
 			}
+			// Route Oisy through oisy-signer
+			else if (isOisyWallet(walletId)) {
+				const oisyResult = await connectWithOisy();
+				this.updateStateFromOisySigner(oisyResult);
+			}
 			// Other wallets not yet implemented
 			else {
-				throw new Error(`Wallet "${walletId}" is not yet implemented. Only Internet Identity is currently supported.`);
+				throw new Error(`Wallet "${walletId}" is not yet implemented. Only II and Oisy are currently supported.`);
 			}
 
 			this.connectedWallet = walletId;
@@ -132,6 +165,11 @@ export class User {
 			// Clear II session if using ii-signer
 			if (this.authType === 'ii-signer') {
 				await clearIISession();
+			}
+
+			// Disconnect from Oisy if using oisy-signer
+			if (this.authType === 'oisy-signer') {
+				await disconnectOisy();
 			}
 
 			// Create anonymous agent
@@ -170,6 +208,23 @@ export class User {
 		this.authType = 'ii-signer';
 	};
 
+	/**
+	 * Update internal state from Oisy signer connection
+	 *
+	 * Note: Oisy doesn't use delegation - each canister call requires user approval.
+	 * The agent here is anonymous (for queries). For updates, use the Oisy wallet
+	 * directly via getOisyWallet() and its transfer/approve methods.
+	 */
+	private updateStateFromOisySigner = (result: OisySignerResult): void => {
+		// Create wrapper identity for principal access
+		const wrapperIdentity = new PrincipalIdentityWrapper(result.principal);
+
+		// ATOMIC: Set all state at once
+		this.agent = result.agent as unknown as Agent;
+		this.identity = wrapperIdentity as unknown as Identity;
+		this.isAuthenticated = true;
+		this.authType = 'oisy-signer';
+	};
 }
 
 export const user = new User();

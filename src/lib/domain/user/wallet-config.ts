@@ -94,7 +94,7 @@ export const WALLET_CONFIG: Record<BaseWalletId, WalletConfig> = {
 		name: 'Oisy',
 		icon: '/wallets/oisy.svg',
 		description: 'Multi-chain IC wallet',
-		enabled: true,
+		enabled: false, // TODO: Re-enable when Oisy integration is ready
 		category: 'ic'
 	},
 
