@@ -9,12 +9,13 @@
   import MiniOrderBook from './MiniOrderBook.svelte';
   import ConfirmationModal from '$lib/components/portal/modals/specific/ConfirmationModal.svelte';
   import TokenAmountInput from '$lib/components/ui/inputs/TokenAmountInput.svelte';
+  import QuoteResult from '$lib/components/trade/shared/QuoteResult.svelte';
   import MarketSelectionModal from './MarketSelectionModal.svelte';
   import { quoteExplorerState } from './quoteExplorer.state.svelte';
-  import { bigIntToString, bpsToPercent } from '$lib/domain/markets/utils';
+  import { bigIntToString, computeOutputUsd, usdImpactPercent } from '$lib/domain/markets/utils';
   import { checkAndApprove } from '$lib/utils/allowance.utils';
   import { user } from '$lib/domain/user/auth.svelte';
-  import type { VenueId, VenueBreakdown } from 'declarations/spot/spot.did';
+  import type { VenueBreakdown } from 'declarations/spot/spot.did';
   import { api } from '$lib/actors/api.svelte';
   import { onDestroy } from 'svelte';
 
@@ -42,26 +43,32 @@
     return bigIntToString(quote.output_amount, outputToken.decimals);
   });
 
-  // Venue helpers
-  function isBookVenue(venue_id: VenueId): boolean {
-    return 'book' in venue_id;
-  }
+  // Input USD: input amount × input token's oracle price
+  let inputUsdValue = $derived.by(() => {
+    const inputToken = quoteExplorerState.inputToken;
+    if (!inputToken) return null;
+    const inputPriceUsd = inputToken.priceUsd;
+    if (!inputPriceUsd || inputPriceUsd === 0n) return null;
+    const oracleUsd = Number(inputPriceUsd) / 1e12;
+    const inputFloat = parseFloat(quoteExplorerState.inputAmount);
+    if (!inputFloat || inputFloat <= 0) return null;
+    return inputFloat * oracleUsd;
+  });
 
-  function getVenueLabel(venue_id: VenueId): string {
-    if ('book' in venue_id) return 'Book';
-    if ('pool' in venue_id) return `Pool-${venue_id.pool / 100}`;
-    return 'Unknown';
-  }
-
-  let sortedVenues = $derived(
-    quoteExplorerState.quote?.venue_breakdown.toSorted(
-      (a: VenueBreakdown, b: VenueBreakdown) => Number(b.input_amount) - Number(a.input_amount)
-    ) ?? []
-  );
-
-  let priceImpactPercent = $derived(
-    quoteExplorerState.quote ? bpsToPercent(quoteExplorerState.quote.price_impact_bps) : 0
-  );
+  // Output USD: convert output via reference_tick to input-token terms, then oracle
+  let outputUsdValue = $derived.by(() => {
+    const q = quoteExplorerState.quote;
+    const b = quoteExplorerState.baseToken;
+    const qt = quoteExplorerState.quoteToken;
+    const inputToken = quoteExplorerState.inputToken;
+    if (!q || !b || !qt || !inputToken) return null;
+    if (q.output_amount === 0n) return null;
+    const inputPriceUsd = inputToken.priceUsd;
+    if (!inputPriceUsd || inputPriceUsd === 0n) return null;
+    const oracleUsd = Number(inputPriceUsd) / 1e12;
+    const outputDecimals = quoteExplorerState.outputDecimals;
+    return computeOutputUsd(q.output_amount, outputDecimals, q.reference_tick, b.decimals, qt.decimals, quoteExplorerState.side, oracleUsd);
+  });
 
   // Track if we've initialized to avoid double-init
   let hasInitialized = $state(false);
@@ -143,9 +150,9 @@
 
     const inputDisplay = bigIntToString(quote.input_amount, inputToken.decimals);
     const outputDisplay = bigIntToString(quote.output_amount, outputToken.decimals);
-    const minOutputDisplay = bigIntToString(quote.min_output, outputToken.decimals);
-    const impactPct = bpsToPercent(quote.price_impact_bps);
-    const impactStr = impactPct < 0.01 ? '< 0.01%' : `${impactPct.toFixed(2)}%`;
+    const priceImpact = (inputUsdValue && outputUsdValue && inputUsdValue > 0)
+      ? (() => { const p = usdImpactPercent(inputUsdValue, outputUsdValue); return Math.abs(p) < 0.01 ? '< 0.01%' : `${Math.abs(p).toFixed(2)}%`; })()
+      : undefined;
 
     return {
       side: confirmSide,
@@ -154,10 +161,11 @@
       rows: [
         { label: 'Spend', value: `${inputDisplay} ${inputToken.displaySymbol}` },
         { label: 'Receive', value: `~${outputDisplay} ${outputToken.displaySymbol}` },
-        { label: 'Min. received', value: `${minOutputDisplay} ${outputToken.displaySymbol}` },
-        { label: 'Price impact', value: impactStr },
       ],
-      routing: buildVenueRouting(quote),
+      routing: (() => {
+        const r = buildVenueRouting(quote);
+        return r ? { ...r, priceImpact } : undefined;
+      })(),
     };
   });
 
@@ -187,12 +195,10 @@
 
         <TokenAmountInput skeleton showPresets={false} showBalance={false} />
 
-        <!-- Skeleton bottom strip -->
-        <div class="bottom-strip">
-          <div class="strip-info">
-            <div class="skeleton skeleton-badge"></div>
-            <div class="skeleton skeleton-badge skeleton-badge-sm"></div>
-            <div class="skeleton skeleton-impact"></div>
+        <!-- Skeleton bottom section -->
+        <div class="bottom-section">
+          <div class="quote-result-wrapper">
+            <div class="skeleton skeleton-quote-result"></div>
           </div>
           <div class="skeleton skeleton-action-btn"></div>
         </div>
@@ -230,29 +236,29 @@
             loading={quoteExplorerState.isQuoting}
             showPresets={false}
             showBalance={false}
+            usdOverride={outputUsdValue}
           />
         {/if}
 
-        <!-- Bottom strip: venue badges + impact + action button -->
+        <!-- Quote result + action button -->
         {#if quoteExplorerState.quote || quoteExplorerState.isQuoting}
-          <div class="bottom-strip">
-            <div class="strip-info">
-              {#if quoteExplorerState.isQuoting}
-                <div class="skeleton skeleton-badge"></div>
-                <div class="skeleton skeleton-impact"></div>
-              {:else if quoteExplorerState.quote}
-                <div class="venue-badges">
-                  {#each sortedVenues as venue, i (i)}
-                    {@const pct = quoteExplorerState.quote ? (Number(venue.input_amount) / Number(quoteExplorerState.quote.input_amount)) * 100 : 0}
-                    <span class="venue-badge" class:is-book={isBookVenue(venue.venue_id)} class:is-pool={!isBookVenue(venue.venue_id)}>
-                      {getVenueLabel(venue.venue_id)}
-                    </span>
-                  {/each}
-                </div>
-                <span class="impact-text" class:warn={priceImpactPercent >= 1} class:severe={priceImpactPercent >= 3}>
-                  {priceImpactPercent < 0.01 ? '< 0.01' : priceImpactPercent.toFixed(2)}% impact
-                </span>
-              {/if}
+          <div class="bottom-section">
+            <div class="quote-result-wrapper">
+              <QuoteResult
+                compact
+                isCalculating={quoteExplorerState.isQuoting}
+                quote={quoteExplorerState.quote}
+                baseSymbol={quoteExplorerState.baseToken?.displaySymbol ?? ''}
+                quoteSymbol={quoteExplorerState.quoteToken?.displaySymbol ?? ''}
+                baseDecimals={quoteExplorerState.baseToken?.decimals ?? 8}
+                quoteDecimals={quoteExplorerState.quoteToken?.decimals ?? 8}
+                baseLogo={quoteExplorerState.baseToken?.logo ?? undefined}
+                quoteLogo={quoteExplorerState.quoteToken?.logo ?? undefined}
+                side={quoteExplorerState.side === 'buy' ? 'Buy' : 'Sell'}
+                {inputUsdValue}
+                {outputUsdValue}
+                inputAmount={quoteExplorerState.quote?.input_amount}
+              />
             </div>
             <button
               type="button"
@@ -367,60 +373,23 @@
     background: var(--field-hover);
   }
 
-  /* Bottom strip (inside swap card) */
-  .bottom-strip {
+  /* Bottom section: QuoteResult + action button */
+  .bottom-section {
     display: flex;
-    align-items: center;
+    align-items: flex-end;
     gap: 8px;
-    padding: 4px 12px 8px;
+    padding: 0 4px 4px;
   }
 
-  .strip-info {
-    display: flex;
-    align-items: center;
-    gap: 8px;
+  .quote-result-wrapper {
     flex: 1;
     min-width: 0;
   }
 
-  .venue-badges {
-    display: flex;
-    gap: 4px;
-    flex-shrink: 0;
+  /* Remove QuoteResult's outer border inside the swap card */
+  .quote-result-wrapper :global(.quote-card) {
+    border: none;
   }
-
-  .venue-badge {
-    display: inline-flex;
-    align-items: center;
-    padding: 3px 10px;
-    font-size: 12px;
-    font-weight: 500;
-    border-radius: var(--radius-sm);
-    border: 1px solid;
-  }
-
-  .venue-badge.is-book {
-    border-color: oklch(0.70 0.16 55 / 0.4);
-    background: oklch(0.70 0.16 55 / 0.1);
-    color: oklch(0.70 0.16 55);
-  }
-
-  .venue-badge.is-pool {
-    border-color: oklch(from var(--color-bullish) l c h / 0.4);
-    background: oklch(from var(--color-bullish) l c h / 0.1);
-    color: var(--color-bullish);
-  }
-
-  .impact-text {
-    font-size: 11px;
-    font-weight: 500;
-    color: var(--muted-foreground);
-    margin-left: auto;
-    flex-shrink: 0;
-  }
-
-  .impact-text.warn { color: oklch(0.75 0.15 85); }
-  .impact-text.severe { color: var(--destructive); }
 
   .action-btn {
     display: flex;
@@ -459,9 +428,7 @@
     animation: pulse 1.5s ease-in-out infinite;
   }
 
-  .skeleton-badge { width: 70px; height: 22px; border-radius: 6px !important; }
-  .skeleton-badge-sm { width: 55px; }
-  .skeleton-impact { width: 60px; height: 14px; margin-left: auto; }
+  .skeleton-quote-result { width: 100%; height: 48px; border-radius: 8px !important; }
   .skeleton-action-btn { width: 32px; height: 32px; border-radius: 10px !important; flex-shrink: 0; }
 
   @keyframes pulse {
@@ -504,20 +471,6 @@
       width: clamp(28px, 7vw, 32px);
       height: clamp(28px, 7vw, 32px);
       border-radius: clamp(8px, 2.5vw, 10px);
-    }
-
-    .bottom-strip {
-      padding: clamp(2px, 1vw, 4px) clamp(8px, 2.5vw, 12px) clamp(4px, 1.5vw, 8px);
-      gap: clamp(4px, 1.5vw, 8px);
-    }
-
-    .venue-badge {
-      padding: 2px clamp(6px, 2vw, 10px);
-      font-size: clamp(10px, 2.8vw, 12px);
-    }
-
-    .impact-text {
-      font-size: clamp(9px, 2.5vw, 11px);
     }
 
     .action-btn {
@@ -574,19 +527,6 @@
     .arrow-circle svg {
       width: 12px;
       height: 12px;
-    }
-
-    .bottom-strip {
-      padding: 2px 8px 6px;
-    }
-
-    .venue-badge {
-      padding: 2px 6px;
-      font-size: 10px;
-    }
-
-    .impact-text {
-      font-size: 9px;
     }
 
     .action-btn {

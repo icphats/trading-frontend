@@ -314,11 +314,11 @@
   }
 
   .token-change.positive {
-    color: var(--color-bullish, #22c55e);
+    color: var(--color-bullish);
   }
 
   .token-change.negative {
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
   }
 
   /* Skeleton loading */

@@ -847,7 +847,7 @@
   }
 
   .danger-zone {
-    background: oklch(from var(--color-bearish, #ef4444) l c h / 0.05);
+    background: oklch(from var(--color-bearish) l c h / 0.05);
   }
 
   .danger-button {
@@ -855,15 +855,15 @@
     font-size: 13px;
     font-weight: 500;
     background: transparent;
-    border: 1px solid var(--color-bearish, #ef4444);
+    border: 1px solid var(--color-bearish);
     border-radius: var(--radius-md);
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
     cursor: pointer;
     transition: all 150ms ease;
   }
 
   .danger-button:hover {
-    background: oklch(from var(--color-bearish, #ef4444) l c h / 0.1);
+    background: oklch(from var(--color-bearish) l c h / 0.1);
   }
 
   /* Scrollbar */

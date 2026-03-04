@@ -856,11 +856,11 @@
   }
 
   .price-change.positive {
-    color: var(--color-bullish, #22c55e);
+    color: var(--color-bullish);
   }
 
   .price-change.negative {
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
   }
 
   .volume-text,
@@ -894,7 +894,7 @@
   }
 
   .fav-btn.active {
-    color: var(--yellow-500, #eab308);
+    color: var(--color-yellow);
     opacity: 1;
   }
 

@@ -524,6 +524,76 @@ export function calculatePriceImpact(
 }
 
 /**
+ * Calculate price impact percentage from reference and effective ticks.
+ * Continuous (non-discretized) — replaces backend's integer bps approximation.
+ *
+ * @param referenceTick - Mid-market tick before execution
+ * @param effectiveTick - Weighted average execution tick
+ * @param baseDecimals - Base token decimals
+ * @param quoteDecimals - Quote token decimals
+ * @returns Impact as percentage (e.g., 0.25 = 0.25%). Positive = unfavorable.
+ */
+export function tickImpactPercent(
+    referenceTick: Tick,
+    effectiveTick: Tick,
+    baseDecimals: number,
+    quoteDecimals: number
+): number {
+    const refPrice = tickToPrice(referenceTick, baseDecimals, quoteDecimals);
+    if (refPrice === 0) return 0;
+    const execPrice = tickToPrice(effectiveTick, baseDecimals, quoteDecimals);
+    return ((execPrice - refPrice) / refPrice) * 100;
+}
+
+/**
+ * Compute output USD value using single-oracle approach.
+ *
+ * Converts output amount to input-token terms via reference_tick,
+ * then prices via the input token's oracle. This ensures the gap
+ * between inputUSD and outputUSD = fees + market impact.
+ *
+ * @param outputAmount - Raw output amount from quote (bigint)
+ * @param outputDecimals - Decimals of the output token
+ * @param referenceTick - Pre-trade reference tick from quote
+ * @param baseDecimals - Base token decimals
+ * @param quoteDecimals - Quote token decimals
+ * @param side - Trade side ('Buy'/'buy' or 'Sell'/'sell')
+ * @param oracleUsd - Input token's oracle price in USD (Number(priceUsd) / 1e12)
+ * @returns Output value in USD
+ */
+export function computeOutputUsd(
+    outputAmount: bigint,
+    outputDecimals: number,
+    referenceTick: Tick,
+    baseDecimals: number,
+    quoteDecimals: number,
+    side: 'Buy' | 'Sell' | 'buy' | 'sell',
+    oracleUsd: number,
+): number {
+    const outputFloat = Number(outputAmount) / (10 ** outputDecimals);
+    const refPrice = tickToPrice(referenceTick, baseDecimals, quoteDecimals);
+    const isBuy = side === 'Buy' || side === 'buy';
+    // Buy: output is base, convert to quote terms (multiply by quote/base price)
+    // Sell: output is quote, convert to base terms (divide by quote/base price)
+    const outputInInputTerms = isBuy
+        ? outputFloat * refPrice
+        : outputFloat / refPrice;
+    return outputInInputTerms * oracleUsd;
+}
+
+/**
+ * Compute price impact from USD values.
+ *
+ * impact = (inputUSD - outputUSD) / inputUSD × 100
+ * Includes fees. Positive = unfavorable, negative = favorable.
+ * Guaranteed 1:1 with displayed USD values by construction.
+ */
+export function usdImpactPercent(inputUsd: number, outputUsd: number): number {
+    if (inputUsd === 0) return 0;
+    return ((inputUsd - outputUsd) / inputUsd) * 100;
+}
+
+/**
  * Calculate minimum amount out with slippage tolerance
  *
  * @param amountOut - Expected output amount

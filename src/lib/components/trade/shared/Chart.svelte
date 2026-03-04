@@ -197,27 +197,27 @@
     '4h': 14_400_000n, '1d': 86_400_000n,
   };
 
-  // Fetch oracle prices for USD conversion
-  $effect(() => {
-    const chartData = market.chartData;
-    const needsOracle = priceBasis === "usd" && !isStablecoinQuote && chartData && chartData.length > 0;
-
-    if (!needsOracle) {
-      oraclePrices = [];
-      return;
-    }
-
-    const symbol = quoteSymbol;
-    const fromMs = BigInt(Number(chartData[0][0]));
-    const toMs = BigInt(Number(chartData[chartData.length - 1][0]));
-    const stepMs = INTERVAL_STEP_MS[chartSettings.interval] ?? 3_600_000n;
-
-    oracleRepository.fetchPriceArchive(symbol, fromMs, toMs, stepMs).then((result) => {
-      if ('ok' in result) {
-        oraclePrices = result.ok;
-      }
-    });
-  });
+  // TODO: re-enable USD oracle price fetching
+  // $effect(() => {
+  //   const chartData = market.chartData;
+  //   const needsOracle = priceBasis === "usd" && !isStablecoinQuote && chartData && chartData.length > 0;
+  //
+  //   if (!needsOracle) {
+  //     oraclePrices = [];
+  //     return;
+  //   }
+  //
+  //   const symbol = quoteSymbol;
+  //   const fromMs = BigInt(Number(chartData[0][0]));
+  //   const toMs = BigInt(Number(chartData[chartData.length - 1][0]));
+  //   const stepMs = INTERVAL_STEP_MS[chartSettings.interval] ?? 3_600_000n;
+  //
+  //   oracleRepository.fetchPriceArchive(symbol, fromMs, toMs, stepMs).then((result) => {
+  //     if ('ok' in result) {
+  //       oraclePrices = result.ok;
+  //     }
+  //   });
+  // });
 
   function initializeChart() {
     if (!chartContainer || chart) {

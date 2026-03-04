@@ -387,12 +387,12 @@
   }
 
   .status-indicator.running .status-dot {
-    background: #22c55e;
-    box-shadow: 0 0 6px #22c55e80;
+    background: var(--success);
+    box-shadow: 0 0 6px oklch(from var(--success) l c h / 0.5);
   }
 
   .status-indicator.running {
-    color: #22c55e;
+    color: var(--success);
   }
 
   .status-indicator.stopped .status-dot {
@@ -405,12 +405,12 @@
   }
 
   .status-indicator.stopping .status-dot {
-    background: #f59e0b;
-    box-shadow: 0 0 6px #f59e0b80;
+    background: var(--warning);
+    box-shadow: 0 0 6px oklch(from var(--warning) l c h / 0.5);
   }
 
   .status-indicator.stopping {
-    color: #f59e0b;
+    color: var(--warning);
   }
 
   .status-error {

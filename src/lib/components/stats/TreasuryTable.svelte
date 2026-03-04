@@ -618,11 +618,11 @@
 
   /* Gain/Loss colors */
   .gain {
-    color: var(--success, #22c55e);
+    color: var(--success);
   }
 
   .loss {
-    color: var(--destructive, #ef4444);
+    color: var(--destructive);
   }
 
   /* Subtotals */

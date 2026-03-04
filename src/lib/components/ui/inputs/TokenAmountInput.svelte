@@ -43,6 +43,8 @@
     onTokenClick?: () => void;
     /** Callback when "Deposit" is clicked on zero-balance hint */
     onDepositClick?: () => void;
+    /** Override USD value (bypasses internal token.priceUsd calculation) */
+    usdOverride?: number | null;
   }
 
   let {
@@ -64,6 +66,7 @@
     fee = 0n,
     onTokenClick,
     onDepositClick,
+    usdOverride,
   }: Props = $props();
 
   // Smart defaults based on size and readonly
@@ -79,7 +82,9 @@
   let hasValue = $derived(value && value !== "" && parseFloat(value) > 0);
 
   // Calculate USD value using entityStore.priceUsd (E12 precision per 06-Precision.md)
+  // If usdOverride is provided, use it directly (for quote-derived values)
   let usdValue = $derived.by(() => {
+    if (usdOverride !== undefined && usdOverride !== null) return usdOverride > 0 ? usdOverride : null;
     if (skeleton || !token) return null;
     if (!value || value === "" || value === "0") return null;
 

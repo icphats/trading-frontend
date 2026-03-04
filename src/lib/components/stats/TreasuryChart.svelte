@@ -2,8 +2,7 @@
   import TimeSeriesChart from '$lib/components/ui/charts/presets/TimeSeriesChart.svelte';
   import ChartToggle from '$lib/components/ui/charts/primitives/ChartToggle.svelte';
   import type { TimeInterval } from '$lib/components/ui/charts/core/chart.constants';
-  import { treasuryState, type TreasuryMetric, type TreasuryDataPoint } from '$lib/domain/treasury';
-  import { entityStore } from '$lib/domain/orchestration/entity-store.svelte';
+  import { treasuryRepository, type TreasuryMetric } from '$lib/repositories/treasury.repository';
 
   // ============================================
   // Types
@@ -68,7 +67,6 @@
 
   let selectedCategory = $state<PrimaryCategory>('fees');
   let selectedUnit = $state<UnitType>('native');
-  let currentInterval = $state<TimeInterval>('1W');
 
   // ============================================
   // Derived
@@ -96,21 +94,20 @@
     ];
   });
 
-  const chartData = $derived.by(() => {
-    return entityStore.getTreasurySnapshots(currentInterval, selectedMetric);
-  });
-
   // ============================================
-  // Data Fetching
+  // Data Fetching (direct, matching PlatformChart pattern)
   // ============================================
 
-  async function fetchData(interval: TimeInterval): Promise<TreasuryDataPoint[]> {
-    currentInterval = interval;
-    await treasuryState.fetchSnapshots(interval, selectedMetric);
-    return entityStore.getTreasurySnapshots(interval, selectedMetric);
+  async function fetchData(interval: TimeInterval): Promise<{ timestamp: number; value: number }[]> {
+    const result = await treasuryRepository.fetchSnapshots(interval, selectedMetric);
+
+    if ('err' in result) {
+      console.error('[TreasuryChart] Failed to fetch snapshots:', result.err);
+      return [];
+    }
+
+    return result.ok;
   }
-
-  const fetchDataFn = $derived(() => fetchData);
 
   // ============================================
   // Formatters
@@ -161,7 +158,7 @@
 <div class="treasury-chart">
   {#key selectedMetric}
     <TimeSeriesChart
-      fetchData={fetchDataFn()}
+      {fetchData}
       title={currentConfig.title}
       valuePrefix={currentConfig.valuePrefix}
       valueSuffix={currentConfig.valueSuffix}

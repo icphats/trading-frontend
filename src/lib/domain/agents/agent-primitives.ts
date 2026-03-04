@@ -477,7 +477,7 @@ const actions: Record<ActionType, ActionFn> = {
     try {
       log({ type: 'action', text: `quoteOrder(#buy, ${fmtNat(amount)}, ${limitTick})` });
       const quote = await market.quoteOrder({ buy: null }, amount, limitTick);
-      log({ type: 'result', text: `output: ${fmtNat(quote.output_amount)}  impact: ${quote.price_impact_bps}bps` });
+      log({ type: 'result', text: `output: ${fmtNat(quote.output_amount)}  ref_tick: ${quote.reference_tick}  exec_tick: ${quote.effective_tick}` });
       const bookOrders = quote.book_order.length > 0
         ? [{ ...quote.book_order[0]!, immediate_or_cancel: true }]
         : [];
@@ -500,7 +500,7 @@ const actions: Record<ActionType, ActionFn> = {
     try {
       log({ type: 'action', text: `quoteOrder(#sell, ${fmtNat(amount)}, ${limitTick})` });
       const quote = await market.quoteOrder({ sell: null }, amount, limitTick);
-      log({ type: 'result', text: `output: ${fmtNat(quote.output_amount)}  impact: ${quote.price_impact_bps}bps` });
+      log({ type: 'result', text: `output: ${fmtNat(quote.output_amount)}  ref_tick: ${quote.reference_tick}  exec_tick: ${quote.effective_tick}` });
       const bookOrders = quote.book_order.length > 0
         ? [{ ...quote.book_order[0]!, immediate_or_cancel: true }]
         : [];

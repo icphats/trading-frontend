@@ -1,7 +1,7 @@
 <script lang="ts">
   import type { OrderView, Side, QuoteResult } from "$lib/actors/services/spot.service";
   import type { VenueBreakdown } from "declarations/spot/spot.did";
-  import { tickToPrice, priceToTick, bigIntToString, bpsToPercent } from "$lib/domain/markets/utils";
+  import { tickToPrice, priceToTick, bigIntToString, tickImpactPercent } from "$lib/domain/markets/utils";
   import { formatToken, formatSigFig, formatTimestamp } from "$lib/utils/format.utils";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
   import { userPortfolio, userPreferences } from "$lib/domain/user";
@@ -318,9 +318,9 @@
 
     if (cachedQuote) {
       const outputFormatted = bigIntToString(cachedQuote.output_amount, outToken.decimals);
-      const impactPercent = bpsToPercent(cachedQuote.price_impact_bps);
+      const impactPct = tickImpactPercent(cachedQuote.reference_tick, cachedQuote.effective_tick, bToken.decimals, qToken.decimals);
       rows.push({ label: 'Receive', value: `~${outputFormatted} ${outToken.displaySymbol}` });
-      rows.push({ label: 'Price impact', value: impactPercent < 0.01 ? '< 0.01%' : `${impactPercent.toFixed(2)}%` });
+      rows.push({ label: 'Price impact', value: Math.abs(impactPct) < 0.01 ? '< 0.01%' : `${Math.abs(impactPct).toFixed(2)}%` });
     }
 
     let routing = undefined;

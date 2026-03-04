@@ -1,8 +1,9 @@
 <script lang="ts">
   import type { QuoteResult as QuoteResultType, VenueBreakdown, VenueId } from 'declarations/spot/spot.did';
-  import { bigIntToString, tickToPrice, bpsToPercent } from "$lib/domain/markets/utils";
+  import { bigIntToString, tickToPrice, usdImpactPercent } from "$lib/domain/markets/utils";
   import { getDisplayDecimals } from "$lib/utils/format.utils";
   import Logo from "$lib/components/ui/Logo.svelte";
+  import InfoTip from "$lib/components/ui/InfoTip.svelte";
 
   interface Props {
     isCalculating: boolean;
@@ -21,9 +22,15 @@
     referenceTick?: number | null;
     /** The current live market tick */
     currentTick?: number;
+    /** Input USD value (for USD-derived impact calculation) */
+    inputUsdValue?: number | null;
+    /** Output USD value (for USD-derived impact calculation) */
+    outputUsdValue?: number | null;
+    /** Compact mode — only shows price impact row, no routing */
+    compact?: boolean;
   }
 
-  let { isCalculating, quoteError = null, quote, baseSymbol, quoteSymbol, baseDecimals, quoteDecimals, baseLogo, quoteLogo, side, inputAmount, referenceTick, currentTick }: Props = $props();
+  let { isCalculating, quoteError = null, quote, baseSymbol, quoteSymbol, baseDecimals, quoteDecimals, baseLogo, quoteLogo, side, inputAmount, referenceTick, currentTick, inputUsdValue, outputUsdValue, compact = false }: Props = $props();
 
   let isExpanded = $state(false);
 
@@ -57,8 +64,12 @@
     return referenceTick !== currentTick;
   });
 
-  // Price impact: convert from bps to percentage
-  let priceImpactPercent = $derived(quote ? bpsToPercent(quote.price_impact_bps) : 0);
+  // Price impact: derived from USD values so it's always 1:1 with displayed USD
+  // impact = (inputUSD - outputUSD) / inputUSD × 100 — includes fees
+  let priceImpactPercent = $derived.by(() => {
+    if (!inputUsdValue || !outputUsdValue || inputUsdValue === 0) return 0;
+    return usdImpactPercent(inputUsdValue, outputUsdValue);
+  });
 
   // Warning thresholds
   let isHighImpact = $derived(priceImpactPercent >= 1);
@@ -122,42 +133,44 @@
   </div>
 {:else if quote || isCalculating}
   <div class="quote-card" class:is-loading={isCalculating} class:is-updating={tickDiverged && !isCalculating}>
-    <!-- Estimated Fill Percentage (shown at top when inputAmount provided) -->
-    {#if inputAmount !== undefined}
-      <div class="fill-indicator" class:fill-full={isFullFill} class:fill-partial={isPartialFill} class:fill-none={isNoFill}>
-        <div class="fill-header">
-          <span class="fill-label">Est. fill</span>
+    <!-- Always-visible rows -->
+    <div class="quote-rows">
+      {#if !compact && inputAmount !== undefined}
+        <div class="quote-row" class:fill-full={isFullFill} class:fill-partial={isPartialFill} class:fill-none={isNoFill}>
+          <span class="quote-label-group">
+            <span class="quote-label">Est. fill</span>
+            <InfoTip text="Percentage of your order that fills immediately. Remainder rests on the book." />
+          </span>
           {#if isCalculating}
             <div class="skeleton skeleton-fill"></div>
           {:else if fillPercent !== null}
-            <span class="fill-value">{fillPercent.toFixed(1)}%</span>
+            <span class="quote-value fill-value">{fillPercent.toFixed(1)}%</span>
           {:else}
-            <span class="fill-value">—</span>
+            <span class="quote-value fill-value">—</span>
           {/if}
         </div>
-        {#if !isCalculating && fillPercent !== null && fillPercent < 100}
-          <div class="fill-bar-container">
-            <div class="fill-bar" style="width: {fillPercent}%"></div>
-          </div>
-        {/if}
-      </div>
-    {/if}
+      {/if}
 
-    <!-- Expandable details -->
-    {#if isExpanded}
-      <div class="quote-details">
-        <!-- Primary quote info -->
+      {#if isCalculating || (inputUsdValue && outputUsdValue)}
         <div class="quote-row">
-          <span class="quote-label">Market impact</span>
+          <span class="quote-label-group">
+            <span class="quote-label">Price impact</span>
+            <InfoTip text="How much this trade moves the price, including fees." />
+          </span>
           {#if isCalculating}
             <div class="skeleton skeleton-value-sm"></div>
           {:else}
             <span class="quote-value" class:quote-value-favorable={isFavorableImpact} class:quote-value-warning={!isFavorableImpact && isHighImpact} class:quote-value-severe={!isFavorableImpact && isVeryHighImpact}>{priceImpactFormatted}</span>
           {/if}
         </div>
+      {/if}
 
+      {#if !compact}
         <div class="quote-row">
-          <span class="quote-label">Total fees</span>
+          <span class="quote-label-group">
+            <span class="quote-label">Total fees</span>
+            <InfoTip text="Sum of fees across all venues used to fill this order." />
+          </span>
           {#if isCalculating}
             <div class="skeleton skeleton-value-md"></div>
           {:else}
@@ -166,66 +179,63 @@
         </div>
 
         <div class="quote-row">
-          <span class="quote-label">Rate</span>
+          <span class="quote-label-group">
+            <span class="quote-label">Rate</span>
+            <InfoTip text="Effective execution price across all venues." />
+          </span>
           {#if isCalculating}
             <div class="skeleton skeleton-value-lg"></div>
           {:else}
             <span class="quote-value">1 {baseSymbol} = {executionPrice.toFixed(priceDecimals)} {quoteSymbol}</span>
           {/if}
         </div>
+      {/if}
+    </div>
 
-        <!-- Venue allocation breakdown -->
-        <div class="venue-section">
-          <div class="venue-section-header">
-            <span class="venue-title">Routing</span>
-          </div>
-          <div class="venue-list">
-            {#if isCalculating}
+    <!-- Routing: collapsed trigger -->
+    {#if !compact}
+    <div class="routing-section">
+      {#if isCalculating}
+        <button type="button" class="routing-collapsed" disabled>
+          <span class="routing-summary">— venue(s)</span>
+          <span class="total-fees">— fee</span>
+          <svg class="routing-chevron" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg>
+        </button>
+      {:else if quote && sortedVenues.length > 0}
+        <button type="button" class="routing-collapsed" onclick={toggleExpanded}>
+          <span class="routing-summary">{sortedVenues.length} venue{sortedVenues.length !== 1 ? 's' : ''}</span>
+          <span class="total-fees">{totalFeesFormatted} {inputTokenSymbol} fee</span>
+          <svg class="routing-chevron" class:expanded={isExpanded} width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M19 9l-7 7-7-7"/></svg>
+        </button>
+
+        <!-- Expanded: per-venue details -->
+        {#if isExpanded}
+          <div class="routing-details">
+            {#each sortedVenues as venue, i (i)}
               <div class="venue-card">
-                <div class="venue-badges">
-                  <div class="skeleton skeleton-badge"></div>
-                  <div class="skeleton skeleton-badge skeleton-badge-sm"></div>
-                </div>
+                <span class="venue-heading">{getVenueLabel(venue.venue_id)} <span class="venue-heading-pct">({getAllocationPercent(venue).toFixed(0)}%)</span></span>
                 <div class="venue-amounts">
-                  <div class="venue-amount-item"><div class="skeleton skeleton-amount"></div></div>
+                  <div class="venue-amount-item">
+                    <span class="venue-amount-value">{bigIntToString(venue.input_amount, inputTokenDecimals)}</span>
+                    <Logo src={inputTokenLogo} alt={inputTokenSymbol} size="xxs" circle />
+                  </div>
                   <span class="venue-arrow">→</span>
-                  <div class="venue-amount-item"><div class="skeleton skeleton-amount"></div></div>
-                </div>
-              </div>
-            {:else if quote && sortedVenues.length > 0}
-              {#each sortedVenues as venue, i (i)}
-                <div class="venue-card">
-                  <span class="venue-badge" class:is-book={isBookVenue(venue.venue_id)} class:is-pool={!isBookVenue(venue.venue_id)}>
-                    {getVenueLabel(venue.venue_id)}: {getAllocationPercent(venue).toFixed(0)}%
-                  </span>
-                  <div class="venue-amounts">
-                    <div class="venue-amount-item">
-                      <span class="venue-amount-value">{bigIntToString(venue.input_amount, inputTokenDecimals)}</span>
-                      <Logo src={inputTokenLogo} alt={inputTokenSymbol} size="xxs" circle />
-                    </div>
-                    <span class="venue-arrow">→</span>
-                    <div class="venue-amount-item">
-                      <span class="venue-amount-value">{bigIntToString(venue.output_amount, outputTokenDecimals)}</span>
-                      <Logo src={outputTokenLogo} alt={outputTokenSymbol} size="xxs" circle />
-                    </div>
+                  <div class="venue-amount-item">
+                    <span class="venue-amount-value">{bigIntToString(venue.output_amount, outputTokenDecimals)}</span>
+                    <Logo src={outputTokenLogo} alt={outputTokenSymbol} size="xxs" circle />
                   </div>
                 </div>
-              {/each}
-            {:else}
-              <span class="venue-empty">No venue data</span>
-            {/if}
+                <div class="venue-fee-row">
+                  <span class="venue-fee-label">Fee</span>
+                  <span class="venue-fee-value">{bigIntToString(venue.fee_amount, inputTokenDecimals)} {inputTokenSymbol}</span>
+                </div>
+              </div>
+            {/each}
           </div>
-        </div>
-      </div>
+        {/if}
+      {/if}
+    </div>
     {/if}
-
-    <!-- Expand/Collapse button -->
-    <button type="button" onclick={toggleExpanded} class="quote-expand-btn">
-      <span>{isExpanded ? "Less" : "Details"}</span>
-      <svg class="quote-expand-icon {isExpanded ? 'rotated' : ''}" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
-      </svg>
-    </button>
   </div>
 {/if}
 
@@ -244,29 +254,16 @@
     opacity: 0.7;
   }
 
-  /* Fill Indicator */
-  .fill-indicator {
+  /* Always-visible rows container */
+  .quote-rows {
     padding: 10px 12px;
-    border-bottom: 1px solid var(--border);
     display: flex;
     flex-direction: column;
-    gap: 6px;
+    gap: 8px;
   }
 
-  .fill-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-  }
-
-  .fill-label {
-    font-size: 12px;
-    font-weight: 500;
-    color: var(--muted-foreground);
-  }
-
+  /* Fill value styling */
   .fill-value {
-    font-size: 14px;
     font-weight: 600;
     font-family: var(--font-mono);
   }
@@ -284,24 +281,9 @@
     color: var(--muted-foreground);
   }
 
-  /* Progress bar */
-  .fill-bar-container {
-    height: 4px;
-    background: var(--muted);
-    border-radius: 2px;
-    overflow: hidden;
-  }
-
-  .fill-bar {
-    height: 100%;
-    background: hsl(45 93% 47%);
-    border-radius: 2px;
-    transition: width 300ms ease;
-  }
-
   .skeleton-fill {
     width: 40px;
-    height: 16px;
+    height: 14px;
   }
 
   /* Skeleton loading states */
@@ -324,13 +306,6 @@
   .skeleton-value-lg {
     width: 140px;
     height: 14px;
-  }
-
-  .venue-empty {
-    font-size: 12px;
-    color: var(--muted-foreground);
-    margin: 0;
-    padding: 8px 0;
   }
 
   @keyframes pulse {
@@ -389,43 +364,71 @@
     color: var(--color-bearish);
   }
 
-  /* Expanded details */
-  .quote-details {
-    padding: 0 12px 12px;
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    border-top: 1px solid var(--border);
-    padding-top: 12px;
-    margin-top: 0;
-  }
-
-  /* Venue section */
-  .venue-section {
-    display: flex;
-    flex-direction: column;
-    gap: 8px;
-    margin-top: 8px;
-    padding-top: 12px;
-    border-top: 1px solid var(--border);
-  }
-
-  .venue-section-header {
-    display: flex;
-    justify-content: space-between;
+  /* Label group (label + InfoTip) */
+  .quote-label-group {
+    display: inline-flex;
     align-items: center;
+    gap: 4px;
+    flex-shrink: 0;
   }
 
-  .venue-title {
+  /* Routing section */
+  .routing-section {
+    padding: 8px 12px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* Collapsed: venue count + fees + chevron */
+  .routing-collapsed {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: none;
+    border: none;
+    padding: 0;
+    cursor: pointer;
+    color: inherit;
+    width: 100%;
+  }
+
+  .routing-collapsed:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  .routing-summary {
     font-size: 12px;
     font-weight: 500;
-    color: var(--muted-foreground);
+    color: var(--foreground);
+    flex-shrink: 0;
   }
 
-  .venue-list {
+  .total-fees {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
+    margin-left: auto;
+    white-space: nowrap;
+  }
+
+  .routing-chevron {
+    color: var(--muted-foreground);
+    flex-shrink: 0;
+    transition: transform 150ms ease;
+  }
+
+  .routing-chevron.expanded {
+    transform: rotate(180deg);
+  }
+
+  /* Expanded venue details */
+  .routing-details {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 0.75rem;
+    padding-top: 0.75rem;
+    border-top: 1px solid var(--border);
+    margin-top: 0.5rem;
   }
 
   .venue-card {
@@ -434,43 +437,20 @@
     gap: 4px;
   }
 
-  .venue-badges {
-    display: flex;
-    gap: 4px;
-    flex-wrap: wrap;
+  .venue-card + .venue-card {
+    border-top: 1px solid var(--border);
+    padding-top: 0.75rem;
   }
 
-  .venue-badge {
-    display: inline-flex;
-    align-items: center;
-    align-self: flex-start;
-    padding: 3px 10px;
+  .venue-heading {
     font-size: 12px;
-    font-weight: 500;
-    border-radius: var(--radius-sm);
-    border: 1px solid;
+    font-weight: 600;
+    color: var(--foreground);
   }
 
-  .venue-badge.is-book {
-    border-color: oklch(0.70 0.16 55 / 0.4);
-    background: oklch(0.70 0.16 55 / 0.1);
-    color: oklch(0.70 0.16 55);
-  }
-
-  .venue-badge.is-pool {
-    border-color: oklch(from var(--color-bullish) l c h / 0.4);
-    background: oklch(from var(--color-bullish) l c h / 0.1);
-    color: var(--color-bullish);
-  }
-
-  .skeleton-badge {
-    width: 70px;
-    height: 22px;
-    border-radius: 6px;
-  }
-
-  .skeleton-badge-sm {
-    width: 55px;
+  .venue-heading-pct {
+    font-weight: 400;
+    color: var(--muted-foreground);
   }
 
   .venue-amounts {
@@ -505,39 +485,20 @@
     color: var(--muted-foreground);
   }
 
-  .skeleton-amount {
-    width: 60px;
-    height: 11px;
+  .venue-fee-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
 
-  /* Expand button */
-  .quote-expand-btn {
-    width: 100%;
-    padding: 8px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 4px;
+  .venue-fee-label {
     font-size: 11px;
     color: var(--muted-foreground);
-    background: transparent;
-    border: none;
-    border-top: 1px solid var(--border);
-    cursor: pointer;
-    transition: color 150ms ease;
   }
 
-  .quote-expand-btn:hover {
-    color: var(--foreground);
-  }
-
-  .quote-expand-icon {
-    width: 12px;
-    height: 12px;
-    transition: transform 200ms ease;
-  }
-
-  .quote-expand-icon.rotated {
-    transform: rotate(180deg);
+  .venue-fee-value {
+    font-size: 11px;
+    font-family: var(--font-mono);
+    color: var(--muted-foreground);
   }
 </style>

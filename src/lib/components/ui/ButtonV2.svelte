@@ -127,7 +127,7 @@
   /* Primary — solid branded purple, white text */
   .v-primary {
     background: var(--primary);
-    color: #fff;
+    color: var(--primary-foreground);
   }
   .v-primary:hover:not(:disabled) {
     background: oklch(from var(--primary) calc(l + 0.08) c h);
@@ -145,7 +145,7 @@
   /* Danger — solid red, white text, destructive counterpart to primary */
   .v-danger {
     background: var(--color-bearish);
-    color: #fff;
+    color: var(--primary-foreground);
   }
   .v-danger:hover:not(:disabled) {
     background: oklch(from var(--color-bearish) calc(l + 0.08) c h);

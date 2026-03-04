@@ -426,7 +426,7 @@
 	}
 
 	.send-button.success {
-		background: var(--success, #22c55e);
+		background: var(--success);
 	}
 
 	/* Spinner */

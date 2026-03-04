@@ -225,8 +225,8 @@
 
 	/* Error Banner */
 	.error-banner {
-		background: var(--destructive-muted, rgba(239, 68, 68, 0.1));
-		color: var(--destructive, #ef4444);
+		background: var(--destructive-muted);
+		color: var(--destructive);
 		padding: 8px 16px;
 		margin: 0 16px 16px;
 		border-radius: 8px;
@@ -277,7 +277,7 @@
 		width: 24px;
 		height: 24px;
 		border: 2px solid var(--border);
-		border-top-color: var(--accent);
+		border-top-color: var(--primary);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}
@@ -388,7 +388,7 @@
 	}
 
 	.link {
-		color: var(--accent);
+		color: var(--primary);
 		text-decoration: none;
 	}
 

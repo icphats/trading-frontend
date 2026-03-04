@@ -50,7 +50,7 @@
     width: 32px;
     height: 32px;
     border-radius: 50%;
-    background: linear-gradient(135deg, var(--primary) 0%, var(--accent) 100%);
+    background: linear-gradient(135deg, var(--primary) 0%, var(--sidebar-primary) 100%);
     display: flex;
     align-items: center;
     justify-content: center;

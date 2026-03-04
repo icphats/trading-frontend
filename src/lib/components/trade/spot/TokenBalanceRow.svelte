@@ -52,7 +52,7 @@
   }
 
   .token-balance-row:active {
-    background: var(--accent);
+    background: var(--control-active);
   }
 
   .left {

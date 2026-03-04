@@ -142,7 +142,7 @@
   }
 
   .afc-card.error {
-    border-color: var(--destructive, #ef4444);
+    border-color: var(--destructive);
   }
 
   .afc-card.disabled {
@@ -250,7 +250,7 @@
     background: oklch(from var(--destructive) l c h / 0.1);
     border-radius: 8px;
     font-size: 12px;
-    color: var(--destructive, #ef4444);
+    color: var(--destructive);
     text-align: center;
   }
 

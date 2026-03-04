@@ -66,7 +66,7 @@
   }
 
   .error-icon {
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
     margin-bottom: 4px;
   }
 

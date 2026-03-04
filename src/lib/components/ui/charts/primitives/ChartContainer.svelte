@@ -85,6 +85,6 @@
   }
 
   .message.error {
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
   }
 </style>

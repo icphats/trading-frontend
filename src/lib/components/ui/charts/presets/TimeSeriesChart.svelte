@@ -463,13 +463,13 @@
   }
 
   .value-change.positive {
-    color: var(--color-bullish, #22c55e);
-    background: rgba(34, 197, 94, 0.12);
+    color: var(--color-bullish);
+    background: oklch(from var(--color-bullish) l c h / 0.12);
   }
 
   .value-change.negative {
-    color: var(--color-bearish, #ef4444);
-    background: rgba(239, 68, 68, 0.12);
+    color: var(--color-bearish);
+    background: oklch(from var(--color-bearish) l c h / 0.12);
   }
 
   .value-change.neutral {

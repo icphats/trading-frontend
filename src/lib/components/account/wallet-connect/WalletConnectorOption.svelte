@@ -124,15 +124,15 @@
 	}
 
 	.badge.detected {
-		background: var(--success-muted, rgba(34, 197, 94, 0.1));
-		color: var(--success, #22c55e);
+		background: var(--success-muted);
+		color: var(--success);
 	}
 
 	.spinner {
 		width: 20px;
 		height: 20px;
 		border: 2px solid var(--border);
-		border-top-color: var(--accent);
+		border-top-color: var(--primary);
 		border-radius: 50%;
 		animation: spin 1s linear infinite;
 	}

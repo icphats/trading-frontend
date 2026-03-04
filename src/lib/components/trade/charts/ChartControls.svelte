@@ -111,14 +111,15 @@
       ariaLabel="Chart type"
     />
 
-    {#if !isStablecoinQuote}
+    <!-- TODO: re-enable USD price basis toggle -->
+    <!-- {#if !isStablecoinQuote}
       <ChartToggle
         options={PRICE_BASIS_OPTIONS}
         value={priceBasis}
         onValueChange={(v) => onPriceBasisSelect(v as PriceBasis)}
         ariaLabel="Quote basis"
       />
-    {/if}
+    {/if} -->
 
     <ChartToggle
       options={INTERVAL_OPTIONS}

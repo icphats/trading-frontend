@@ -409,11 +409,11 @@
   }
 
   .value-change.positive {
-    color: var(--color-bullish, #22c55e);
+    color: var(--color-bullish);
   }
 
   .value-change.negative {
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
   }
 
   .value-volume {
@@ -443,12 +443,12 @@
   }
 
   .star-button.is-favorite {
-    color: var(--color-warning, #eab308);
+    color: var(--color-warning);
     opacity: 1;
   }
 
   .star-button.is-favorite:hover {
-    color: oklch(from var(--color-warning, #eab308) calc(l * 0.9) c h);
+    color: oklch(from var(--color-warning) calc(l * 0.9) c h);
   }
 
   /* Brighten star on row hover */

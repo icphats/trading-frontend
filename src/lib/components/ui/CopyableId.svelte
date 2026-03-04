@@ -217,7 +217,7 @@
   }
 
   .copyable-id.pill.copied {
-    background-color: rgba(76, 175, 80, 0.1);
+    background-color: oklch(from var(--success) l c h / 0.1);
   }
 
   /* ── Outline variant ── */
@@ -234,7 +234,7 @@
 
   .copyable-id.outline.copied {
     border-color: var(--color-connected);
-    background-color: rgba(76, 175, 80, 0.05);
+    background-color: oklch(from var(--success) l c h / 0.05);
   }
 
   .copyable-id.outline .id-text {

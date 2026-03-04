@@ -13,7 +13,8 @@
     alignTickToSpacing,
     stringToBigInt,
     bigIntToString,
-    bpsToPercent,
+    computeOutputUsd,
+    usdImpactPercent,
   } from "$lib/domain/markets/utils";
   import { toastState } from "$lib/state/portal/toast.state.svelte";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
@@ -267,6 +268,31 @@
   const displayPrice = $derived.by(() => {
     if (limitTick === null) return null;
     return tickToPrice(limitTick, spot.baseTokenDecimals, spot.quoteTokenDecimals);
+  });
+
+  // Input USD: input amount × input token's oracle price
+  let inputUsdValue = $derived.by(() => {
+    if (!base || !quote) return null;
+    const inputToken = side === "Buy" ? quote : base;
+    const inputPriceUsd = inputToken.priceUsd;
+    if (!inputPriceUsd || inputPriceUsd === 0n) return null;
+    const oracleUsd = Number(inputPriceUsd) / 1e12;
+    const inputValue = side === "Buy" ? localTotal : localAmount;
+    const inputFloat = parseFloat(inputValue);
+    if (!inputFloat || inputFloat <= 0) return null;
+    return inputFloat * oracleUsd;
+  });
+
+  // Output USD: convert output via reference_tick to input-token terms, then oracle
+  let outputUsdValue = $derived.by(() => {
+    if (!quoteResult || !base || !quote) return null;
+    if (quoteResult.output_amount === 0n) return null;
+    const inputToken = side === "Buy" ? quote : base;
+    const inputPriceUsd = inputToken.priceUsd;
+    if (!inputPriceUsd || inputPriceUsd === 0n) return null;
+    const oracleUsd = Number(inputPriceUsd) / 1e12;
+    const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
+    return computeOutputUsd(quoteResult.output_amount, outputDecimals, quoteResult.reference_tick, base.decimals, quote.decimals, side, oracleUsd);
   });
 
   // Calculate total from amount when amount changes (only when editing amount)
@@ -525,22 +551,24 @@
     if (timeInForce === "IOC") {
       rows.push({ label: "Time in Force", value: "IOC" });
     }
-    if (quoteResult) {
-      const impactPct = bpsToPercent(quoteResult.price_impact_bps);
-      rows.push({ label: "Price impact", value: impactPct < 0.01 ? '< 0.01%' : `${impactPct.toFixed(2)}%` });
-    }
+    const priceImpact = (inputUsdValue && outputUsdValue && inputUsdValue > 0)
+      ? (() => { const p = usdImpactPercent(inputUsdValue, outputUsdValue); return Math.abs(p) < 0.01 ? '< 0.01%' : `${Math.abs(p).toFixed(2)}%`; })()
+      : undefined;
     return {
       side,
       baseSymbol: base.displaySymbol,
       baseLogo: base.logo ?? undefined,
       rows,
-      routing: quoteResult ? buildVenueRouting(quoteResult, (() => {
-        try {
-          const inputDecimals = side === "Buy" ? quote!.decimals : base!.decimals;
-          const inputValue = side === "Buy" ? localTotal : localAmount;
-          return inputValue ? stringToBigInt(inputValue, inputDecimals) : 0n;
-        } catch { return 0n; }
-      })()) : undefined,
+      routing: quoteResult ? (() => {
+        const r = buildVenueRouting(quoteResult, (() => {
+          try {
+            const inputDecimals = side === "Buy" ? quote!.decimals : base!.decimals;
+            const inputValue = side === "Buy" ? localTotal : localAmount;
+            return inputValue ? stringToBigInt(inputValue, inputDecimals) : 0n;
+          } catch { return 0n; }
+        })());
+        return r ? { ...r, priceImpact } : undefined;
+      })() : undefined,
     };
   });
 </script>
@@ -605,6 +633,8 @@
         {side}
         referenceTick={quoteReferenceTick}
         currentTick={currentTick ?? undefined}
+        {inputUsdValue}
+        {outputUsdValue}
         inputAmount={(() => {
           if (!base || !quote) return undefined;
           const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;

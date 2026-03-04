@@ -267,7 +267,7 @@
 
   @keyframes flashGreen {
     0% {
-      background-color: rgba(34, 197, 94, 0.4);
+      background-color: oklch(from var(--color-bullish) l c h / 0.4);
     }
     100% {
       background-color: transparent;
@@ -276,7 +276,7 @@
 
   @keyframes flashRed {
     0% {
-      background-color: rgba(239, 68, 68, 0.4);
+      background-color: oklch(from var(--color-bearish) l c h / 0.4);
     }
     100% {
       background-color: transparent;

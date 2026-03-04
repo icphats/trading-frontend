@@ -349,7 +349,7 @@
   }
 
   .logo-remove-btn:hover {
-    background: rgba(239, 68, 68, 0.9);
+    background: oklch(from var(--destructive) l c h / 0.9);
   }
 
   /* Toggle Switch Styles */

@@ -22,6 +22,8 @@
     inputLogo?: string;
     outputSymbol: string;
     outputLogo?: string;
+    /** Price impact as formatted string (e.g. "0.15%") — shown in routing panel */
+    priceImpact?: string;
   }
 
   interface OrderDetail {
@@ -180,9 +182,15 @@
                 <span class="fill-label">Est. fill</span>
                 <span class="fill-value" class:fill-full={isFullFill} class:fill-partial={isPartialFill}>{routing.fillPercent.toFixed(1)}%</span>
               </div>
-              {#if !isFullFill}
-                <div class="fill-bar-track">
-                  <div class="fill-bar" class:fill-full={isFullFill} class:fill-partial={isPartialFill} style="width: {routing.fillPercent}%"></div>
+              <div class="fill-bar-track">
+                <div class="fill-bar" class:fill-full={isFullFill} class:fill-partial={isPartialFill} style="width: {routing.fillPercent}%"></div>
+              </div>
+
+              <!-- Price impact -->
+              {#if routing.priceImpact}
+                <div class="fill-row">
+                  <span class="fill-label">Price impact</span>
+                  <span class="fill-value">{routing.priceImpact}</span>
                 </div>
               {/if}
 

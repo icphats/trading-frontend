@@ -337,7 +337,7 @@
   }
 
   .message-username {
-    color: var(--accent-foreground);
+    color: var(--foreground);
     font-weight: 600;
     background: none;
     border: none;

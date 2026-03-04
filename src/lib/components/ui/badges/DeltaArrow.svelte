@@ -46,10 +46,10 @@
   }
 
   .delta-arrow.up {
-    color: var(--color-bullish, #22c55e);
+    color: var(--color-bullish);
   }
 
   .delta-arrow.down {
-    color: var(--color-bearish, #ef4444);
+    color: var(--color-bearish);
   }
 </style>
