@@ -193,16 +193,6 @@
 			</div>
 		</div>
 	{/if}
-
-	<!-- Privacy Notice -->
-	<div class="privacy-notice">
-		<p>
-			By connecting a wallet, you agree to our
-			<a href="/terms" class="link">Terms of Service</a>
-			and
-			<a href="/privacy" class="link">Privacy Policy</a>.
-		</p>
-	</div>
 </div>
 
 <style>
@@ -373,26 +363,4 @@
 		display: none;
 	}
 
-	/* Privacy Notice */
-	.privacy-notice {
-		padding: 16px;
-		margin-top: auto;
-	}
-
-	.privacy-notice p {
-		font-size: 12px;
-		color: var(--muted-foreground);
-		text-align: center;
-		margin: 0;
-		line-height: 1.5;
-	}
-
-	.link {
-		color: var(--primary);
-		text-decoration: none;
-	}
-
-	.link:hover {
-		text-decoration: underline;
-	}
 </style>
