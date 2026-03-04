@@ -9,7 +9,7 @@
   // Types
   // ============================================
 
-  type PrimaryCategory = 'fees' | 'cycles_out';
+  type PrimaryCategory = 'fees' | 'cycles_out' | 'buybacks';
   type UnitType = 'native' | 'usd';
 
   interface MetricConfig {
@@ -48,11 +48,18 @@
       valueSuffix: '',
       formatValue: formatUSD,
     },
+    buyback_usd_e6: {
+      title: 'DAILY BUYBACKS (USD)',
+      valuePrefix: '$',
+      valueSuffix: '',
+      formatValue: formatUSD,
+    },
   };
 
   const PRIMARY_OPTIONS: { value: PrimaryCategory; label: string }[] = [
     { value: 'fees', label: 'Fees' },
     { value: 'cycles_out', label: 'Cycles' },
+    { value: 'buybacks', label: 'Buybacks' },
   ];
 
   // ============================================
@@ -70,12 +77,16 @@
   const selectedMetric = $derived.by((): TreasuryMetric => {
     if (selectedCategory === 'fees') {
       return selectedUnit === 'native' ? 'fees_icp' : 'fees_usd_e6';
+    } else if (selectedCategory === 'buybacks') {
+      return 'buyback_usd_e6';
     } else {
       return selectedUnit === 'native' ? 'cycles_out' : 'cycles_expense_usd_e6';
     }
   });
 
   const currentConfig = $derived(METRIC_CONFIG[selectedMetric]);
+
+  const showUnitToggle = $derived(selectedCategory !== 'buybacks');
 
   const secondaryOptions = $derived.by(() => {
     const nativeLabel = selectedCategory === 'fees' ? 'ICP' : 'Cycles';
@@ -137,11 +148,13 @@
       bind:value={selectedCategory}
       ariaLabel="Category"
     />
-    <ChartToggle
-      options={secondaryOptions}
-      bind:value={selectedUnit}
-      ariaLabel="Unit"
-    />
+    {#if showUnitToggle}
+      <ChartToggle
+        options={secondaryOptions}
+        bind:value={selectedUnit}
+        ariaLabel="Unit"
+      />
+    {/if}
   </div>
 {/snippet}
 
@@ -153,6 +166,8 @@
       valuePrefix={currentConfig.valuePrefix}
       valueSuffix={currentConfig.valueSuffix}
       formatValue={currentConfig.formatValue}
+      intervals={['1W', '1M', '1Y']}
+      defaultInterval="1W"
       rightControls={toggleControls}
     />
   {/key}

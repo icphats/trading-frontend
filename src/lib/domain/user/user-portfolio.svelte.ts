@@ -444,16 +444,23 @@ class UserPortfolioState {
           if ('ok' in result) {
             return { canisterId, balance: result.ok };
           }
+          if ('err' in result && result.err === 'CANISTER_UNAVAILABLE') {
+            return { canisterId, balance: 0n, evict: true };
+          }
           return { canisterId, balance: 0n };
         })
       );
 
       const next = new Map(this.balances);
+      const toEvict: string[] = [];
 
       for (const result of results) {
         if (result.status === 'fulfilled') {
-          const { canisterId, balance } = result.value;
-          // Get decimals from entityStore for formatting
+          const { canisterId, balance, evict } = result.value as { canisterId: string; balance: bigint; evict?: boolean };
+          if (evict) {
+            toEvict.push(canisterId);
+            continue;
+          }
           const token = entityStore.getToken(canisterId);
           const decimals = token?.decimals ?? 8;
 
@@ -466,6 +473,10 @@ class UserPortfolioState {
       }
 
       this.balances = next;
+
+      for (const id of toEvict) {
+        this.removeToken(id);
+      }
     } finally {
       this.isLoadingBalances = false;
     }

@@ -8,11 +8,12 @@
 import { api } from '$lib/actors/api.svelte';
 import type { SpotMarketMetadata } from '$lib/actors/services/registry.service';
 import type { PoolState, PoolOverview } from '$lib/actors/services/spot.service';
+import type { LiquidityLockSummary } from 'declarations/spot/spot.did';
 import { marketRepository } from '$lib/repositories/market.repository';
 import type { Principal } from '@dfinity/principal';
 
 // Re-export types for consumers
-export type { SpotMarketMetadata, PoolState, PoolOverview };
+export type { SpotMarketMetadata, PoolState, PoolOverview, LiquidityLockSummary };
 
 // ============================================
 // Market Creation
@@ -81,6 +82,18 @@ export async function fetchPoolsOverview(spotCanisterId: string): Promise<PoolOv
   if ('err' in result) {
     console.error('[MarketOperations] Failed to fetch pool overviews:', result.err);
     return [];
+  }
+  return result.ok;
+}
+
+/**
+ * Fetch lock schedule for a spot market
+ */
+export async function fetchLockSchedule(spotCanisterId: string): Promise<LiquidityLockSummary | null> {
+  const result = await marketRepository.fetchLockSchedule(spotCanisterId);
+  if ('err' in result) {
+    console.error('[MarketOperations] Failed to fetch lock schedule:', result.err);
+    return null;
   }
   return result.ok;
 }

@@ -3,7 +3,6 @@ import type { ActorMethod } from '@dfinity/agent';
 import type { IDL } from '@dfinity/candid';
 
 export type ActivityDetails = { 'trigger' : TriggerActivityDetails } |
-  { 'penalty' : PenaltyActivityDetails } |
   { 'order' : OrderActivityDetails } |
   { 'liquidity' : LiquidityActivityDetails } |
   { 'position_transfer' : PositionTransferActivityDetails } |
@@ -16,11 +15,9 @@ export type ActivityType = { 'trigger_fired' : null } |
   { 'lp_fees_collected' : null } |
   { 'lp_transferred' : null } |
   { 'trigger_failed' : null } |
-  { 'transfer_in_failed' : null } |
   { 'lp_closed' : null } |
   { 'lp_decreased' : null } |
   { 'lp_opened' : null } |
-  { 'circuit_breaker_penalty' : null } |
   { 'lp_increased' : null } |
   { 'order_filled' : null } |
   { 'lp_locked' : null } |
@@ -407,12 +404,16 @@ export interface LiquidityActivityDetails {
   'position_id' : bigint,
 }
 export interface LiquidityLockSummary {
+  'total_unlocked_quote' : bigint,
+  'total_locked_quote' : bigint,
   'locked_position_count' : bigint,
   'total_position_count' : bigint,
+  'total_locked_base' : bigint,
   'total_unlocked_base_usd_e6' : bigint,
   'total_locked_quote_usd_e6' : bigint,
   'schedule' : Array<LockScheduleEntry>,
   'total_unlocked_quote_usd_e6' : bigint,
+  'total_unlocked_base' : bigint,
   'total_locked_base_usd_e6' : bigint,
 }
 export type LiquidityResult = {
@@ -431,6 +432,8 @@ export interface LockScheduleEntry {
   'quote_usd_e6' : bigint,
   'base_usd_e6' : bigint,
   'liquidity' : bigint,
+  'amount_quote' : bigint,
+  'amount_base' : bigint,
   'fee_pips' : number,
   'position_id' : PositionId,
 }
@@ -549,17 +552,6 @@ export interface PassThroughTradeSuccess {
   'versions' : PollVersions,
   'refund' : bigint,
 }
-export interface PenaltyActivityDetails {
-  'token' : { 'base' : null } |
-    { 'quote' : null },
-  'tick_after' : number,
-  'bound_lower' : number,
-  'bound_upper' : number,
-  'order_id' : bigint,
-  'penalty_amount' : bigint,
-  'tick_before' : number,
-  'pool_fee_pips' : number,
-}
 export interface PlatformData {
   'triggers_live' : bigint,
   'book_depth_base_usd_e6' : bigint,
@@ -579,6 +571,7 @@ export interface PlatformData {
   'pool_depth_base_usd_e6' : bigint,
   'market_depth' : MarketDepthResponse,
   'price_change_24h_bps' : bigint,
+  'quote_usd_rate_e12' : bigint,
   'pool_depth_quote_usd_e6' : bigint,
   'last_trade_tick' : [] | [Tick],
   'orders_live' : bigint,
@@ -738,8 +731,10 @@ export interface RoutingState {
   'book' : BookLevelsResponse,
   'quote' : RoutingTokenInfo,
   'taker_fee_pips' : number,
+  'current_price_usd_e12' : bigint,
   'last_trade_sqrt_price_x96' : [] | [SqrtPriceX96],
   'pools' : Array<RoutingPoolState>,
+  'quote_usd_rate_e12' : bigint,
   'last_trade_tick' : [] | [Tick],
 }
 export interface RoutingTokenInfo {
@@ -1053,7 +1048,6 @@ export interface TickLiquidityData {
   'tick' : Tick,
   'liquidity_net' : bigint,
 }
-export type TimestampMs = bigint;
 export interface TokenMetadata {
   'fee' : bigint,
   'decimals' : number,
@@ -1118,7 +1112,7 @@ export interface TriggerView {
   'owner' : Principal,
   'side' : Side,
   'limit_tick' : Tick,
-  'timestamp' : TimestampMs,
+  'timestamp' : bigint,
   'immediate_or_cancel' : boolean,
   'quote_usd_rate_e12' : bigint,
   'trigger_id' : TriggerId,

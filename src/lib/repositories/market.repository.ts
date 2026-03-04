@@ -63,6 +63,7 @@ import type {
   PoolSnapshotsResponse,
   GetUserActivityResult,
   ChainCursor,
+  LiquidityLockSummary,
 } from 'declarations/spot/spot.did';
 
 // Re-export for consumers
@@ -457,6 +458,22 @@ export class MarketRepository {
     } catch (error) {
       console.error(`Failed to fetch pools overview for ${canisterId}:`, error);
       return { err: error instanceof Error ? error.message : 'Failed to fetch pools overview' };
+    }
+  }
+
+  /**
+   * Fetch lock schedule (locked vs unlocked positions)
+   */
+  async fetchLockSchedule(
+    canisterId: string
+  ): Promise<Result<LiquidityLockSummary>> {
+    try {
+      const actor = this.getSpotActor(canisterId);
+      const result = await actor.get_lock_schedule();
+      return { ok: result };
+    } catch (error) {
+      console.error(`Failed to fetch lock schedule for ${canisterId}:`, error);
+      return { err: error instanceof Error ? error.message : 'Failed to fetch lock schedule' };
     }
   }
 

@@ -10,9 +10,9 @@
 
   let { canisterId }: Props = $props();
 
-  function handleGoHome() {
+  function handleViewTokens() {
     tokenCreation.reset();
-    goto("/");
+    goto("/create/token");
   }
 
   function handleCreateMarket() {
@@ -67,7 +67,7 @@
 
     <!-- Action Buttons -->
     <div class="flex items-center gap-4 mt-6">
-      <ButtonV2 variant="secondary" size="lg" onclick={handleGoHome}>Go to Home</ButtonV2>
+      <ButtonV2 variant="secondary" size="lg" onclick={handleViewTokens}>View My Tokens</ButtonV2>
       <ButtonV2 variant="primary" size="lg" onclick={handleCreateMarket} class="flex-1">
         Create Market for {tokenCreation.tokenSymbol}
       </ButtonV2>

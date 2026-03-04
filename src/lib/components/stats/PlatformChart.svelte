@@ -11,16 +11,49 @@
   // Types
   // ============================================
 
-  type MetricType = 'tvl' | 'volume' | 'transactions';
+  type MetricType =
+    | 'tvl'
+    | 'volume'
+    | 'transactions'
+    | 'pool_reserve'
+    | 'book_oi'
+    | 'trigger_locked'
+    | 'pool_fees'
+    | 'book_fees'
+    | 'orders'
+    | 'triggers'
+    | 'positions'
+    | 'trading_balance'
+    | 'users'
+    | 'user_markets';
+
+  type MetricFormat = 'usd' | 'count';
+
+  interface MetricConfig {
+    label: string;
+    format: MetricFormat;
+    extract: (point: PlatformSnapshotView) => number;
+  }
 
   // ============================================
   // Configuration
   // ============================================
 
-  const METRIC_CONFIG: Record<MetricType, { label: string }> = {
-    tvl: { label: 'TVL' },
-    volume: { label: 'Volume' },
-    transactions: { label: 'Txns' },
+  const METRIC_CONFIG: Record<MetricType, MetricConfig> = {
+    tvl:            { label: 'TVL',             format: 'usd',   extract: (p) => Number(p.tvl_usd_e6) / 1_000_000 },
+    volume:         { label: 'Volume',          format: 'usd',   extract: (p) => Number(p.volume_usd_e6) / 1_000_000 },
+    transactions:   { label: 'Txns',            format: 'count', extract: (p) => Number(p.transactions) },
+    pool_reserve:   { label: 'Pool Reserves',   format: 'usd',   extract: (p) => Number(p.pool_reserve_usd_e6) / 1_000_000 },
+    book_oi:        { label: 'Book OI',         format: 'usd',   extract: (p) => Number(p.book_open_interest_usd_e6) / 1_000_000 },
+    trigger_locked: { label: 'Trigger Locked',  format: 'usd',   extract: (p) => Number(p.trigger_locked_usd_e6) / 1_000_000 },
+    trading_balance:{ label: 'Trading Bal.',   format: 'usd',   extract: (p) => Number(p.tvl_usd_e6 - p.pool_reserve_usd_e6 - p.book_open_interest_usd_e6 - p.trigger_locked_usd_e6) / 1_000_000 },
+    pool_fees:      { label: 'Pool Fees',       format: 'usd',   extract: (p) => Number(p.pool_fees_usd_e6) / 1_000_000 },
+    book_fees:      { label: 'Book Fees',       format: 'usd',   extract: (p) => Number(p.book_fees_usd_e6) / 1_000_000 },
+    orders:         { label: 'Orders',          format: 'count', extract: (p) => p.orders_live },
+    triggers:       { label: 'Triggers',        format: 'count', extract: (p) => p.triggers_live },
+    positions:      { label: 'LP Positions',    format: 'count', extract: (p) => p.total_positions },
+    users:          { label: 'Users',           format: 'count', extract: (p) => p.total_users },
+    user_markets:   { label: 'User×Markets',    format: 'count', extract: (p) => p.total_user_market_pairs },
   };
 
   // Map TimeSeriesChart intervals to interval_hours and limit
@@ -57,38 +90,24 @@
     // Store raw data for tooltip lookups
     rawDataPoints = result.data;
 
+    const metric = METRIC_CONFIG[selectedMetric];
+
     return result.data
-      .map((point: PlatformSnapshotView) => {
-        let value: number;
-
-        switch (selectedMetric) {
-          case 'tvl':
-            value = Number(point.tvl_usd_e6) / 1_000_000;
-            break;
-          case 'volume':
-            value = Number(point.volume_usd_e6) / 1_000_000;
-            break;
-          case 'transactions':
-            value = Number(point.transactions);
-            break;
-        }
-
-        return {
-          timestamp: Math.floor(Number(point.timestamp) / 1000), // Convert ms to seconds for chart
-          value,
-        };
-      })
-      .sort((a, b) => a.timestamp - b.timestamp);
+      .map((point: PlatformSnapshotView) => ({
+        timestamp: Math.floor(Number(point.timestamp) / 1000),
+        value: metric.extract(point),
+      }))
+      .sort((a: { timestamp: number }, b: { timestamp: number }) => a.timestamp - b.timestamp);
   }
 
   // ============================================
   // Formatters
   // ============================================
 
+  const currentFormat = $derived(METRIC_CONFIG[selectedMetric].format);
+
   function formatDisplayValue(value: number): string {
-    if (selectedMetric === 'transactions') {
-      return formatCompact(value);
-    }
+    if (currentFormat === 'count') return formatCompact(value);
     return formatVolumeRaw(value);
   }
 
@@ -103,7 +122,6 @@
   }
 
   // Derive a key from the metric to force re-render when metric changes
-  // Using the metric string directly as the key instead of an incrementing counter
   const fetchKey = $derived(selectedMetric);
 </script>
 
@@ -115,13 +133,15 @@
     }))}
     bind:value={selectedMetric}
     ariaLabel="Metric type"
+    maxInline={6}
+    dropup
   />
 {/snippet}
 
 {#key fetchKey}
   <TimeSeriesChart
     {fetchData}
-    valuePrefix={selectedMetric === 'transactions' ? '' : '$'}
+    valuePrefix={currentFormat === 'usd' ? '$' : ''}
     formatValue={formatDisplayValue}
     getTooltip={selectedMetric === 'volume' ? getVolumeTooltip : undefined}
     rightControls={metricControls}

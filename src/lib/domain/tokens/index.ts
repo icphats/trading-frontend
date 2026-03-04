@@ -21,6 +21,7 @@ export { TOKEN_DEFINITIONS } from "$lib/constants/token.constants";
 export { pricingService } from "./state/pricing.svelte";
 export { tokenLogoService, type UIMarketInfo } from "./state/token-logo.svelte";
 export { tokenCreation } from "./state/token-creation.svelte";
+export { createdTokens } from "./state/created-tokens.svelte";
 
 // ============================================
 // Utils (import directly from $lib/domain/tokens/utils)

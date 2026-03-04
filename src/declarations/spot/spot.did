@@ -124,7 +124,7 @@ type TriggerView =
    quote_usd_rate_e12: nat;
    side: Side;
    status: TriggerStatus;
-   timestamp: TimestampMs;
+   timestamp: nat64;
    trigger_id: TriggerId;
    trigger_tick: Tick;
    trigger_type: TriggerType;
@@ -215,7 +215,6 @@ type TokenMetadata =
    fee: nat;
    ledger: principal;
  };
-type TimestampMs = nat64;
 type TickLiquidityData = 
  record {
    liquidity_gross: nat;
@@ -430,12 +429,14 @@ type RoutingState =
  record {
    base: RoutingTokenInfo;
    book: BookLevelsResponse;
+   current_price_usd_e12: nat;
    last_book_tick: opt Tick;
    last_trade_sqrt_price_x96: opt SqrtPriceX96;
    last_trade_tick: opt Tick;
    maker_fee_pips: nat32;
    pools: vec RoutingPoolState;
    quote: RoutingTokenInfo;
+   quote_usd_rate_e12: nat;
    reference_tick: opt Tick;
    system_state: SystemState;
    taker_fee_pips: nat32;
@@ -637,6 +638,7 @@ type PlatformData =
    pool_depth_base_usd_e6: nat;
    pool_depth_quote_usd_e6: nat;
    price_change_24h_bps: int;
+   quote_usd_rate_e12: nat;
    reference_tick: opt Tick;
    taker_fee_pips: nat32;
    total_positions: nat;
@@ -644,20 +646,6 @@ type PlatformData =
    triggers_live: nat;
    users: nat;
    volume_24h_usd_e6: nat;
- };
-type PenaltyActivityDetails = 
- record {
-   bound_lower: int32;
-   bound_upper: int32;
-   order_id: nat64;
-   penalty_amount: nat;
-   pool_fee_pips: nat32;
-   tick_after: int32;
-   tick_before: int32;
-   token: variant {
-            base;
-            quote;
-          };
  };
 type PassThroughTradeSuccess = 
  record {
@@ -800,6 +788,8 @@ type LockedBalances =
  };
 type LockScheduleEntry = 
  record {
+   amount_base: nat;
+   amount_quote: nat;
    base_usd_e6: nat;
    fee_pips: nat32;
    liquidity: nat;
@@ -827,10 +817,14 @@ type LiquidityLockSummary =
  record {
    locked_position_count: nat;
    schedule: vec LockScheduleEntry;
+   total_locked_base: nat;
    total_locked_base_usd_e6: nat;
+   total_locked_quote: nat;
    total_locked_quote_usd_e6: nat;
    total_position_count: nat;
+   total_unlocked_base: nat;
    total_unlocked_base_usd_e6: nat;
+   total_unlocked_quote: nat;
    total_unlocked_quote_usd_e6: nat;
  };
 type LiquidityActivityDetails = 
@@ -1343,7 +1337,6 @@ type ActivityView =
  };
 type ActivityType = 
  variant {
-   circuit_breaker_penalty;
    lp_closed;
    lp_decreased;
    lp_fees_collected;
@@ -1356,7 +1349,6 @@ type ActivityType =
    order_modified;
    order_partial;
    transfer_in;
-   transfer_in_failed;
    transfer_out;
    trigger_cancelled;
    trigger_failed;
@@ -1366,7 +1358,6 @@ type ActivityDetails =
  variant {
    liquidity: LiquidityActivityDetails;
    order: OrderActivityDetails;
-   penalty: PenaltyActivityDetails;
    position_transfer: PositionTransferActivityDetails;
    transfer: TransferActivityDetails;
    trigger: TriggerActivityDetails;

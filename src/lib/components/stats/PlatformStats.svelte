@@ -26,165 +26,145 @@
     const sign = percent >= 0 ? '+' : '';
     return sign + percent.toFixed(2) + '%';
   }
+
+  // All-time cumulative fees
+  const totalFeesCumulative = $derived(
+    (platformState.stats?.pool_fees_cumulative_usd_e6 ?? 0n) + (platformState.stats?.book_fees_cumulative_usd_e6 ?? 0n)
+  );
+
+  // Trading balance = TVL - pool reserves - book OI - trigger locked
+  const tradingBalance = $derived(
+    BigInt(platformState.tvl) - BigInt(platformState.poolReserve) - BigInt(platformState.bookOpenInterest) - BigInt(platformState.triggerLocked)
+  );
 </script>
 
 <div class="platform-stats">
-  <!-- Key Metrics Grid -->
+  <!-- Overview -->
   <section class="metrics-section">
-    <h2 class="section-title">Key Metrics</h2>
+    <h2 class="section-title">Overview</h2>
     <div class="metrics-grid">
       <div class="metric-card">
         <span class="metric-label">Total Value Locked</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.tvl) : '—'}
-        </span>
-        {#if platformState.hasData}
-          <span class="metric-change" class:positive={Number(platformState.tvlChange24h) >= 0} class:negative={Number(platformState.tvlChange24h) < 0}>
-            {formatPercentBps(platformState.tvlChange24h)} (24h)
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.tvl) : '—'}</span>
+        {#if platformState.hasData && platformState.tvlChange30d !== 0}
+          <span class="metric-change" class:positive={platformState.tvlChange30d >= 0} class:negative={platformState.tvlChange30d < 0}>
+            {formatPercentBps(platformState.tvlChange30d)} ({platformState.tvlChangeLabel})
           </span>
         {/if}
       </div>
 
       <div class="metric-card">
         <span class="metric-label">24h Volume</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.volume24h) : '—'}
-        </span>
-        {#if platformState.hasData}
-          <span class="metric-change" class:positive={Number(platformState.volumeChange24h) >= 0} class:negative={Number(platformState.volumeChange24h) < 0}>
-            {formatPercentBps(platformState.volumeChange24h)} (24h)
-          </span>
-        {/if}
-      </div>
-
-      <div class="metric-card">
-        <span class="metric-label">All-Time Volume</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.totalVolumeCumulative) : '—'}
-        </span>
-        <span class="metric-sublabel">Pool + Order Book</span>
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.volume24h) : '—'}</span>
+        <span class="metric-sublabel">Trading activity</span>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">24h Fees</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.totalFees24h) : '—'}
-        </span>
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.totalFees24h) : '—'}</span>
         <span class="metric-sublabel">Pool + Book</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Users</span>
+        <span class="metric-value">{platformState.hasData ? formatCount(BigInt(platformState.totalUsers)) : '—'}</span>
+        <span class="metric-sublabel">Active wallets</span>
       </div>
     </div>
   </section>
 
-  <!-- TVL Decomposition -->
+  <!-- TVL Breakdown -->
   <section class="metrics-section">
     <h2 class="section-title">TVL Breakdown</h2>
     <div class="metrics-grid">
       <div class="metric-card">
         <span class="metric-label">Pool Reserves</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.poolReserve) : '—'}
-        </span>
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.poolReserve) : '—'}</span>
         <span class="metric-sublabel">Liquidity pools</span>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">Book Open Interest</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.bookOpenInterest) : '—'}
-        </span>
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.bookOpenInterest) : '—'}</span>
         <span class="metric-sublabel">Limit orders</span>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">Trigger Locked</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.triggerLocked) : '—'}
-        </span>
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.triggerLocked) : '—'}</span>
         <span class="metric-sublabel">Stop/take-profit</span>
       </div>
 
       <div class="metric-card">
-        <span class="metric-label">Active Pools</span>
-        <span class="metric-value">
-          {platformState.hasData ? platformState.activePools : '—'}
-        </span>
-        <span class="metric-sublabel">{platformState.hasData ? platformState.activeMarkets : '—'} markets</span>
+        <span class="metric-label">Trading Balances</span>
+        <span class="metric-value">{platformState.hasData ? formatE6(tradingBalance) : '—'}</span>
+        <span class="metric-sublabel">Idle user funds</span>
       </div>
     </div>
   </section>
 
-  <!-- Fee Metrics -->
+  <!-- Activity -->
   <section class="metrics-section">
-    <h2 class="section-title">Fee Revenue</h2>
+    <h2 class="section-title">Activity</h2>
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="metric-label">24h Pool Fees</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.poolFees24h) : '—'}
-        </span>
-        <span class="metric-sublabel">LP earnings</span>
+        <span class="metric-label">All-Time Volume</span>
+        <span class="metric-value">{platformState.hasData ? formatE6(platformState.totalVolumeCumulative) : '—'}</span>
+        <span class="metric-sublabel">Pool + Book</span>
       </div>
 
       <div class="metric-card">
-        <span class="metric-label">24h Book Fees</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.bookFees24h) : '—'}
-        </span>
-        <span class="metric-sublabel">Protocol revenue</span>
-      </div>
-
-      <div class="metric-card">
-        <span class="metric-label">Total 24h Fees</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatE6(platformState.totalFees24h) : '—'}
-        </span>
-        <span class="metric-sublabel">Combined</span>
+        <span class="metric-label">All-Time Fees</span>
+        <span class="metric-value">{platformState.hasData ? formatE6(totalFeesCumulative) : '—'}</span>
+        <span class="metric-sublabel">Pool + Book</span>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">Total Transactions</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatCount(platformState.totalTransactions) : '—'}
-        </span>
-        <span class="metric-sublabel">All-time trades</span>
+        <span class="metric-value">{platformState.hasData ? formatCount(platformState.totalTransactions) : '—'}</span>
+        <span class="metric-sublabel">All-time</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">User × Markets</span>
+        <span class="metric-value">{platformState.hasData ? formatCount(BigInt(platformState.totalUserMarketPairs)) : '—'}</span>
+        <span class="metric-sublabel">Total market memberships</span>
       </div>
     </div>
   </section>
 
-  <!-- Entity Counts -->
+  <!-- Live Entities -->
   <section class="metrics-section">
-    <h2 class="section-title">Open Entities</h2>
+    <h2 class="section-title">Live Entities</h2>
     <div class="metrics-grid">
       <div class="metric-card">
-        <span class="metric-label">Live Orders</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatCount(BigInt(platformState.ordersLive)) : '—'}
-        </span>
+        <span class="metric-label">Markets</span>
+        <span class="metric-value">{platformState.hasData ? platformState.activeMarkets : '—'}</span>
+        <span class="metric-sublabel">Active</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Pools</span>
+        <span class="metric-value">{platformState.hasData ? platformState.activePools : '—'}</span>
+        <span class="metric-sublabel">Active</span>
+      </div>
+
+      <div class="metric-card">
+        <span class="metric-label">Orders</span>
+        <span class="metric-value">{platformState.hasData ? formatCount(BigInt(platformState.ordersLive)) : '—'}</span>
         <span class="metric-sublabel">Limit orders</span>
       </div>
 
       <div class="metric-card">
-        <span class="metric-label">Live Triggers</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatCount(BigInt(platformState.triggersLive)) : '—'}
-        </span>
+        <span class="metric-label">Triggers</span>
+        <span class="metric-value">{platformState.hasData ? formatCount(BigInt(platformState.triggersLive)) : '—'}</span>
         <span class="metric-sublabel">Stop/take-profit</span>
       </div>
 
       <div class="metric-card">
         <span class="metric-label">LP Positions</span>
-        <span class="metric-value">
-          {platformState.hasData ? formatCount(BigInt(platformState.totalPositions)) : '—'}
-        </span>
+        <span class="metric-value">{platformState.hasData ? formatCount(BigInt(platformState.totalPositions)) : '—'}</span>
         <span class="metric-sublabel">Across all pools</span>
-      </div>
-
-      <div class="metric-card">
-        <span class="metric-label">Active Pools</span>
-        <span class="metric-value">
-          {platformState.hasData ? platformState.activePools : '—'}
-        </span>
-        <span class="metric-sublabel">{platformState.hasData ? platformState.activeMarkets : '—'} markets</span>
       </div>
     </div>
   </section>

@@ -34,15 +34,15 @@
       ];
     }
 
-    const tvlChange = formatChange(Number(platformState.tvlChange24h));
-    const volumeChange = formatChange(Number(platformState.volumeChange24h));
+    const tvlChange = formatChange(platformState.tvlChange30d);
 
     return [
       {
         label: "Total TVL",
         value: `$${formatToken({ value: platformState.tvl, unitName: 6, short: true })}`,
         change: tvlChange,
-        isPositive: platformState.tvlChange24h >= 0
+        changeLabel: platformState.tvlChangeLabel || undefined,
+        isPositive: platformState.tvlChange30d >= 0
       },
       {
         label: "Total Volume",
@@ -50,9 +50,7 @@
       },
       {
         label: "24h Volume",
-        value: `$${formatToken({ value: platformState.volume24h, unitName: 6, short: true })}`,
-        change: volumeChange,
-        isPositive: platformState.volumeChange24h >= 0
+        value: `$${formatToken({ value: platformState.volume24h, unitName: 6, short: true })}`
       },
       {
         label: "24h Fees",

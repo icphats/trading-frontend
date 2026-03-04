@@ -60,7 +60,8 @@ export type TreasuryMetric =
   | 'fees_icp'
   | 'fees_usd_e6'
   | 'cycles_out'
-  | 'cycles_expense_usd_e6';
+  | 'cycles_expense_usd_e6'
+  | 'buyback_usd_e6';
 
 /**
  * Entity Store

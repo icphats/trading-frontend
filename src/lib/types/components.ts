@@ -8,6 +8,7 @@ export interface Stat {
   label: string;
   value: string;
   change?: string;
+  changeLabel?: string;
   isPositive?: boolean;
 }
 

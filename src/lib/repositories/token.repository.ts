@@ -247,6 +247,33 @@ export class TokenRepository {
   }
 
   // ============================================
+  // ICRC-1 Extended Metadata
+  // ============================================
+
+  async fetchMintingAccount(canisterId: string): Promise<Result<string | null>> {
+    try {
+      const actor = this.getActor(canisterId);
+      const result = await actor.icrc1_minting_account();
+      if (result.length > 0) {
+        return { ok: result[0].owner.toString() };
+      }
+      return { ok: null };
+    } catch (error) {
+      return { err: error instanceof Error ? error.message : 'Failed to fetch minting account' };
+    }
+  }
+
+  async fetchSupportedStandards(canisterId: string): Promise<Result<Array<{ name: string; url: string }>>> {
+    try {
+      const actor = this.getActor(canisterId);
+      const result = await actor.icrc1_supported_standards();
+      return { ok: result.map(s => ({ name: s.name, url: s.url })) };
+    } catch (error) {
+      return { err: error instanceof Error ? error.message : 'Failed to fetch supported standards' };
+    }
+  }
+
+  // ============================================
   // Token Discovery
   // ============================================
 
@@ -387,8 +414,14 @@ export class TokenRepository {
       this.balanceCache.set(cacheKey, balance, TokenRepository.BALANCE_TTL);
       return { ok: balance };
     } catch (error) {
+      const msg = error instanceof Error ? error.message : String(error);
+      const isGone = msg.includes('has no query method') || msg.includes('Canister not found');
+      if (isGone) {
+        console.warn(`Canister ${canisterId} is unavailable (deleted or missing methods)`);
+        return { err: 'CANISTER_UNAVAILABLE' };
+      }
       console.error(`Failed to fetch balance for ${canisterId}:`, error);
-      return { err: error instanceof Error ? error.message : 'Failed to fetch balance' };
+      return { err: msg || 'Failed to fetch balance' };
     }
   }
 

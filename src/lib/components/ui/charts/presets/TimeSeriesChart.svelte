@@ -33,6 +33,12 @@
     // Optional formatting
     formatValue?: (value: number) => string;
 
+    // Optional: restrict which intervals are shown (defaults to all from EXPLORE_INTERVAL_CONFIG)
+    intervals?: TimeInterval[];
+
+    // Optional: default interval to select (defaults to first in intervals list)
+    defaultInterval?: TimeInterval;
+
     // Optional tooltip on bar hover (e.g., fees overlay on volume bars)
     getTooltip?: (timestamp: number) => { label: string; value: string } | null;
 
@@ -46,12 +52,21 @@
     valuePrefix = '',
     valueSuffix = '',
     formatValue,
+    intervals,
+    defaultInterval,
     getTooltip,
     rightControls,
   }: Props = $props();
 
+  // Resolve available intervals (default: all from config)
+  const availableIntervals = $derived(
+    intervals ?? (Object.keys(EXPLORE_INTERVAL_CONFIG) as TimeInterval[])
+  );
+
   // UI State
-  let selectedInterval = $state<TimeInterval>('1D');
+  let selectedInterval = $state<TimeInterval>(
+    defaultInterval ?? (intervals?.[0] ?? '1D')
+  );
 
   // Chart state
   let chartContainer: HTMLElement | null = $state(null);
@@ -277,11 +292,11 @@
   function updateChartDisplay() {
     if (!chart || !histogramSeries) return;
 
-    if (chartData.length > 0) {
-      histogramSeries.setData(chartData as any);
-    }
+    histogramSeries.setData(chartData as any);
 
-    chart.timeScale().fitContent();
+    requestAnimationFrame(() => {
+      chart?.timeScale().fitContent();
+    });
   }
 
   // Resize handler
@@ -291,6 +306,7 @@
         width: chartContainer.clientWidth,
         height: chartContainer.clientHeight,
       });
+      chart.timeScale().fitContent();
     }
   }
 
@@ -377,7 +393,7 @@
 
   <div class="chart-controls">
     <ChartToggle
-      options={Object.keys(EXPLORE_INTERVAL_CONFIG).map((interval) => ({
+      options={availableIntervals.map((interval) => ({
         value: interval,
         label: interval,
       }))}

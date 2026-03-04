@@ -537,7 +537,6 @@ export const idlFactory = ({ IDL }) => {
     'fees_base' : IDL.Nat,
     'position_id' : PositionId,
   });
-  const TimestampMs = IDL.Nat64;
   const TriggerType = IDL.Variant({ 'above' : IDL.Null, 'below' : IDL.Null });
   const TriggerView = IDL.Record({
     'status' : TriggerStatus,
@@ -545,7 +544,7 @@ export const idlFactory = ({ IDL }) => {
     'owner' : IDL.Principal,
     'side' : Side,
     'limit_tick' : Tick,
-    'timestamp' : TimestampMs,
+    'timestamp' : IDL.Nat64,
     'immediate_or_cancel' : IDL.Bool,
     'quote_usd_rate_e12' : IDL.Nat,
     'trigger_id' : TriggerId,
@@ -618,6 +617,7 @@ export const idlFactory = ({ IDL }) => {
     'pool_depth_base_usd_e6' : IDL.Nat,
     'market_depth' : MarketDepthResponse,
     'price_change_24h_bps' : IDL.Int,
+    'quote_usd_rate_e12' : IDL.Nat,
     'pool_depth_quote_usd_e6' : IDL.Nat,
     'last_trade_tick' : IDL.Opt(Tick),
     'orders_live' : IDL.Nat,
@@ -687,16 +687,22 @@ export const idlFactory = ({ IDL }) => {
     'quote_usd_e6' : IDL.Nat,
     'base_usd_e6' : IDL.Nat,
     'liquidity' : IDL.Nat,
+    'amount_quote' : IDL.Nat,
+    'amount_base' : IDL.Nat,
     'fee_pips' : IDL.Nat32,
     'position_id' : PositionId,
   });
   const LiquidityLockSummary = IDL.Record({
+    'total_unlocked_quote' : IDL.Nat,
+    'total_locked_quote' : IDL.Nat,
     'locked_position_count' : IDL.Nat,
     'total_position_count' : IDL.Nat,
+    'total_locked_base' : IDL.Nat,
     'total_unlocked_base_usd_e6' : IDL.Nat,
     'total_locked_quote_usd_e6' : IDL.Nat,
     'schedule' : IDL.Vec(LockScheduleEntry),
     'total_unlocked_quote_usd_e6' : IDL.Nat,
+    'total_unlocked_base' : IDL.Nat,
     'total_locked_base_usd_e6' : IDL.Nat,
   });
   const MarketSnapshotView = IDL.Record({
@@ -805,8 +811,10 @@ export const idlFactory = ({ IDL }) => {
     'book' : BookLevelsResponse,
     'quote' : RoutingTokenInfo,
     'taker_fee_pips' : IDL.Nat32,
+    'current_price_usd_e12' : IDL.Nat,
     'last_trade_sqrt_price_x96' : IDL.Opt(SqrtPriceX96),
     'pools' : IDL.Vec(RoutingPoolState),
+    'quote_usd_rate_e12' : IDL.Nat,
     'last_trade_tick' : IDL.Opt(Tick),
   });
   const ChainCursor = IDL.Record({
@@ -823,11 +831,9 @@ export const idlFactory = ({ IDL }) => {
     'lp_fees_collected' : IDL.Null,
     'lp_transferred' : IDL.Null,
     'trigger_failed' : IDL.Null,
-    'transfer_in_failed' : IDL.Null,
     'lp_closed' : IDL.Null,
     'lp_decreased' : IDL.Null,
     'lp_opened' : IDL.Null,
-    'circuit_breaker_penalty' : IDL.Null,
     'lp_increased' : IDL.Null,
     'order_filled' : IDL.Null,
     'lp_locked' : IDL.Null,
@@ -844,16 +850,6 @@ export const idlFactory = ({ IDL }) => {
     'resulting_order_id' : IDL.Opt(IDL.Nat64),
     'trigger_tick' : IDL.Int32,
     'trigger_type' : TriggerType,
-  });
-  const PenaltyActivityDetails = IDL.Record({
-    'token' : IDL.Variant({ 'base' : IDL.Null, 'quote' : IDL.Null }),
-    'tick_after' : IDL.Int32,
-    'bound_lower' : IDL.Int32,
-    'bound_upper' : IDL.Int32,
-    'order_id' : IDL.Nat64,
-    'penalty_amount' : IDL.Nat,
-    'tick_before' : IDL.Int32,
-    'pool_fee_pips' : IDL.Nat32,
   });
   const OrderActivityDetails = IDL.Record({
     'output_received' : IDL.Nat,
@@ -895,7 +891,6 @@ export const idlFactory = ({ IDL }) => {
   });
   const ActivityDetails = IDL.Variant({
     'trigger' : TriggerActivityDetails,
-    'penalty' : PenaltyActivityDetails,
     'order' : OrderActivityDetails,
     'liquidity' : LiquidityActivityDetails,
     'position_transfer' : PositionTransferActivityDetails,

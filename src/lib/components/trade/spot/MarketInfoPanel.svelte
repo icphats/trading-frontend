@@ -1,14 +1,16 @@
 <script lang="ts">
   import type { SpotMarket } from "$lib/domain/markets/state/spot-market.svelte";
   import type { BalanceSheet } from "$lib/actors/services/spot.service";
-  import type { PoolOverview } from 'declarations/spot/spot.did';
+  import type { PoolOverview, LiquidityLockSummary } from 'declarations/spot/spot.did';
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
-  import { fetchPoolsOverview } from "$lib/domain/orchestration";
+  import { fetchPoolsOverview, fetchLockSchedule } from "$lib/domain/orchestration";
   import { formatToken, formatSigFig } from "$lib/utils/format.utils";
   import { tickToPrice } from "$lib/domain/markets/utils/math";
+  import { untrack } from "svelte";
   import Tabs from "$lib/components/ui/Tabs.svelte";
   import CopyableId from "$lib/components/ui/CopyableId.svelte";
   import Logo from "$lib/components/ui/Logo.svelte";
+  import LockScheduleChart from "./LockScheduleChart.svelte";
 
   interface Props {
     spot: SpotMarket;
@@ -45,9 +47,17 @@
   let poolsLoading = $state(false);
   let poolsError = $state<string | null>(null);
 
+  // ── Lock Schedule (lazy-loaded with pools tab) ──
+  let lockSummary = $state<LiquidityLockSummary | null>(null);
+  let locksLoading = $state(false);
+  let locksError = $state<string | null>(null);
+
   $effect(() => {
     if (activeTab === "pools") {
-      fetchPools();
+      untrack(() => {
+        fetchPools();
+        fetchLocks();
+      });
     }
   });
 
@@ -60,6 +70,18 @@
       poolsError = e instanceof Error ? e.message : String(e);
     } finally {
       poolsLoading = false;
+    }
+  }
+
+  async function fetchLocks() {
+    if (!lockSummary) locksLoading = true;
+    locksError = null;
+    try {
+      lockSummary = await fetchLockSchedule(spot.canister_id);
+    } catch (e) {
+      locksError = e instanceof Error ? e.message : String(e);
+    } finally {
+      locksLoading = false;
     }
   }
 
@@ -274,12 +296,37 @@
               </div>
             {/if}
 
-            <!-- Liquidity Locks (Phase 3) -->
+            <!-- Liquidity Locks -->
             <div class="info-section">
               <h3 class="section-heading">Liquidity Locks</h3>
-              <div class="tab-placeholder">
-                <p class="placeholder-text">Lock schedule will be available after replica reset.</p>
-              </div>
+              {#if locksLoading && !lockSummary}
+                <div class="tab-placeholder">
+                  <p class="placeholder-text">Loading locks...</p>
+                </div>
+              {:else if locksError}
+                <div class="tab-placeholder">
+                  <p class="placeholder-text error">{locksError}</p>
+                  <button class="retry-btn" onclick={() => { lockSummary = null; fetchLocks(); }}>Retry</button>
+                </div>
+              {:else if lockSummary}
+                <div class="lock-chart-wrap">
+                  <LockScheduleChart
+                    schedule={lockSummary.schedule}
+                    totalLockedBase={lockSummary.total_locked_base}
+                    totalLockedQuote={lockSummary.total_locked_quote}
+                    totalUnlockedBase={lockSummary.total_unlocked_base}
+                    totalUnlockedQuote={lockSummary.total_unlocked_quote}
+                    lockedCount={lockSummary.locked_position_count}
+                    totalCount={lockSummary.total_position_count}
+                    {baseDecimals}
+                    {quoteDecimals}
+                    {baseSymbol}
+                    {quoteSymbol}
+                    baseLogo={baseToken?.logo ?? undefined}
+                    quoteLogo={quoteToken?.logo ?? undefined}
+                  />
+                </div>
+              {/if}
             </div>
           </div>
 
@@ -659,6 +706,11 @@
 
   .pool-indicator.active {
     background: var(--color-bullish);
+  }
+
+  /* ── Lock Schedule ── */
+  .lock-chart-wrap {
+    height: 14rem;
   }
 
   /* ── Tab Placeholder ── */

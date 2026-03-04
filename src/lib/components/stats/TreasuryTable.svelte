@@ -60,7 +60,9 @@
   const icpFairValueUsd = $derived(statement?.icp_fair_value_usd_e6 ?? 0n);
   const cyclesBalance = $derived(statement?.cycles_balance ?? 0n);
   const cyclesCostBasisUsd = $derived(statement?.cycles_cost_basis_usd_e6 ?? 0n);
-  const totalAssetsUsd = $derived(icpFairValueUsd + cyclesCostBasisUsd);
+  const ckusdtBalance = $derived(statement?.ckusdt_balance ?? 0n);
+  const ckusdcBalance = $derived(statement?.ckusdc_balance ?? 0n);
+  const totalAssetsUsd = $derived(icpFairValueUsd + cyclesCostBasisUsd + ckusdtBalance + ckusdcBalance);
 
   // ============================================
   // Formatters
@@ -91,6 +93,14 @@
   function formatIcp(value: bigint): string {
     const icp = Number(value) / 100_000_000;
     return icp.toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2,
+    });
+  }
+
+  function formatStablecoin(value: bigint): string {
+    const usd = Number(value) / 1_000_000;
+    return usd.toLocaleString('en-US', {
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
     });
@@ -326,6 +336,32 @@
           <tr class="detail-row sub-detail">
             <td class="line-item indent-2 muted">Cost Basis</td>
             <td class="amount muted">{formatUsd(cyclesCostBasisUsd)}</td>
+          </tr>
+
+          <!-- Spacer -->
+          <tr class="spacer"><td colspan="2"></td></tr>
+
+          <tr class="detail-row">
+            <td class="line-item indent">USDT</td>
+            <td class="amount">
+              <span class="token-label">
+                {formatStablecoin(ckusdtBalance)}
+                <Logo src="/tokens/ckusdt.svg" alt="ckUSDT" size="xxs" circle />
+              </span>
+            </td>
+          </tr>
+
+          <!-- Spacer -->
+          <tr class="spacer"><td colspan="2"></td></tr>
+
+          <tr class="detail-row">
+            <td class="line-item indent">USDC</td>
+            <td class="amount">
+              <span class="token-label">
+                {formatStablecoin(ckusdcBalance)}
+                <Logo src="/tokens/ckusdc.svg" alt="ckUSDC" size="xxs" circle />
+              </span>
+            </td>
           </tr>
 
           <!-- Spacer -->

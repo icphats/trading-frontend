@@ -52,9 +52,11 @@ export {
   isRegistryAvailable,
   fetchPoolState,
   fetchPoolsOverview,
+  fetchLockSchedule,
   type CreateMarketParams,
   type CreateMarketResult,
   type SpotMarketMetadata,
   type PoolState,
   type PoolOverview,
+  type LiquidityLockSummary,
 } from './market-operations';

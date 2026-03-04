@@ -48,7 +48,8 @@ export type TreasuryMetric =
   | 'fees_icp'
   | 'fees_usd_e6'
   | 'cycles_out'
-  | 'cycles_expense_usd_e6';
+  | 'cycles_expense_usd_e6'
+  | 'buyback_usd_e6';
 
 /**
  * Treasury statement - snapshot view data for financial display.
@@ -65,6 +66,8 @@ export interface TreasuryStatement {
   icp_fair_value_usd_e6: bigint;
   icp_cost_basis_usd_e6: bigint;
   cycles_cost_basis_usd_e6: bigint;
+  ckusdt_balance: bigint;
+  ckusdc_balance: bigint;
   unrealized_gain_loss_e6: bigint;
   // Flows (deltas)
   fees_icp: bigint;
@@ -197,6 +200,8 @@ export class TreasuryRepository {
         icp_fair_value_usd_e6: snapshot.icp_fair_value_usd_e6,
         icp_cost_basis_usd_e6: snapshot.icp_cost_basis_usd_e6,
         cycles_cost_basis_usd_e6: snapshot.cycles_cost_basis_usd_e6,
+        ckusdt_balance: snapshot.ckusdt_balance,
+        ckusdc_balance: snapshot.ckusdc_balance,
         unrealized_gain_loss_e6: snapshot.unrealized_gain_loss_e6,
         // Flows (cumulative totals from raw snapshot — not per-day deltas)
         fees_icp: snapshot.cumulative_fees_icp,
@@ -228,11 +233,10 @@ export class TreasuryRepository {
    */
   private getLimitForInterval(interval: TimeInterval): number {
     switch (interval) {
-      case '1D': return 24;
       case '1W': return 7;
       case '1M': return 30;
       case '1Y': return 365;
-      default: return 500;
+      default: return 30;
     }
   }
 
@@ -276,6 +280,8 @@ export class TreasuryRepository {
         return Number(snapshot.cycles_out);
       case 'cycles_expense_usd_e6':
         return Number(snapshot.cycles_expense_usd_e6);
+      case 'buyback_usd_e6':
+        return Number(snapshot.buyback_usd_e6);
     }
   }
 

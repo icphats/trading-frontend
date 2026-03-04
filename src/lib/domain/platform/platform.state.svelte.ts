@@ -103,11 +103,33 @@ class PlatformStateCoordinator {
   /** Total cumulative volume (pool + book) */
   totalVolumeCumulative = $derived(this.poolVolumeCumulative + this.bookVolumeCumulative);
 
-  /** 24h volume change percentage */
-  volumeChange24h = $derived(this.stats?.volume_change_24h_bps ?? 0);
+  /** Historical snapshot for % change computation */
+  private changeSnapshot = $state<PlatformSnapshotView | null>(null);
+  /** Whether we got a full 30d snapshot or fell back to oldest available */
+  private changeSnapshotIs30d = $state(false);
 
-  /** 24h TVL change percentage */
-  tvlChange24h = $derived(this.stats?.tvl_change_24h_bps ?? 0);
+  /** TVL change (basis points), computed from snapshot */
+  tvlChange30d = $derived.by(() => {
+    if (!this.stats || !this.changeSnapshot) return 0;
+    const current = Number(this.stats.total_tvl_usd_e6);
+    const past = Number(this.changeSnapshot.tvl_usd_e6);
+    if (past === 0) return 0;
+    return Math.round(((current - past) / past) * 10_000);
+  });
+
+  /** Label for the change period (e.g. "30d" or "7d") */
+  tvlChangeLabel = $derived.by(() => {
+    if (!this.changeSnapshot) return '';
+    if (this.changeSnapshotIs30d) return '30d';
+    // Compute actual days from snapshot timestamp
+    const snapshotMs = Number(this.changeSnapshot.timestamp);
+    const days = Math.round((Date.now() - snapshotMs) / (24 * 3600 * 1000));
+    if (days < 1) return '<1d';
+    return `${days}d`;
+  });
+
+  /** Volume over the change period (USD E6) */
+  volume30d = $derived(this.changeSnapshot ? this.changeSnapshot.volume_usd_e6 : 0n);
 
   /** Total transaction count */
   totalTransactions = $derived(this.stats?.total_transactions ?? 0n);
@@ -130,6 +152,10 @@ class PlatformStateCoordinator {
   ordersLive = $derived(this.stats?.orders_live ?? 0);
   triggersLive = $derived(this.stats?.triggers_live ?? 0);
   totalPositions = $derived(this.stats?.total_positions ?? 0);
+
+  /** User counts */
+  totalUsers = $derived(this.stats?.total_users ?? 0);
+  totalUserMarketPairs = $derived(this.stats?.total_user_market_pairs ?? 0);
 
   /** Whether we have data */
   hasData = $derived(this.stats !== null);
@@ -158,6 +184,28 @@ class PlatformStateCoordinator {
         this.lastError = result.err;
         console.error('[PlatformState] Failed to fetch stats:', result.err);
       }
+
+      // Fetch snapshot from ~30 days ago for % change
+      if (!this.changeSnapshot) {
+        const thirtyDaysMs = BigInt(30 * 24 * 3600 * 1000);
+        const beforeTs = BigInt(Date.now()) - thirtyDaysMs;
+
+        // Try fetching a 1h bar from ~30 days ago
+        let snapshots = await this.fetchPlatformSnapshots(1n, 1n, beforeTs);
+        let is30d = true;
+
+        // Fallback for platforms younger than 30 days: fetch all hourly bars, take the oldest
+        if (!snapshots?.data?.length && this.stats && this.stats.snapshot_count > 1n) {
+          snapshots = await this.fetchPlatformSnapshots(1n, this.stats.snapshot_count);
+          is30d = false;
+        }
+
+        if (snapshots?.data?.length) {
+          // Use the first element (oldest bar, since results are oldest-first)
+          this.changeSnapshot = snapshots.data[0];
+          this.changeSnapshotIs30d = is30d;
+        }
+      }
     } catch (error) {
       this.lastError = error instanceof Error ? error.message : 'Unknown error';
       console.error('[PlatformState] Failed to fetch stats:', error);
@@ -172,9 +220,10 @@ class PlatformStateCoordinator {
    */
   async fetchPlatformSnapshots(
     intervalHours: bigint = 1n,
-    limit: bigint = 168n
+    limit: bigint = 168n,
+    beforeTimestamp?: bigint
   ): Promise<PlatformSnapshotsResponse | null> {
-    const cacheKey = `${intervalHours}:${limit}`;
+    const cacheKey = `${intervalHours}:${limit}:${beforeTimestamp ?? 'latest'}`;
     const cached = this.chartCache.get(cacheKey);
 
     // Return cached if fresh
@@ -191,7 +240,8 @@ class PlatformStateCoordinator {
         return null;
       }
 
-      const result = await actor.get_platform_snapshots([], limit, intervalHours);
+      const cursor: [] | [bigint] = beforeTimestamp !== undefined ? [beforeTimestamp] : [];
+      const result = await actor.get_platform_snapshots(cursor, limit, intervalHours);
 
       // Cache the result
       this.chartCache.set(cacheKey, {

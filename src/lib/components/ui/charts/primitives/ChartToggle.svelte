@@ -18,6 +18,10 @@
     ariaLabel?: string;
     /** Enable responsive mode - renders as dropdown on mobile (default: true) */
     responsive?: boolean;
+    /** Force dropdown when options exceed this count (regardless of viewport) */
+    maxInline?: number;
+    /** Open dropdown upward (passed through to ChartDropdown) */
+    dropup?: boolean;
   }
 
   const MOBILE_BREAKPOINT = 768;
@@ -28,11 +32,14 @@
     onValueChange,
     ariaLabel = 'Toggle group',
     responsive = true,
+    maxInline,
+    dropup = false,
   }: Props = $props();
 
   // Track viewport width for responsive behavior
   let innerWidth = $state(browser ? window.innerWidth : 1024);
-  let isMobile = $derived(responsive && innerWidth < MOBILE_BREAKPOINT);
+  let tooManyOptions = $derived(maxInline != null && options.length > maxInline);
+  let isMobile = $derived(tooManyOptions || (responsive && innerWidth < MOBILE_BREAKPOINT));
 
   $effect(() => {
     if (!browser || !responsive) return;
@@ -72,6 +79,7 @@
     bind:value
     onValueChange={onValueChange}
     ariaLabel={ariaLabel}
+    {dropup}
   />
 {:else}
   <!-- Desktop: Render as segmented control -->

@@ -21,6 +21,8 @@
     label?: string;
     /** Aria label for accessibility */
     ariaLabel?: string;
+    /** Open menu upward instead of downward */
+    dropup?: boolean;
   }
 
   let {
@@ -31,7 +33,8 @@
     onToggle,
     multiSelect = false,
     label,
-    ariaLabel = 'Select options'
+    ariaLabel = 'Select options',
+    dropup = false,
   }: Props = $props();
 
   let open = $state(false);
@@ -101,6 +104,7 @@
   <svg
     class="trigger-chevron"
     class:rotated={open}
+    class:flipped={dropup}
     viewBox="0 0 24 24"
     fill="none"
     stroke="currentColor"
@@ -129,7 +133,7 @@
   </button>
 
   {#if open}
-    <div class="dropdown-menu" role={multiSelect ? "menu" : "listbox"}>
+    <div class="dropdown-menu" class:dropup role={multiSelect ? "menu" : "listbox"}>
       {#each options as option (option.value)}
         <button
           type="button"
@@ -198,7 +202,15 @@
     color: var(--muted-foreground);
   }
 
-  .trigger-chevron.rotated {
+  .trigger-chevron.flipped {
+    transform: rotate(180deg);
+  }
+
+  .trigger-chevron.flipped.rotated {
+    transform: rotate(0deg);
+  }
+
+  .trigger-chevron:not(.flipped).rotated {
     transform: rotate(180deg);
   }
 
@@ -207,6 +219,8 @@
     position: absolute;
     top: calc(100% + 8px);
     left: 0;
+    max-height: 320px;
+    overflow-y: auto;
     min-width: 130px;
     z-index: 50;
     background: var(--background);
@@ -250,10 +264,27 @@
     cursor: not-allowed;
   }
 
+  .dropdown-menu.dropup {
+    top: auto;
+    bottom: calc(100% + 8px);
+    animation: dropupFade 150ms ease-out;
+  }
+
   @keyframes dropdownFade {
     from {
       opacity: 0;
       transform: translateY(-4px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes dropupFade {
+    from {
+      opacity: 0;
+      transform: translateY(4px);
     }
     to {
       opacity: 1;

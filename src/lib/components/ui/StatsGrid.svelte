@@ -18,7 +18,7 @@
           <span class="delta-arrow" class:positive={stat.isPositive} class:negative={!stat.isPositive}>
             {stat.isPositive ? '▲' : '▼'}
           </span>
-          <span class="stat-change">{stat.change} today</span>
+          <span class="stat-change">{stat.change}{stat.changeLabel ? ` (${stat.changeLabel})` : ''}</span>
         </div>
       {/if}
     </div>
