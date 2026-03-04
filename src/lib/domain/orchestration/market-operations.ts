@@ -10,6 +10,8 @@ import type { SpotMarketMetadata } from '$lib/actors/services/registry.service';
 import type { PoolState, PoolOverview } from '$lib/actors/services/spot.service';
 import type { LiquidityLockSummary } from 'declarations/spot/spot.did';
 import { marketRepository } from '$lib/repositories/market.repository';
+import { checkAndApprove } from '$lib/utils/allowance.utils';
+import { canisterIds } from '$lib/constants/app.constants';
 import type { Principal } from '@dfinity/principal';
 
 // Re-export types for consumers
@@ -37,6 +39,7 @@ export async function createMarket(params: CreateMarketParams): Promise<CreateMa
   }
 
   try {
+    await checkAndApprove(canisterIds.icp_ledger!, canisterIds.registry!);
     const result = await api.registry.create_spot_market(params);
     if ('err' in result) {
       return { err: result.err.message };
