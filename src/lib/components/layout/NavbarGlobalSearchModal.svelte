@@ -28,13 +28,26 @@
     const normalized = normalizeTokenSymbol(rawSymbol).toLowerCase();
     return CK_DISPLAY_NAMES[normalized] ?? raw;
   }
+  import { browser } from "$app/environment";
   import { ticker, tokenTicker } from "$lib/domain/orchestration/ticker-action";
   import { SearchInput, SectionHeader, EmptyState, UnifiedListRow } from "$lib/components/ui";
   import Modal from "$lib/components/portal/modals/Modal.svelte";
+  import ResponsiveDrawer from "$lib/components/portal/drawers/shared/ResponsiveDrawer.svelte";
 
   // Default quote token for market favorites
   const ICP_QUOTE = "icp";
   const COLLAPSED_LIMIT = 3;
+  const MOBILE_BREAKPOINT = 768;
+
+  let innerWidth = $state(browser ? window.innerWidth : 1024);
+  let isMobile = $derived(innerWidth < MOBILE_BREAKPOINT);
+
+  $effect(() => {
+    if (!browser) return;
+    const onResize = () => { innerWidth = window.innerWidth; };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  });
 
   // ============================================
   // UI-Ready Types
@@ -519,73 +532,117 @@
   });
 </script>
 
-<Modal bind:open onClose={handleClose} showHeader={false} size="sm" customClass="global-search-modal" closeOnBackdrop={true} contentPadding={false}>
-  {#snippet children()}
-    <div class="modal-search-body">
-      <!-- Search Input -->
-      <SearchInput
-        bind:value={search.query}
-        placeholder="Search tokens and markets"
-        autofocus
-      />
+{#snippet searchContent()}
+  <div class="modal-search-body">
+    <!-- Search Input -->
+    <SearchInput
+      bind:value={search.query}
+      placeholder="Search tokens and markets"
+      autofocus
+    />
 
-      <!-- Results -->
-      <div class="modal-search-list">
-        {#if isLoadingToken && search.isPrincipal}
-          <EmptyState variant="loading" message="Loading token metadata..." />
-        {:else if search.isSearching && totalResults === 0}
-          <EmptyState
-            variant="empty"
-            message="No results found"
-            hint={search.isPrincipal ? undefined : "Try entering a Principal ID to add a new token"}
-          />
-        {:else}
-          <!-- Recent Section (compact pills) -->
-          {#if showRecent}
-            <div class="recent-section">
-              <div class="recent-header">
-                <span class="recent-label">Recent</span>
-                <button class="clear-button" onclick={handleClearRecent}>Clear</button>
-              </div>
-              <div class="recent-pills">
-                {#each recentDisplayItems as item}
-                  {#if item.type === 'token'}
-                    <button class="recent-pill" onclick={() => handleTokenSelect(item.data.canisterId)}>
-                      {#if item.data.logo}
-                        <img src={item.data.logo} alt="" class="pill-logo" />
-                      {:else}
-                        <div class="pill-logo-placeholder">{item.data.symbol.charAt(0)}</div>
-                      {/if}
-                      <span class="pill-symbol">{item.data.symbol}</span>
-                    </button>
-                  {:else}
-                    <button class="recent-pill" onclick={() => handleMarketSelect(item.data.tradingCanisterId, item.data.symbol)}>
-                      <div class="pill-pair-logos">
-                        {#if item.data.baseLogo}
-                          <img src={item.data.baseLogo} alt="" class="pill-logo-small" />
-                        {:else}
-                          <div class="pill-logo-placeholder-small">{item.data.baseSymbol?.charAt(0) ?? "?"}</div>
-                        {/if}
-                        {#if item.data.quoteLogo}
-                          <img src={item.data.quoteLogo} alt="" class="pill-logo-small pill-logo-overlap" />
-                        {:else}
-                          <div class="pill-logo-placeholder-small pill-logo-overlap">{item.data.quoteSymbol?.charAt(0) ?? "?"}</div>
-                        {/if}
-                      </div>
-                      <span class="pill-symbol">{item.data.baseSymbol}/{item.data.quoteSymbol}</span>
-                    </button>
-                  {/if}
-                {/each}
-              </div>
+    <!-- Results -->
+    <div class="modal-search-list">
+      {#if isLoadingToken && search.isPrincipal}
+        <EmptyState variant="loading" message="Loading token metadata..." />
+      {:else if search.isSearching && totalResults === 0}
+        <EmptyState
+          variant="empty"
+          message="No results found"
+          hint={search.isPrincipal ? undefined : "Try entering a Principal ID to add a new token"}
+        />
+      {:else}
+        <!-- Recent Section (compact pills) -->
+        {#if showRecent}
+          <div class="recent-section">
+            <div class="recent-header">
+              <span class="recent-label">Recent</span>
+              <button class="clear-button" onclick={handleClearRecent}>Clear</button>
             </div>
-          {/if}
+            <div class="recent-pills">
+              {#each recentDisplayItems as item}
+                {#if item.type === 'token'}
+                  <button class="recent-pill" onclick={() => handleTokenSelect(item.data.canisterId)}>
+                    {#if item.data.logo}
+                      <img src={item.data.logo} alt="" class="pill-logo" />
+                    {:else}
+                      <div class="pill-logo-placeholder">{item.data.symbol.charAt(0)}</div>
+                    {/if}
+                    <span class="pill-symbol">{item.data.symbol}</span>
+                  </button>
+                {:else}
+                  <button class="recent-pill" onclick={() => handleMarketSelect(item.data.tradingCanisterId, item.data.symbol)}>
+                    <div class="pill-pair-logos">
+                      {#if item.data.baseLogo}
+                        <img src={item.data.baseLogo} alt="" class="pill-logo-small" />
+                      {:else}
+                        <div class="pill-logo-placeholder-small">{item.data.baseSymbol?.charAt(0) ?? "?"}</div>
+                      {/if}
+                      {#if item.data.quoteLogo}
+                        <img src={item.data.quoteLogo} alt="" class="pill-logo-small pill-logo-overlap" />
+                      {:else}
+                        <div class="pill-logo-placeholder-small pill-logo-overlap">{item.data.quoteSymbol?.charAt(0) ?? "?"}</div>
+                      {/if}
+                    </div>
+                    <span class="pill-symbol">{item.data.baseSymbol}/{item.data.quoteSymbol}</span>
+                  </button>
+                {/if}
+              {/each}
+            </div>
+          </div>
+        {/if}
 
-          <!-- Favorites Section (only when browsing and has favorites) -->
-          {#if showFavorites && totalFavorites > 0}
-            <SectionHeader label="Favorites" count={totalFavorites} />
+        <!-- Favorites Section (only when browsing and has favorites) -->
+        {#if showFavorites && totalFavorites > 0}
+          <SectionHeader label="Favorites" count={totalFavorites} />
 
-            <!-- Favorite Tokens -->
-            {#each favoriteTokens as token (token.canisterId)}
+          <!-- Favorite Tokens -->
+          {#each favoriteTokens as token (token.canisterId)}
+            <UnifiedListRow
+              type="token"
+              id={token.canisterId}
+              logo={token.logo}
+              primaryLabel={token.symbol}
+              secondaryLabel={token.name}
+              price={token.priceUsd}
+              priceChange={token.priceChange24h}
+              showPrice
+              showPriceChange
+              isFavorite={true}
+              onClick={() => handleTokenSelect(token.canisterId)}
+              onFavorite={() => handleTokenFavorite(token.canisterId)}
+              logoSize="md"
+            />
+          {/each}
+
+          <!-- Favorite Markets -->
+          {#each favoriteMarkets as market (market.tradingCanisterId)}
+            <div use:ticker={market.tradingCanisterId} style="display:contents">
+              <UnifiedListRow
+                type="market"
+                id={market.tradingCanisterId}
+                pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
+                pairSymbols={{ base: market.baseSymbol ?? "", quote: market.quoteSymbol ?? "" }}
+                primaryLabel={market.baseSymbol && market.quoteSymbol ? `${market.baseSymbol}/${market.quoteSymbol}` : market.symbol}
+                secondaryLabel="Vol {formatVolumeFloat(market.volume24h)}"
+                price={market.priceUsd}
+                priceChange={market.priceChange24h}
+                showPrice
+                showPriceChange
+                isFavorite={true}
+                onClick={() => handleMarketSelect(market.tradingCanisterId, market.symbol)}
+                onFavorite={() => handleMarketFavorite(market.tradingCanisterId)}
+                logoSize="sm"
+              />
+            </div>
+          {/each}
+        {/if}
+
+        <!-- Tokens Section -->
+        {#if displayedTokens.length > 0}
+          <SectionHeader label="Tokens" count={search.isSearching ? filteredTokens.length : totalNonFavoriteTokens} />
+          {#each displayedTokens as token (token.canisterId)}
+            <div use:tokenTicker={token.canisterId} style="display:contents">
               <UnifiedListRow
                 type="token"
                 id={token.canisterId}
@@ -596,109 +653,75 @@
                 priceChange={token.priceChange24h}
                 showPrice
                 showPriceChange
-                isFavorite={true}
+                isFavorite={userPreferences.isFavorite(token.canisterId)}
                 onClick={() => handleTokenSelect(token.canisterId)}
                 onFavorite={() => handleTokenFavorite(token.canisterId)}
                 logoSize="md"
               />
-            {/each}
+            </div>
+          {/each}
 
-            <!-- Favorite Markets -->
-            {#each favoriteMarkets as market (market.tradingCanisterId)}
-              <div use:ticker={market.tradingCanisterId} style="display:contents">
-                <UnifiedListRow
-                  type="market"
-                  id={market.tradingCanisterId}
-                  pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
-                  pairSymbols={{ base: market.baseSymbol ?? "", quote: market.quoteSymbol ?? "" }}
-                  primaryLabel={market.baseSymbol && market.quoteSymbol ? `${market.baseSymbol}/${market.quoteSymbol}` : market.symbol}
-                  secondaryLabel="Vol {formatVolumeFloat(market.volume24h)}"
-                  price={market.priceUsd}
-                  priceChange={market.priceChange24h}
-                  showPrice
-                  showPriceChange
-                  isFavorite={true}
-                  onClick={() => handleMarketSelect(market.tradingCanisterId, market.symbol)}
-                  onFavorite={() => handleMarketFavorite(market.tradingCanisterId)}
-                  logoSize="sm"
-                />
-              </div>
-            {/each}
-          {/if}
-
-          <!-- Tokens Section -->
-          {#if displayedTokens.length > 0}
-            <SectionHeader label="Tokens" count={search.isSearching ? filteredTokens.length : totalNonFavoriteTokens} />
-            {#each displayedTokens as token (token.canisterId)}
-              <div use:tokenTicker={token.canisterId} style="display:contents">
-                <UnifiedListRow
-                  type="token"
-                  id={token.canisterId}
-                  logo={token.logo}
-                  primaryLabel={token.symbol}
-                  secondaryLabel={token.name}
-                  price={token.priceUsd}
-                  priceChange={token.priceChange24h}
-                  showPrice
-                  showPriceChange
-                  isFavorite={userPreferences.isFavorite(token.canisterId)}
-                  onClick={() => handleTokenSelect(token.canisterId)}
-                  onFavorite={() => handleTokenFavorite(token.canisterId)}
-                  logoSize="md"
-                />
-              </div>
-            {/each}
-
-            {#if showTokensExpand}
-              <button class="expand-button" onclick={() => tokensExpanded = !tokensExpanded}>
-                {#if tokensExpanded}
-                  Show less
-                {:else}
-                  Show {totalNonFavoriteTokens - COLLAPSED_LIMIT} more
-                {/if}
-              </button>
-            {/if}
-          {/if}
-
-          <!-- Markets Section -->
-          {#if displayedMarkets.length > 0}
-            <SectionHeader label="Markets" count={search.isSearching ? filteredMarkets.length : totalNonFavoriteMarkets} />
-            {#each displayedMarkets as market (market.tradingCanisterId)}
-              <div use:ticker={market.tradingCanisterId} style="display:contents">
-                <UnifiedListRow
-                  type="market"
-                  id={market.tradingCanisterId}
-                  pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
-                  pairSymbols={{ base: market.baseSymbol ?? "", quote: market.quoteSymbol ?? "" }}
-                  primaryLabel={market.baseSymbol && market.quoteSymbol ? `${market.baseSymbol}/${market.quoteSymbol}` : market.symbol}
-                  secondaryLabel="Vol {formatVolumeFloat(market.volume24h)}"
-                  price={market.priceUsd}
-                  priceChange={market.priceChange24h}
-                  showPrice
-                  showPriceChange
-                  isFavorite={userPreferences.isFavoriteMarket(market.tradingCanisterId, ICP_QUOTE)}
-                  onClick={() => handleMarketSelect(market.tradingCanisterId, market.symbol)}
-                  onFavorite={() => handleMarketFavorite(market.tradingCanisterId)}
-                  logoSize="sm"
-                />
-              </div>
-            {/each}
-
-            {#if showMarketsExpand}
-              <button class="expand-button" onclick={() => marketsExpanded = !marketsExpanded}>
-                {#if marketsExpanded}
-                  Show less
-                {:else}
-                  Show {totalNonFavoriteMarkets - COLLAPSED_LIMIT} more
-                {/if}
-              </button>
-            {/if}
+          {#if showTokensExpand}
+            <button class="expand-button" onclick={() => tokensExpanded = !tokensExpanded}>
+              {#if tokensExpanded}
+                Show less
+              {:else}
+                Show {totalNonFavoriteTokens - COLLAPSED_LIMIT} more
+              {/if}
+            </button>
           {/if}
         {/if}
-      </div>
+
+        <!-- Markets Section -->
+        {#if displayedMarkets.length > 0}
+          <SectionHeader label="Markets" count={search.isSearching ? filteredMarkets.length : totalNonFavoriteMarkets} />
+          {#each displayedMarkets as market (market.tradingCanisterId)}
+            <div use:ticker={market.tradingCanisterId} style="display:contents">
+              <UnifiedListRow
+                type="market"
+                id={market.tradingCanisterId}
+                pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
+                pairSymbols={{ base: market.baseSymbol ?? "", quote: market.quoteSymbol ?? "" }}
+                primaryLabel={market.baseSymbol && market.quoteSymbol ? `${market.baseSymbol}/${market.quoteSymbol}` : market.symbol}
+                secondaryLabel="Vol {formatVolumeFloat(market.volume24h)}"
+                price={market.priceUsd}
+                priceChange={market.priceChange24h}
+                showPrice
+                showPriceChange
+                isFavorite={userPreferences.isFavoriteMarket(market.tradingCanisterId, ICP_QUOTE)}
+                onClick={() => handleMarketSelect(market.tradingCanisterId, market.symbol)}
+                onFavorite={() => handleMarketFavorite(market.tradingCanisterId)}
+                logoSize="sm"
+              />
+            </div>
+          {/each}
+
+          {#if showMarketsExpand}
+            <button class="expand-button" onclick={() => marketsExpanded = !marketsExpanded}>
+              {#if marketsExpanded}
+                Show less
+              {:else}
+                Show {totalNonFavoriteMarkets - COLLAPSED_LIMIT} more
+              {/if}
+            </button>
+          {/if}
+        {/if}
+      {/if}
     </div>
-  {/snippet}
-</Modal>
+  </div>
+{/snippet}
+
+{#if isMobile}
+  <ResponsiveDrawer open={open} onClose={handleClose} bottomSheetMaxHeight="85dvh">
+    {@render searchContent()}
+  </ResponsiveDrawer>
+{:else}
+  <Modal bind:open onClose={handleClose} showHeader={false} size="sm" customClass="global-search-modal" closeOnBackdrop={true} contentPadding={false}>
+    {#snippet children()}
+      {@render searchContent()}
+    {/snippet}
+  </Modal>
+{/if}
 
 
 <style>

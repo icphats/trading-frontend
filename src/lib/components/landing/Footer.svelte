@@ -254,7 +254,7 @@
   /* Responsive */
   @media (max-width: 767px) {
     .footer {
-      padding: 0 clamp(0.75rem, 4vw, 1.5rem) clamp(1rem, 4vw, 2rem);
+      padding: 0 clamp(0.75rem, 4vw, 1.5rem) clamp(0.75rem, 3vw, 1.5rem);
     }
 
     .footer-content {
@@ -282,6 +282,11 @@
 
     .copyright {
       font-size: clamp(0.6875rem, 2.5vw, 0.8125rem);
+    }
+
+    .footer-logo-img {
+      width: 28px;
+      height: 28px;
     }
   }
 </style>

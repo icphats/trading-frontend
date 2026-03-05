@@ -234,7 +234,7 @@
   <img
     src="/tokens/party.svg"
     alt="Party"
-    class="max-h-[28px] md:max-h-[32px] max-w-[28px] md:max-w-[32px]"
+    class="max-h-[24px] md:max-h-[32px] max-w-[24px] md:max-w-[32px]"
     style="transform: rotate({rotation}deg);"
   />
 </a>

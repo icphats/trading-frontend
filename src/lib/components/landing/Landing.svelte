@@ -83,6 +83,19 @@
     scroll-behavior: smooth;
   }
 
+  /* Mobile: no snap, sections flow naturally with spacing between them */
+  @media (max-width: 767px) {
+    .snap-section {
+      min-height: auto;
+      padding-bottom: clamp(3rem, 10vw, 5rem);
+    }
+
+    .snap-section--footer {
+      padding-top: 1rem;
+      padding-bottom: 0;
+    }
+  }
+
   /* Fallback for browsers without dvh support */
   @supports not (height: 100dvh) {
     .landing-page {

@@ -562,7 +562,7 @@
     display: flex;
     flex-direction: column;
     justify-content: flex-end;
-    gap: 1.25rem;
+    gap: 1.5rem;
     max-width: 500px;
   }
 
@@ -582,7 +582,7 @@
 
   .description p {
     font-size: clamp(0.9375rem, 3.75vw, 1.125rem);
-    line-height: 1.6;
+    line-height: 1.7;
     color: var(--muted-foreground);
     margin: 0;
   }
@@ -885,13 +885,13 @@
   /* Mobile: < 768px — stacked, fluid down to 300px */
   @media (max-width: 767px) {
     .agents-section {
-      padding: clamp(0.75rem, 5vw, 2.5rem) clamp(0.5rem, 4vw, 2rem);
+      padding: clamp(1rem, 6vw, 2.5rem) clamp(0.75rem, 4vw, 2rem);
     }
 
     .agents-container {
       grid-template-columns: 1fr;
       grid-template-rows: auto auto auto;
-      gap: clamp(0.875rem, 5vw, 2.5rem);
+      gap: clamp(1rem, 5vw, 2rem);
     }
 
     .agents-headline {

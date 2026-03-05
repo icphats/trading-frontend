@@ -669,7 +669,27 @@
     }
 
     .nav-right {
-      gap: 8px;
+      gap: 2px;
+    }
+
+    .icon-button {
+      width: 36px;
+      height: 36px;
+    }
+
+    .icon-button :global(svg) {
+      width: 18px;
+      height: 18px;
+    }
+
+    .hamburger-button {
+      width: 36px;
+      height: 36px;
+    }
+
+    .hamburger-button :global(svg) {
+      width: 18px;
+      height: 18px;
     }
   }
 </style>
