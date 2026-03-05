@@ -1849,6 +1849,34 @@ export class SpotMarket implements ISpotMarket {
   }
 
   /**
+   * Load older chart candles (pagination backwards).
+   * Prepends to existing chartData. Returns the number of candles added.
+   */
+  async loadOlderChartData(limit: number = 300): Promise<number> {
+    if (this.chartData.length === 0) return 0;
+
+    const oldestTimestamp = this.chartData[0][0];
+    const result = await marketRepository.fetchChartData(
+      this.canister_id,
+      this.chartInterval,
+      limit,
+      oldestTimestamp
+    );
+
+    if ('ok' in result && result.ok.length > 0) {
+      // Deduplicate: filter out any candles that overlap with existing data
+      const existingOldest = Number(oldestTimestamp);
+      const olderCandles = result.ok.filter(c => Number(c[0]) < existingOldest);
+      if (olderCandles.length > 0) {
+        this.chartData = [...olderCandles, ...this.chartData];
+        return olderCandles.length;
+      }
+    }
+
+    return 0;
+  }
+
+  /**
    * Manually refresh chart data
    * Uses get_chart endpoint for efficiency
    */

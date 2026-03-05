@@ -12,6 +12,7 @@
     ISeriesApi,
     UTCTimestamp,
     IPriceLine,
+    LogicalRange,
   } from "lightweight-charts";
   import ChartControls from "$lib/components/trade/charts/ChartControls.svelte";
   import { chartSettings } from "$lib/components/trade/charts/chart-controls.svelte";
@@ -111,6 +112,8 @@
 
   let dataInitialized = $state(false);
   let isLoadingInterval = $state(false);
+  let isLoadingOlder = $state(false);
+  let noMoreOlderData = $state(false);
 
   // Price line management for limit orders
   let priceLineMap = new Map<
@@ -329,6 +332,7 @@
     // Reset tracking state
     lastSpotLiveUpdate = null;
     lastHistoricalDataLength = 0;
+    noMoreOlderData = false;
 
     if (!dataInitialized) return;
 
@@ -557,14 +561,46 @@
   // NOTE: Interval change handling is consolidated into the market/interval effect above (line ~284)
   // This prevents race conditions from duplicate setChartInterval calls
 
+  /**
+   * Handle visible range change — load older candles when scrolling left
+   */
+  async function handleVisibleRangeChange(logicalRange: LogicalRange | null) {
+    if (!logicalRange || !chart || !dataInitialized) return;
+    if (isLoadingOlder || noMoreOlderData || isLoadingInterval) return;
+
+    // Trigger when user scrolls to within 10 bars of the left edge
+    if (logicalRange.from > 10) return;
+
+    isLoadingOlder = true;
+    try {
+      const added = await market.loadOlderChartData(300);
+      if (added === 0) {
+        noMoreOlderData = true;
+      }
+    } finally {
+      isLoadingOlder = false;
+    }
+  }
+
   onMount(() => {
     initializeChart();
 
     const ro = new ResizeObserver(() => applySize());
     if (chartContainer) ro.observe(chartContainer);
 
+    // Subscribe to visible range changes for scroll-back pagination
+    const timeScale = chart?.timeScale();
+    if (timeScale) {
+      timeScale.subscribeVisibleLogicalRangeChange(handleVisibleRangeChange);
+    }
+
     return () => {
       ro.disconnect();
+
+      // Unsubscribe from range changes
+      if (timeScale) {
+        timeScale.unsubscribeVisibleLogicalRangeChange(handleVisibleRangeChange);
+      }
 
       // Clean up price lines before removing chart
       for (const [key, entry] of priceLineMap) {
