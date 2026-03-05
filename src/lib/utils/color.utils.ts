@@ -53,18 +53,25 @@ export function oklchToHex(L: number, C: number, H: number): string {
 
 /**
  * Parse oklch() CSS string and convert to hex
+ * Handles browser variations: spaces, %, deg, none, / alpha
  * @param oklchString - CSS oklch() string
- * @returns Hex color string or fallback color if parsing fails
+ * @returns Hex color string or null if parsing fails
  */
-export function parseOklchToHex(oklchString: string): string {
-  const match = oklchString.match(/oklch\(([\d.]+)\s+([\d.]+)\s+([\d.]+)\)/);
-  if (!match) return "#888888"; // Fallback gray
+export function parseOklchToHex(oklchString: string): string | null {
+  // Flexible regex: optional spaces, optional % on L, optional deg on H, optional / alpha
+  const match = oklchString.match(
+    /oklch\(\s*([\d.]+)%?\s+([\d.]+|none)\s+([\d.]+|none)(?:deg)?(?:\s*\/\s*[\d.]+%?)?\s*\)/
+  );
+  if (!match) return null;
 
-  const L = parseFloat(match[1]);
-  const C = parseFloat(match[2]);
-  const H = parseFloat(match[3]);
+  const L = match[1] === 'none' ? 0 : parseFloat(match[1]);
+  const C = match[2] === 'none' ? 0 : parseFloat(match[2]);
+  const H = match[3] === 'none' ? 0 : parseFloat(match[3]);
 
-  return oklchToHex(L, C, H);
+  // If L was given as percentage (e.g. 19%), convert to 0-1 range
+  const lightness = oklchString.match(/oklch\(\s*[\d.]+%/) ? L / 100 : L;
+
+  return oklchToHex(lightness, C, H);
 }
 
 /**
@@ -86,11 +93,28 @@ export function getCSSColorValue(
 
   // Handle oklch() color format
   if (value.startsWith("oklch(")) {
-    return parseOklchToHex(value);
+    const parsed = parseOklchToHex(value);
+    if (parsed) return parsed;
+    // oklch parse failed — fall through to canvas fallback
   }
 
-  // Return as-is for hex or rgb values
-  return value;
+  // Handle hex and rgb() directly (lightweight-charts understands these)
+  if (value.startsWith("#") || value.startsWith("rgb")) {
+    return value;
+  }
+
+  // Fallback: use canvas 2D context to resolve any CSS color to hex
+  try {
+    const ctx = document.createElement("canvas").getContext("2d");
+    if (ctx) {
+      ctx.fillStyle = value;
+      return ctx.fillStyle; // returns resolved hex string
+    }
+  } catch {
+    // Ignore canvas errors
+  }
+
+  return null;
 }
 
 /**
