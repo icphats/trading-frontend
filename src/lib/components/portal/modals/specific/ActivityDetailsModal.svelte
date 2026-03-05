@@ -99,6 +99,18 @@
     return formatSigFig(price, 5, { subscriptZeros: true });
   }
 
+  // Compute effective swap price from input/output amounts
+  function formatSwapPrice(inputSpent: bigint, outputReceived: bigint, isBuy: boolean): string {
+    if (outputReceived === 0n || inputSpent === 0n) return '-';
+    const baseDecimals = base?.decimals ?? 8;
+    const quoteDecimals = quote?.decimals ?? 8;
+    // Price = quote / base. Buy: input=quote, output=base. Sell: input=base, output=quote.
+    const quoteAmount = isBuy ? inputSpent : outputReceived;
+    const baseAmount = isBuy ? outputReceived : inputSpent;
+    const price = (Number(quoteAmount) / 10 ** quoteDecimals) / (Number(baseAmount) / 10 ** baseDecimals);
+    return formatSigFig(price, 5, { subscriptZeros: true });
+  }
+
   // Format token amount
   function formatAmount(value: bigint, isBase: boolean): string {
     const decimals = isBase ? (base?.decimals ?? 8) : (quote?.decimals ?? 8);
@@ -172,10 +184,21 @@
                 {isBuy ? 'Buy' : 'Sell'}
               </span>
             </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Price</span>
-              <span class="modal-detail-value">{formatTickPrice(orderDetails.tick)}</span>
-            </div>
+            {#if isSwap}
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Effective Price</span>
+                <span class="modal-detail-value">{formatSwapPrice(orderDetails.input_spent, orderDetails.output_received, isBuy)}</span>
+              </div>
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Fee Tier</span>
+                <span class="modal-detail-value">{formatPipsAsPercent(orderDetails.tick)}</span>
+              </div>
+            {:else}
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Price</span>
+                <span class="modal-detail-value">{formatTickPrice(orderDetails.tick)}</span>
+              </div>
+            {/if}
             <div class="modal-detail-row">
               <span class="modal-detail-label">Input Spent</span>
               <span class="modal-detail-value">
@@ -188,12 +211,14 @@
                 {formatAmount(orderDetails.output_received, isBuy)} {getTokenSymbol(isBuy)}
               </span>
             </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Locked Input</span>
-              <span class="modal-detail-value">
-                {formatAmount(orderDetails.locked_input, !isBuy)} {getTokenSymbol(!isBuy)}
-              </span>
-            </div>
+            {#if !isSwap}
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Locked Input</span>
+                <span class="modal-detail-value">
+                  {formatAmount(orderDetails.locked_input, !isBuy)} {getTokenSymbol(!isBuy)}
+                </span>
+              </div>
+            {/if}
             <div class="modal-detail-row">
               <span class="modal-detail-label">{isOrderModified ? 'Operation Fee' : 'Fees Paid'}</span>
               <span class="modal-detail-value">
@@ -204,16 +229,18 @@
               <span class="modal-detail-label">Status</span>
               <span class="modal-detail-value">{statusLabel}</span>
             </div>
-            {#if orderDetails.immediate_or_cancel}
+            {#if !isSwap && orderDetails.immediate_or_cancel}
               <div class="modal-detail-row">
                 <span class="modal-detail-label">Order Type</span>
                 <span class="modal-detail-value">IOC</span>
               </div>
             {/if}
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Created</span>
-              <span class="modal-detail-value">{formatTimestamp(orderDetails.created_at_ms)}</span>
-            </div>
+            {#if !isSwap}
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Created</span>
+                <span class="modal-detail-value">{formatTimestamp(orderDetails.created_at_ms)}</span>
+              </div>
+            {/if}
 
           {:else if triggerDetails}
             <!-- Trigger Activity Panel -->
@@ -278,18 +305,14 @@
               <span class="modal-detail-value">{formatPipsAsPercent(liquidityDetails.fee_pips)}</span>
             </div>
             <div class="modal-detail-row">
-              <span class="modal-detail-label">Tick Range</span>
+              <span class="modal-detail-label">Price Range</span>
               <span class="modal-detail-value">
-                {liquidityDetails.tick_lower} - {liquidityDetails.tick_upper}
+                {formatTickPrice(liquidityDetails.tick_lower)} — {formatTickPrice(liquidityDetails.tick_upper)}
               </span>
             </div>
             <div class="modal-detail-row">
               <span class="modal-detail-label">Price at Event</span>
               <span class="modal-detail-value">{formatTickPrice(liquidityDetails.tick_at_event)}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Liquidity Delta</span>
-              <span class="modal-detail-value">{liquidityDetails.liquidity_delta.toLocaleString()}</span>
             </div>
             <div class="modal-detail-row">
               <span class="modal-detail-label">{base?.displaySymbol ?? 'Base'} Amount</span>
@@ -355,14 +378,10 @@
               <span class="modal-detail-value">{formatPipsAsPercent(positionTransferDetails.fee_pips)}</span>
             </div>
             <div class="modal-detail-row">
-              <span class="modal-detail-label">Tick Range</span>
+              <span class="modal-detail-label">Price Range</span>
               <span class="modal-detail-value">
-                {positionTransferDetails.tick_lower} - {positionTransferDetails.tick_upper}
+                {formatTickPrice(positionTransferDetails.tick_lower)} — {formatTickPrice(positionTransferDetails.tick_upper)}
               </span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Liquidity</span>
-              <span class="modal-detail-value">{positionTransferDetails.liquidity.toLocaleString()}</span>
             </div>
           {/if}
         </div>

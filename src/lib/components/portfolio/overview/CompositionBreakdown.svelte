@@ -62,7 +62,31 @@
     return total;
   });
 
-  const totalValue = $derived(tokensValue + poolsValue + ordersValue + triggersValue);
+  // Trading balances: available (deposited but not locked) base/quote per market
+  const tradingBalanceValue = $derived.by(() => {
+    let total = 0;
+    for (const market of userPortfolio.spotMarkets) {
+      const marketData = entityStore.getMarket(market.spotCanisterId);
+      if (!marketData) continue;
+
+      const baseToken = marketData.baseToken ? entityStore.getToken(marketData.baseToken) : null;
+      const quoteToken = marketData.quoteToken ? entityStore.getToken(marketData.quoteToken) : null;
+
+      if (baseToken && market.available.base > 0n) {
+        const amountFloat = Number(market.available.base) / (10 ** baseToken.decimals);
+        const priceFloat = Number(baseToken.priceUsd ?? 0n) / 1e12;
+        total += amountFloat * priceFloat;
+      }
+      if (quoteToken && market.available.quote > 0n) {
+        const amountFloat = Number(market.available.quote) / (10 ** quoteToken.decimals);
+        const priceFloat = Number(quoteToken.priceUsd ?? 0n) / 1e12;
+        total += amountFloat * priceFloat;
+      }
+    }
+    return total;
+  });
+
+  const totalValue = $derived(tokensValue + poolsValue + ordersValue + triggersValue + tradingBalanceValue);
 
   // Helper: given a current USD value and the token's 24h % change, return the dollar change
   function dollarChangeFromPercent(currentUsd: number, changePercent: number): number {
@@ -117,6 +141,16 @@
         if (!token) continue;
         const usdValue = (Number(trigger.input_amount) / (10 ** token.decimals)) * (Number(token.priceUsd ?? 0n) / 1e12);
         totalChange += dollarChangeFromPercent(usdValue, token.priceChange24h);
+      }
+
+      // 5) Trading balances — available (deposited but not locked) base/quote
+      if (baseToken && market.available.base > 0n) {
+        const usdValue = (Number(market.available.base) / (10 ** baseToken.decimals)) * (Number(baseToken.priceUsd ?? 0n) / 1e12);
+        totalChange += dollarChangeFromPercent(usdValue, baseToken.priceChange24h);
+      }
+      if (quoteToken && market.available.quote > 0n) {
+        const usdValue = (Number(market.available.quote) / (10 ** quoteToken.decimals)) * (Number(quoteToken.priceUsd ?? 0n) / 1e12);
+        totalChange += dollarChangeFromPercent(usdValue, quoteToken.priceChange24h);
       }
     }
 

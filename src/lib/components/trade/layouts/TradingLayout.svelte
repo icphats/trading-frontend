@@ -394,7 +394,7 @@
      - Row 4: UserPanel (auto)
      ======================================== */
   .trading-grid.mobile {
-    --mobile-chart-height: 420px;
+    --mobile-chart-height: 35dvh;
 
     grid-template-columns: auto 1fr; /* Token selector (auto) + ChartHead (fills) */
     grid-template-rows: auto auto auto auto; /* Header, Tabs, Chart/Depth, UserPanel */

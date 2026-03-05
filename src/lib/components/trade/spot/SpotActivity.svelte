@@ -3,11 +3,10 @@
    * SpotActivity - Unified activity feed table
    *
    * Displays a normalized view of all user activity:
-   * - Orders (filled, partial, cancelled)
+   * - Orders (swap, filled, partial, cancelled, modified)
    * - Triggers (fired, cancelled, failed)
-   * - LP events (open, increase, decrease, close, fees)
+   * - LP events (open, increase, decrease, close, fees, lock, transfer)
    * - Transfers (deposit, withdraw)
-   * - Penalties
    *
    * Features:
    * - Infinite scroll pagination
