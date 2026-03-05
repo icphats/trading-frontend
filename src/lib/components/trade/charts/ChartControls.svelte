@@ -146,4 +146,30 @@
     align-items: center;
     gap: 0.25rem;
   }
+
+  /* Mobile: tighter controls */
+  @media (max-width: 767px) {
+    .chart-controls {
+      padding: 0.25rem 0.5rem;
+    }
+
+    .chart-controls :global(.trigger-btn),
+    .chart-controls :global(.segmented-control) {
+      height: 28px;
+      font-size: 12px;
+      padding: 0 8px;
+    }
+
+    .chart-controls :global(.chart-pill) {
+      height: 20px;
+      font-size: 12px;
+      padding: 0 6px;
+    }
+
+    /* Right-side dropdowns: align menu to right edge */
+    .controls-right :global(.dropdown-menu) {
+      left: auto;
+      right: 0;
+    }
+  }
 </style>

@@ -24,6 +24,8 @@
 
   // Username popover state
   let showUsernamePopover = $state(false);
+  let usernamePopoverRef = $state<HTMLDivElement>();
+  let usernameButtonRef = $state<HTMLButtonElement>();
 
   // Auto-scroll to bottom when new messages arrive
   $effect(() => {
@@ -128,12 +130,26 @@
     return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
   }
 
+  function handleUsernameClickOutside(e: MouseEvent) {
+    if (
+      showUsernamePopover &&
+      usernamePopoverRef &&
+      usernameButtonRef &&
+      !usernamePopoverRef.contains(e.target as Node) &&
+      !usernameButtonRef.contains(e.target as Node)
+    ) {
+      showUsernamePopover = false;
+    }
+  }
+
   onMount(() => {
     trollbox.startPolling();
+    document.addEventListener("click", handleUsernameClickOutside);
   });
 
   onDestroy(() => {
     trollbox.stopPolling();
+    document.removeEventListener("click", handleUsernameClickOutside);
   });
 </script>
 
@@ -207,6 +223,7 @@
 
             <div class="username-popover-anchor">
               <button
+                bind:this={usernameButtonRef}
                 type="button"
                 class="toolbar-icon-button"
                 aria-label="Change username"
@@ -217,7 +234,7 @@
 
               {#if showUsernamePopover}
                 <!-- svelte-ignore a11y_no_static_element_interactions -->
-                <div class="username-popover" onkeydown={(e) => { if (e.key === 'Escape') showUsernamePopover = false; }}>
+                <div bind:this={usernamePopoverRef} class="username-popover" onkeydown={(e) => { if (e.key === 'Escape') showUsernamePopover = false; }}>
                   <label class="popover-label" for="username-input">
                     {trollbox.myUsername ? 'Change username' : 'Set username'}
                   </label>
@@ -489,15 +506,27 @@
 
   .username-popover {
     position: absolute;
-    bottom: calc(100% + 8px);
+    bottom: calc(100% + 0.25rem);
     left: 0;
-    background: var(--popover);
+    background: var(--background);
     border: 1px solid var(--border);
-    border-radius: var(--radius-lg);
+    border-radius: var(--radius-md);
     padding: 12px;
     min-width: 220px;
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    z-index: 10;
+    box-shadow: var(--shadow-elevated);
+    z-index: 1000;
+    animation: slideUp 0.2s ease-out;
+  }
+
+  @keyframes slideUp {
+    from {
+      opacity: 0;
+      transform: translateY(10px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 
   .popover-label {

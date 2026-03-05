@@ -107,12 +107,8 @@
 <style>
   .meme-autocomplete {
     position: absolute;
-    background: linear-gradient(
-      135deg,
-      oklch(from var(--card) l c h / 1) 0%,
-      oklch(from var(--card) calc(l * 0.95) c h / 1) 100%
-    );
-    border: 1px solid oklch(from var(--border) l c h / 0.8);
+    background: var(--background);
+    border: 1px solid var(--border);
     border-radius: var(--radius-md);
     padding: 4px;
     box-shadow: var(--shadow-elevated);

@@ -5,15 +5,14 @@
   import NavbarLogo from "./NavbarLogo.svelte";
   import NavbarLinks from "./NavbarLinks.svelte";
   import NavbarGlobalSearchModal from "./NavbarGlobalSearchModal.svelte";
-  import CashierModal from "$lib/components/portal/modals/CashierModal.svelte";
   import { AccountDrawer, accountDrawer } from "$lib/components/portal/drawers/specific/AccountDrawer";
+  import { CashierDrawer, cashierDrawer } from "$lib/components/portal/drawers/specific/CashierDrawer";
   import { trollboxDrawer } from "$lib/components/portal/drawers/specific/TrollboxDrawer";
 
   function handleThemeToggle() {
     app.setThemeMode(app.themeMode === 'dark' ? 'light' : 'dark');
   }
 
-  let isCashierModalOpen = $state(false);
   // Theme toggle (cycles light ↔ dark)
   let isSearchOpen = $state(false);
   let isMobileMenuOpen = $state(false);
@@ -48,11 +47,7 @@
   }
 
   function handleWallet() {
-    isCashierModalOpen = true;
-  }
-
-  function handleCashierClose() {
-    isCashierModalOpen = false;
+    cashierDrawer.open();
   }
 
   // Navigation links for mobile menu
@@ -242,12 +237,14 @@
         </svg>
       </button>
 
-      <!-- Chat Toggle -->
-      <button class="icon-button" onclick={() => trollboxDrawer.toggle()} aria-label="Toggle chat">
-        <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
-      </button>
+      <!-- Chat Toggle (only when authenticated) -->
+      {#if user.isAuthenticated}
+        <button class="icon-button" onclick={() => trollboxDrawer.toggle()} aria-label="Toggle chat">
+          <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
+          </svg>
+        </button>
+      {/if}
 
       <!-- Theme Toggle -->
       <button class="icon-button" onclick={handleThemeToggle} aria-label="Toggle theme">
@@ -301,8 +298,8 @@
 <!-- Search Modal -->
 <NavbarGlobalSearchModal bind:open={isSearchOpen} onClose={closeSearch} />
 
-<!-- Cashier Modal -->
-<CashierModal bind:open={isCashierModalOpen} onClose={handleCashierClose} />
+<!-- Cashier Drawer -->
+<CashierDrawer />
 
 <!-- Account Drawer -->
 <AccountDrawer />
@@ -357,8 +354,14 @@
     align-items: center;
     justify-content: flex-end;
     gap: 8px;
-    flex: 1;
-    min-width: 0;
+    flex-shrink: 0;
+  }
+
+  @media (min-width: 1280px) {
+    .nav-right {
+      flex: 1;
+      min-width: 0;
+    }
   }
 
   /* ===== SEARCH BAR ===== */

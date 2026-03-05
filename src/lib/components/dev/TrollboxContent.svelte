@@ -8,7 +8,7 @@
 
 <style>
   .trollbox-content {
-    height: 85dvh;
+    height: 100%;
     width: 100%;
     overflow: hidden;
   }
