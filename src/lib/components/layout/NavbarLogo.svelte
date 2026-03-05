@@ -155,6 +155,7 @@
   }
 
   function handleMouseEnter() {
+    if (window.innerWidth < 768) return;
     isHovering = true;
     if (phase === 'idle') {
       phase = 'spinning';

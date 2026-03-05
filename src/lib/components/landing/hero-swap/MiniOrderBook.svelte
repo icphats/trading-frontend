@@ -56,7 +56,9 @@
     return askTotal + bidTotal;
   });
 
-  // Get asks with cumulative amounts (reversed so lowest ask is at bottom near spread)
+  // Get asks with cumulative amounts
+  // Desktop (vertical): reversed so lowest ask is at bottom near spread
+  // Mobile (horizontal): natural order, lowest ask at top
   let asks = $derived.by(() => {
     if (!remappedBook) return [];
     let cumulative = 0n;
@@ -64,9 +66,10 @@
       cumulative += row.amount;
       return { ...row, cumulativeAmount: cumulative };
     });
-    // Reverse after calculating cumulative so depth bars grow toward spread
-    return withCumulative.reverse();
+    return withCumulative;
   });
+
+  let asksReversed = $derived([...asks].reverse());
 
   // Get bids with cumulative amounts
   let bids = $derived.by(() => {
@@ -141,31 +144,54 @@
       {/each}
     </div>
   {:else}
-    <!-- Asks (reversed so lowest ask is at bottom near spread) -->
-    <div class="asks">
-      {#each asks as row (row.usd_price)}
-        <div class="order-row ask">
-          <div class="depth-bar ask-bar" style="width: {getDepthPercent(row.cumulativeAmount)}%"></div>
-          <span class="price">{formatPrice(row)}</span>
-          <span class="usd">{formatUsd(row.amount)}</span>
-        </div>
-      {/each}
+    <!-- Desktop: vertical (asks → spread → bids) -->
+    <div class="desktop-book">
+      <div class="asks">
+        {#each asksReversed as row (row.usd_price)}
+          <div class="order-row ask">
+            <div class="depth-bar ask-bar" style="width: {getDepthPercent(row.cumulativeAmount)}%"></div>
+            <span class="price">{formatPrice(row)}</span>
+            <span class="usd">{formatUsd(row.amount)}</span>
+          </div>
+        {/each}
+      </div>
+
+      <div class="spread-row">
+        <span class="spread-price">{formatSpreadPrice(currentPrice)}</span>
+      </div>
+
+      <div class="bids">
+        {#each bids as row (row.usd_price)}
+          <div class="order-row bid">
+            <div class="depth-bar bid-bar" style="width: {getDepthPercent(row.cumulativeAmount)}%"></div>
+            <span class="price">{formatPrice(row)}</span>
+            <span class="usd">{formatUsd(row.amount)}</span>
+          </div>
+        {/each}
+      </div>
     </div>
 
-    <!-- Spread -->
-    <div class="spread-row">
-      <span class="spread-price">{formatSpreadPrice(currentPrice)}</span>
-    </div>
+    <!-- Mobile: side-by-side (bids left, asks right) -->
+    <div class="mobile-book">
+      <div class="bids">
+        {#each bids as row (row.usd_price)}
+          <div class="order-row bid">
+            <div class="depth-bar bid-bar" style="width: {getDepthPercent(row.cumulativeAmount)}%"></div>
+            <span class="price">{formatPrice(row)}</span>
+            <span class="usd">{formatUsd(row.amount)}</span>
+          </div>
+        {/each}
+      </div>
 
-    <!-- Bids -->
-    <div class="bids">
-      {#each bids as row (row.usd_price)}
-        <div class="order-row bid">
-          <div class="depth-bar bid-bar" style="width: {getDepthPercent(row.cumulativeAmount)}%"></div>
-          <span class="price">{formatPrice(row)}</span>
-          <span class="usd">{formatUsd(row.amount)}</span>
-        </div>
-      {/each}
+      <div class="asks">
+        {#each asks as row (row.usd_price)}
+          <div class="order-row ask">
+            <div class="depth-bar ask-bar" style="width: {getDepthPercent(row.cumulativeAmount)}%"></div>
+            <span class="price">{formatPrice(row)}</span>
+            <span class="usd">{formatUsd(row.amount)}</span>
+          </div>
+        {/each}
+      </div>
     </div>
   {/if}
 </div>
@@ -183,17 +209,87 @@
     box-sizing: border-box;
   }
 
-  .asks,
-  .bids {
+  /* Desktop: vertical layout */
+  .desktop-book {
     display: flex;
     flex-direction: column;
-    height: 160px; /* 8 rows × 20px — fixed regardless of row count */
   }
 
-  .asks {
-    justify-content: flex-end; /* rows hug the spread */
+  .desktop-book .asks,
+  .desktop-book .bids {
+    display: flex;
+    flex-direction: column;
+    height: 160px;
   }
 
+  .desktop-book .asks {
+    justify-content: flex-end;
+  }
+
+  /* Desktop corner rounding */
+  .desktop-book .asks .order-row:first-child {
+    border-radius: 12px 12px 0 0;
+  }
+
+  .desktop-book .asks .order-row:first-child .depth-bar {
+    border-radius: 12px 12px 0 0;
+  }
+
+  .desktop-book .bids .order-row:last-child {
+    border-radius: 0 0 12px 12px;
+  }
+
+  .desktop-book .bids .order-row:last-child .depth-bar {
+    border-radius: 0 0 12px 12px;
+  }
+
+  /* Mobile: side-by-side layout (hidden on desktop) */
+  .mobile-book {
+    display: none;
+  }
+
+  .mobile-book .asks,
+  .mobile-book .bids {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-width: 0;
+  }
+
+  /* Mobile corner rounding */
+  .mobile-book .bids .order-row:first-child {
+    border-radius: 12px 0 0 0;
+  }
+
+  .mobile-book .bids .order-row:first-child .depth-bar {
+    border-radius: 12px 0 0 0;
+  }
+
+  .mobile-book .bids .order-row:last-child {
+    border-radius: 0 0 0 12px;
+  }
+
+  .mobile-book .bids .order-row:last-child .depth-bar {
+    border-radius: 0 0 0 12px;
+  }
+
+  .mobile-book .asks .order-row:first-child {
+    border-radius: 0 12px 0 0;
+  }
+
+  .mobile-book .asks .order-row:first-child .depth-bar {
+    border-radius: 0 12px 0 0;
+  }
+
+  .mobile-book .asks .order-row:last-child {
+    border-radius: 0 0 12px 0;
+  }
+
+  .mobile-book .asks .order-row:last-child .depth-bar {
+    border-radius: 0 0 12px 0;
+  }
+
+  /* Shared row styles */
   .order-row {
     display: flex;
     justify-content: space-between;
@@ -202,24 +298,6 @@
     position: relative;
     height: 20px;
     overflow: hidden;
-  }
-
-  /* Round the first ask row (top of orderbook) */
-  .asks .order-row:first-child {
-    border-radius: 12px 12px 0 0;
-  }
-
-  .asks .order-row:first-child .depth-bar {
-    border-radius: 12px 12px 0 0;
-  }
-
-  /* Round the last bid row (bottom of orderbook) */
-  .bids .order-row:last-child {
-    border-radius: 0 0 12px 12px;
-  }
-
-  .bids .order-row:last-child .depth-bar {
-    border-radius: 0 0 12px 12px;
   }
 
   .depth-bar {
@@ -273,6 +351,7 @@
     font-size: 12px;
   }
 
+  /* Skeleton */
   .loading-state {
     display: flex;
     flex-direction: column;
@@ -326,18 +405,26 @@
     }
   }
 
-  /* Mobile horizontal layout */
+  /* Mobile: swap to side-by-side */
   @media (max-width: 767px) {
     .mini-orderbook {
-      flex-direction: row;
       height: 100%;
       font-size: clamp(9px, 2.5vw, 11px);
     }
 
-    .asks,
-    .bids {
+    .desktop-book {
+      display: none;
+    }
+
+    .mobile-book {
+      display: flex;
+      flex-direction: row;
       flex: 1;
-      height: auto;
+    }
+
+    .mobile-book .ask-bar {
+      right: 0;
+      left: auto;
     }
 
     .order-row {
@@ -349,54 +436,10 @@
       font-size: clamp(8px, 2.2vw, 10px);
     }
 
-    .spread-price {
-      font-size: clamp(10px, 2.8vw, 12px);
-    }
-
-    /* On mobile, round left side of asks, right side of bids */
-    .asks .order-row:first-child {
-      border-radius: 12px 0 0 0;
-    }
-
-    .asks .order-row:first-child .depth-bar {
-      border-radius: 12px 0 0 0;
-    }
-
-    .asks .order-row:last-child {
-      border-radius: 0 0 0 12px;
-    }
-
-    .asks .order-row:last-child .depth-bar {
-      border-radius: 0 0 0 12px;
-    }
-
-    .bids .order-row:first-child {
-      border-radius: 0 12px 0 0;
-    }
-
-    .bids .order-row:first-child .depth-bar {
-      border-radius: 0 12px 0 0;
-    }
-
-    .bids .order-row:last-child {
-      border-radius: 0 0 12px 0;
-    }
-
-    .bids .order-row:last-child .depth-bar {
-      border-radius: 0 0 12px 0;
-    }
-
-    .spread-row {
-      display: none;
-    }
-
-    .bids {
-      flex-direction: column-reverse;
-    }
-
     .loading-state {
       min-height: auto;
       flex-direction: row;
+      flex: 1;
     }
   }
 </style>

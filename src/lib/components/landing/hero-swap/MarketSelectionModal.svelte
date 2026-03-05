@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Modal from "$lib/components/portal/modals/Modal.svelte";
+  import ResponsiveDrawer from "$lib/components/portal/drawers/shared/ResponsiveDrawer.svelte";
   import { SearchInput, SectionHeader, EmptyState, UnifiedListRow } from "$lib/components/ui";
   import { entityStore } from "$lib/domain/orchestration";
   import { normalizeTokenSymbol } from "$lib/domain/markets";
@@ -71,40 +71,53 @@
   }
 </script>
 
-<Modal bind:open onClose={handleClose} showHeader={false} size="sm" closeOnBackdrop={true} contentPadding={false}>
-  {#snippet children()}
-    <div class="modal-search-body">
-      <SearchInput
-        bind:value={searchQuery}
-        placeholder="Search markets"
-        autofocus
-      />
+<ResponsiveDrawer open={open} onClose={handleClose} bottomSheetMaxHeight="85dvh">
+  <div class="market-picker">
+    <SearchInput
+      bind:value={searchQuery}
+      placeholder="Search markets"
+      autofocus
+    />
 
-      <div class="modal-search-list">
-        {#if filteredMarkets.length > 0}
-          <SectionHeader label="Markets" count={filteredMarkets.length} />
-          {#each filteredMarkets as market (market.canisterId)}
-            <UnifiedListRow
-              type="market"
-              id={market.canisterId}
-              pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
-              pairSymbols={{ base: market.baseSymbol, quote: market.quoteSymbol }}
-              primaryLabel={market.symbol}
-              secondaryLabel={market.name}
-              isSelected={market.canisterId === currentMarketId}
-              onClick={() => handleSelect(market.canisterId)}
-              logoSize="sm"
-            />
-          {/each}
-        {:else if searchQuery}
-          <EmptyState
-            variant="empty"
-            message="No markets found"
+    <div class="market-list">
+      {#if filteredMarkets.length > 0}
+        <SectionHeader label="Markets" count={filteredMarkets.length} />
+        {#each filteredMarkets as market (market.canisterId)}
+          <UnifiedListRow
+            type="market"
+            id={market.canisterId}
+            pairLogos={{ base: market.baseLogo, quote: market.quoteLogo }}
+            pairSymbols={{ base: market.baseSymbol, quote: market.quoteSymbol }}
+            primaryLabel={market.symbol}
+            secondaryLabel={market.name}
+            isSelected={market.canisterId === currentMarketId}
+            onClick={() => handleSelect(market.canisterId)}
+            logoSize="sm"
           />
-        {:else}
-          <EmptyState variant="loading" message="Loading markets..." />
-        {/if}
-      </div>
+        {/each}
+      {:else if searchQuery}
+        <EmptyState
+          variant="empty"
+          message="No markets found"
+        />
+      {:else}
+        <EmptyState variant="loading" message="Loading markets..." />
+      {/if}
     </div>
-  {/snippet}
-</Modal>
+  </div>
+</ResponsiveDrawer>
+
+<style>
+  .market-picker {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .market-list {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+</style>
