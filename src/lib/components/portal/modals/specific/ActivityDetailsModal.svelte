@@ -3,11 +3,11 @@
    * ActivityDetailsModal - Shows detailed view of a single activity
    *
    * Displays type-specific detail panels based on activity variant:
-   * - Order: side, tick, input/output, fees, status
+   * - Order/Swap: side, tick, input/output, fees, status
    * - Trigger: type, side, trigger/limit ticks, amount, status
    * - Liquidity: position ID, fee tier, tick range, amounts
    * - Transfer: direction, token, amount, block index
-   * - Penalty: token, amount, tick bounds, order ID
+   * - Position Transfer: direction, counterparty, fee tier, tick range
    */
 
   import type { ActivityView } from "$lib/actors/services/spot.service";
@@ -23,7 +23,6 @@
     getTriggerDetails,
     getLiquidityDetails,
     getTransferDetails,
-    getPenaltyDetails,
     getPositionTransferDetails,
     computeActivityUsdValue,
   } from "$lib/utils/activity.utils";
@@ -82,10 +81,10 @@
   const triggerDetails = $derived(activity ? getTriggerDetails(activity) : null);
   const liquidityDetails = $derived(activity ? getLiquidityDetails(activity) : null);
   const transferDetails = $derived(activity ? getTransferDetails(activity) : null);
-  const penaltyDetails = $derived(activity ? getPenaltyDetails(activity) : null);
   const positionTransferDetails = $derived(activity ? getPositionTransferDetails(activity) : null);
 
-  // Detect order_modified vs terminal order
+  // Detect swap and order_modified variants
+  const isSwap = $derived(activity ? 'swap' in activity.activity_type : false);
   const isOrderModified = $derived(activity ? 'order_modified' in activity.activity_type : false);
 
   // Handlers
@@ -120,6 +119,7 @@
   const statusLabel = $derived.by(() => {
     if (!activity) return '';
     const t = activity.activity_type;
+    if ('swap' in t) return 'Swapped';
     if ('order_filled' in t) return 'Filled';
     if ('order_partial' in t) return 'Partial';
     if ('order_cancelled' in t) return 'Cancelled';
@@ -160,10 +160,12 @@
           {#if orderDetails}
             <!-- Order Activity Panel -->
             {@const isBuy = 'buy' in orderDetails.side}
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Order ID</span>
-              <span class="modal-detail-value">#{orderDetails.order_id}</span>
-            </div>
+            {#if !isSwap}
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Order ID</span>
+                <span class="modal-detail-value">#{orderDetails.order_id}</span>
+              </div>
+            {/if}
             <div class="modal-detail-row">
               <span class="modal-detail-label">Side</span>
               <span class="modal-detail-value {isBuy ? 'text-bullish' : 'text-bearish'}">
@@ -329,42 +331,6 @@
             <div class="modal-detail-row">
               <span class="modal-detail-label">Ledger</span>
               <span class="modal-detail-value mono">{transferDetails.ledger_principal.toText()}</span>
-            </div>
-
-          {:else if penaltyDetails}
-            <!-- Penalty Activity Panel -->
-            {@const isBase = 'base' in penaltyDetails.token}
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Token</span>
-              <span class="modal-detail-value">{getTokenSymbol(isBase)}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Penalty Amount</span>
-              <span class="modal-detail-value text-bearish">
-                {formatAmount(penaltyDetails.penalty_amount, isBase)}
-              </span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Tick Before</span>
-              <span class="modal-detail-value">{penaltyDetails.tick_before}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Tick After</span>
-              <span class="modal-detail-value">{penaltyDetails.tick_after}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Tick Bounds</span>
-              <span class="modal-detail-value">
-                {penaltyDetails.bound_lower} - {penaltyDetails.bound_upper}
-              </span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Order ID</span>
-              <span class="modal-detail-value">#{penaltyDetails.order_id}</span>
-            </div>
-            <div class="modal-detail-row">
-              <span class="modal-detail-label">Pool Fee Tier</span>
-              <span class="modal-detail-value">{formatPipsAsPercent(penaltyDetails.pool_fee_pips)}</span>
             </div>
 
           {:else if positionTransferDetails}

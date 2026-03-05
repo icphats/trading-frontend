@@ -250,7 +250,7 @@ class QuoteExplorerStateManager {
       const anonActor = this.getAnonSpotActor(targetCanisterId);
 
       // Single canister query — only need orderbook depth (includes price)
-      const depth = await anonActor.get_market_depth(20, 10);
+      const depth = await anonActor.get_market_depth(20, 1);
 
       // Create SpotMarket instance — tokens from indexer, price from depth
       const market = new SpotMarket(targetCanisterId, '', '');
@@ -488,7 +488,7 @@ class QuoteExplorerStateManager {
 
     try {
       const anonActor = this.getAnonSpotActor(market.canister_id);
-      const depth = await anonActor.get_market_depth(20, 10);
+      const depth = await anonActor.get_market_depth(20, 1);
       this.orderbook = transformMarketDepthToLegacy(depth, market.baseTokenDecimals, market.quoteTokenDecimals);
     } catch (error) {
       console.error('[QuoteExplorerState] Failed to fetch orderbook:', error);

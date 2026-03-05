@@ -9,6 +9,7 @@
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
   import { userPortfolio } from "$lib/domain/user";
   import { checkAndApprove } from "$lib/utils/allowance.utils";
+  import { user } from "$lib/domain/user/auth.svelte";
 
   interface Props {
     open: boolean;
@@ -88,7 +89,7 @@
 
   let canSubmit = $derived(
     localAmount &&
-    amountBigInt > fee &&
+    (activeTab === "deposit" ? amountBigInt > fee : amountBigInt > 0n) &&
     amountBigInt <= currentBalance &&
     token
   );
@@ -140,12 +141,18 @@
     handleClose();
 
     const executeTransfer = async () => {
+      let result;
       if (tab === "deposit") {
         await checkAndApprove(canisterId, spot.canister_id);
-        return await spot.deposit(tid, amount);
+        result = await spot.deposit(tid, amount);
       } else {
-        return await spot.withdraw(tid, amount);
+        result = await spot.withdraw(tid, amount);
       }
+      // Refresh wallet balance for the affected token
+      if (user.principal) {
+        userPortfolio.checkBalance(canisterId, user.principal as any).catch(() => {});
+      }
+      return result;
     };
 
     try {
@@ -216,7 +223,7 @@
             label="Amount"
             {token}
             balance={currentBalance}
-            {fee}
+            fee={activeTab === "deposit" ? fee : 0n}
             value={localAmount}
             onValueChange={handleAmountChange}
             size="lg"

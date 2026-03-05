@@ -389,7 +389,7 @@ export class SpotMarket implements ISpotMarket {
    * User's preferred orderbook bucket size in basis points (10 = 0.1%)
    * Used for both platform polling and explicit orderbook fetches
    */
-  orderBookBucketSize = $state<number>(10);
+  orderBookBucketSize = $state<number>(1);
 
   // ============================================
   // Chart & Platform Data (Reactive)
@@ -1915,8 +1915,8 @@ export class SpotMarket implements ISpotMarket {
       if ('ok' in depositResult) {
         const success = depositResult.ok;
         // Refresh user data from backend to update entityStore
-        // This ensures entityStore has the latest balance
-        this.hydrateUserDataOnly().catch(() => {});
+        // Must await so callers see updated availableBase/availableQuote
+        await this.hydrateUserDataOnly().catch(() => {});
         return {
           credited: success.credited,
           newBalance: success.new_balance,
@@ -1959,8 +1959,8 @@ export class SpotMarket implements ISpotMarket {
       if ('ok' in withdrawResult) {
         const success = withdrawResult.ok;
         // Refresh user data from backend to update entityStore
-        // This ensures entityStore has the latest balance
-        this.hydrateUserDataOnly().catch(() => {});
+        // Must await so callers see updated availableBase/availableQuote
+        await this.hydrateUserDataOnly().catch(() => {});
         return {
           withdrawn: success.withdrawn,
           remaining: success.remaining,

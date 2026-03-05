@@ -198,6 +198,7 @@ type TransferActivityDetails =
             base;
             quote;
           };
+   token_price_usd_e12: nat64;
  };
 type TokenPairInt = 
  record {
@@ -460,7 +461,6 @@ type QuoteResult =
    min_output: nat;
    output_amount: nat;
    pool_swaps: vec PoolSwapSpec;
-   price_impact_bps: nat;
    reference_tick: Tick;
    total_fees: nat;
    venue_breakdown: vec VenueBreakdown;
@@ -1348,6 +1348,7 @@ type ActivityType =
    order_filled;
    order_modified;
    order_partial;
+   swap;
    transfer_in;
    transfer_out;
    trigger_cancelled;

@@ -10,6 +10,7 @@
   import { checkAndApprove } from "$lib/utils/allowance.utils";
   import { canisterIds } from "$lib/constants/app.constants";
   import { discoverToken } from "$lib/domain/orchestration/token-discovery";
+  import { toastState } from "$lib/state/portal/toast.state.svelte";
   import Step1TokenDetails from "$lib/components/create/token/Step1TokenDetails.svelte";
   import Step2InitialSupply from "$lib/components/create/token/Step2InitialSupply.svelte";
   import Step3Confirmation from "$lib/components/create/token/Step3Confirmation.svelte";
@@ -64,25 +65,38 @@
         controllers: [controllers],
         init_args: ledgerInitArgs
       };
-      const result = await api.registry.create_ledger(args);
 
-      if ("ok" in result) {
-        createdTokenCanisterId = result.ok.canister_id.toText();
+      const symbol = tokenCreation.tokenSymbol;
 
-        // Discover and add to created tokens list
-        const discovered = await discoverToken(createdTokenCanisterId);
-        if (discovered) {
-          createdTokens.addToken(discovered);
-        }
+      await toastState.show({
+        async: true,
+        maxTimeout: 60_000,
+        promise: api.registry!.create_ledger(args).then(async (result) => {
+          if ("err" in result) throw new Error(result.err.message || "Failed to create token");
 
-        isCreating = false;
-        currentStep = 4;
-      } else {
-        creationError = result.err.message || "Failed to create token. Please try again.";
-        isCreating = false;
-      }
+          createdTokenCanisterId = result.ok.canister_id.toText();
+
+          const discovered = await discoverToken(createdTokenCanisterId);
+          if (discovered) {
+            createdTokens.addToken(discovered);
+          }
+
+          currentStep = 4;
+          return result;
+        }),
+        messages: {
+          loading: `Launching ${symbol} ledger — this may take up to a minute...`,
+          success: `${symbol} token created successfully!`,
+          error: (error) => {
+            const errorMsg = error instanceof Error ? error.message : "Failed to create token";
+            creationError = errorMsg;
+            return errorMsg;
+          },
+        },
+      });
     } catch (error) {
       creationError = error instanceof Error ? error.message : "An unexpected error occurred";
+    } finally {
       isCreating = false;
     }
   }

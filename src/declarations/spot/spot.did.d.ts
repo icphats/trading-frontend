@@ -9,6 +9,7 @@ export type ActivityDetails = { 'trigger' : TriggerActivityDetails } |
   { 'transfer' : TransferActivityDetails };
 export type ActivityType = { 'trigger_fired' : null } |
   { 'transfer_out' : null } |
+  { 'swap' : null } |
   { 'trigger_cancelled' : null } |
   { 'order_cancelled' : null } |
   { 'transfer_in' : null } |
@@ -703,7 +704,6 @@ export type QuoteOrderResult = { 'ok' : QuoteResult } |
 export interface QuoteResult {
   'input_amount' : bigint,
   'reference_tick' : Tick,
-  'price_impact_bps' : bigint,
   'output_amount' : bigint,
   'total_fees' : bigint,
   'pool_swaps' : Array<PoolSwapSpec>,
@@ -1060,6 +1060,7 @@ export interface TransferActivityDetails {
     { 'outbound' : null },
   'token' : { 'base' : null } |
     { 'quote' : null },
+  'token_price_usd_e12' : bigint,
   'block_index' : [] | [bigint],
   'ledger_principal' : Principal,
   'ledger_fee' : bigint,

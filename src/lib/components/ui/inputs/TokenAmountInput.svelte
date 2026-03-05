@@ -504,7 +504,7 @@
   }
 
   .deposit-hint-link {
-    color: var(--ring);
+    color: var(--color-blue);
     font-weight: 500;
   }
 

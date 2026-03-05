@@ -62,6 +62,7 @@
 
       await toastState.show({
         async: true,
+        maxTimeout: 300_000,
         promise: createMarket({
           base: ledgerPrincipal,
           quote: quotePrincipal,
@@ -70,7 +71,7 @@
           return r;
         }),
         messages: {
-          loading: `Creating ${tokenSymbol}/${quoteSymbol} market...`,
+          loading: `Setting up ${tokenSymbol}/${quoteSymbol} market — this may take a few minutes...`,
           success: (result) => {
             const metadata: SpotMarketMetadata = result.ok;
             marketCreation.marketCanisterId = metadata.canister_id.toString();

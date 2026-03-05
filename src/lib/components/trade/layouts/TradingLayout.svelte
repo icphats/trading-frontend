@@ -297,10 +297,8 @@
   .right-column {
     grid-column: 4; /* Fourth column (second sidebar) */
     grid-row: 1 / 4; /* Spans all rows */
-    align-self: start;
     min-width: var(--sidebar-width);
     max-width: var(--sidebar-width);
-    max-height: 100vh;
     overflow-y: auto;
   }
 

@@ -1,6 +1,5 @@
 <script lang="ts">
   import Button from "$lib/components/ui/Button.svelte";
-  import ToggleGroup from "$lib/components/ui/ToggleGroup.svelte";
   import { TradePriceInput, TokenAmountInput } from "$lib/components/ui/inputs";
   import QuoteResult from "$lib/components/trade/shared/QuoteResult.svelte";
   import ConfirmationModal from "$lib/components/portal/modals/specific/ConfirmationModal.svelte";
@@ -70,7 +69,6 @@
 
   let limitTick = $state<number | null>(null);
   let isSubmitting = $state(false);
-  let timeInForce = $state<"GTC" | "IOC">("GTC");
 
   // UI State
   let showConfirmation = $state(false);
@@ -127,7 +125,6 @@
       quoteReferenceTick = null;
       quoteError = null;
       isCalculating = false;
-      timeInForce = "GTC";
 
       // Set limit tick based on new side
       if (side === "Buy" && bestAskTick !== undefined) {
@@ -446,15 +443,22 @@
     // Convert side
     const sideVariant: Side = side === "Buy" ? { buy: null } : { sell: null };
 
-    // Step 1: Get quote to obtain pool_swaps + book_order
+    // Step 1: Get quote for optimal venue routing (pools + crossing book orders)
     const orderQuote = await spot.quoteOrder(sideVariant, validation.asBigInt, limitTick);
 
-    // Step 2: Build specs — override IOC based on time-in-force selection
-    const isIOC = timeInForce === "IOC";
-    const bookOrders = orderQuote.book_order.length > 0
-      ? [{ ...orderQuote.book_order[0]!, immediate_or_cancel: isIOC }]
-      : [];
+    // Step 2: Build specs
+    // Pool swaps from quote routing (immediate fills via AMM)
     const poolSwaps = orderQuote.pool_swaps;
+
+    // Book order = user's full input minus pool allocations.
+    // The cascade matches against existing book orders; the unfilled remainder
+    // rests on the book (GTC). Cascade matches against existing orders first.
+    const poolInputTotal = poolSwaps.reduce((sum, s) => sum + s.input_amount, 0n);
+    const bookInputAmount = validation.asBigInt - poolInputTotal;
+
+    const bookOrders = bookInputAmount > 0n
+      ? [{ side: sideVariant, input_amount: bookInputAmount, limit_tick: limitTick, immediate_or_cancel: false }]
+      : [];
 
     // Step 3: Create order via unified endpoint
     const result = await spot.createOrders([], bookOrders, poolSwaps);
@@ -548,9 +552,6 @@
       { label: "Amount", value: `${localAmount} ${base.displaySymbol}` },
       { label: "Price", value: `${priceStr} ${quote.displaySymbol}` }
     ];
-    if (timeInForce === "IOC") {
-      rows.push({ label: "Time in Force", value: "IOC" });
-    }
     const priceImpact = (inputUsdValue && outputUsdValue && inputUsdValue > 0)
       ? (() => { const p = usdImpactPercent(inputUsdValue, outputUsdValue); return Math.abs(p) < 0.01 ? '< 0.01%' : `${Math.abs(p).toFixed(2)}%`; })()
       : undefined;
@@ -648,20 +649,10 @@
         })()}
       />
 
-      <!-- Time-in-Force Toggle -->
+      <!-- Time in Force (limit orders are always GTC) -->
       <div class="flex items-center justify-between">
         <span class="text-xs text-muted-foreground">Time in Force</span>
-        <ToggleGroup
-          options={[
-            { value: 'GTC', label: 'GTC', variant: 'purple' },
-            { value: 'IOC', label: 'IOC', variant: 'purple' },
-          ]}
-          value={timeInForce}
-          onValueChange={(val) => timeInForce = val as "GTC" | "IOC"}
-          size="sm"
-          disabled={isSubmitting}
-          ariaLabel="Time in force"
-        />
+        <span class="text-xs font-medium px-2 py-0.5 rounded bg-green-500/15 text-green-400">GTC</span>
       </div>
 
       <!-- Action Button (per canon 7.1 - all conditions required) -->

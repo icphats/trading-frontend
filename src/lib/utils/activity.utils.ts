@@ -13,7 +13,6 @@ import type {
   TriggerActivityDetails,
   LiquidityActivityDetails,
   TransferActivityDetails,
-  PenaltyActivityDetails,
   PositionTransferActivityDetails,
 } from '$lib/actors/services/spot.service';
 import { getTriggerLabel } from '$lib/utils/trigger.utils';
@@ -23,7 +22,7 @@ import { tickToPrice } from '$lib/domain/markets/utils/math';
 // TYPES
 // ============================================================================
 
-export type ActivityCategory = 'order' | 'trigger' | 'lp' | 'transfer' | 'penalty';
+export type ActivityCategory = 'order' | 'trigger' | 'lp' | 'transfer';
 
 export interface NormalizedActivity {
   id: bigint;
@@ -53,9 +52,11 @@ export interface TokenContext {
  * Maps ActivityType variant to a short display label
  */
 export function getActivityTypeLabel(type: ActivityType): string {
+  if ('swap' in type) return 'Swap';
   if ('order_filled' in type) return 'Filled';
   if ('order_partial' in type) return 'Partial';
   if ('order_cancelled' in type) return 'Cancelled';
+  if ('order_modified' in type) return 'Modified';
   if ('trigger_fired' in type) return 'Triggered';
   if ('trigger_cancelled' in type) return 'Cancelled';
   if ('trigger_failed' in type) return 'Failed';
@@ -65,13 +66,9 @@ export function getActivityTypeLabel(type: ActivityType): string {
   if ('lp_closed' in type) return 'LP Close';
   if ('lp_fees_collected' in type) return 'Fees';
   if ('lp_locked' in type) return 'LP Lock';
+  if ('lp_transferred' in type) return 'LP Transfer';
   if ('transfer_in' in type) return 'Deposit';
   if ('transfer_out' in type) return 'Withdraw';
-  if ('transfer_in_failed' in type) return 'Deposit Failed';
-  if ('transfer_out_failed' in type) return 'Withdraw Failed';
-  if ('circuit_breaker_penalty' in type) return 'Penalty';
-  if ('order_modified' in type) return 'Modified';
-  if ('lp_transferred' in type) return 'LP Transfer';
   return 'Unknown';
 }
 
@@ -83,9 +80,11 @@ export function getActivityTypeLabel(type: ActivityType): string {
  * Maps ActivityType variant to a category for color coding
  */
 export function getActivityCategory(type: ActivityType): ActivityCategory {
+  if ('swap' in type) return 'order';
   if ('order_filled' in type) return 'order';
   if ('order_partial' in type) return 'order';
   if ('order_cancelled' in type) return 'order';
+  if ('order_modified' in type) return 'order';
   if ('trigger_fired' in type) return 'trigger';
   if ('trigger_cancelled' in type) return 'trigger';
   if ('trigger_failed' in type) return 'trigger';
@@ -95,13 +94,9 @@ export function getActivityCategory(type: ActivityType): ActivityCategory {
   if ('lp_closed' in type) return 'lp';
   if ('lp_fees_collected' in type) return 'lp';
   if ('lp_locked' in type) return 'lp';
+  if ('lp_transferred' in type) return 'lp';
   if ('transfer_in' in type) return 'transfer';
   if ('transfer_out' in type) return 'transfer';
-  if ('transfer_in_failed' in type) return 'transfer';
-  if ('transfer_out_failed' in type) return 'transfer';
-  if ('circuit_breaker_penalty' in type) return 'penalty';
-  if ('order_modified' in type) return 'order';
-  if ('lp_transferred' in type) return 'lp';
   return 'order';
 }
 
@@ -118,14 +113,13 @@ export function getActivityDescription(
 ): string {
   const { details } = activity;
 
-  // Order activities
+  // Order activities (including swap)
   if ('order' in details) {
     const order = details.order;
     const side = 'buy' in order.side ? 'Buy' : 'Sell';
-    const isModified = 'order_modified' in activity.activity_type;
-    return isModified
-      ? `${side} #${order.order_id} modified`
-      : `${side} #${order.order_id}`;
+    if ('swap' in activity.activity_type) return `${side} swap`;
+    if ('order_modified' in activity.activity_type) return `${side} #${order.order_id} modified`;
+    return `${side} #${order.order_id}`;
   }
 
   // Trigger activities
@@ -146,13 +140,6 @@ export function getActivityDescription(
     const transfer = details.transfer;
     const tokenSymbol = 'base' in transfer.token ? tokens.baseSymbol : tokens.quoteSymbol;
     return tokenSymbol;
-  }
-
-  // Penalty activities
-  if ('penalty' in details) {
-    const penalty = details.penalty;
-    const tokenSymbol = 'base' in penalty.token ? tokens.baseSymbol : tokens.quoteSymbol;
-    return `${tokenSymbol} penalty`;
   }
 
   // Position transfer activities
@@ -210,14 +197,6 @@ export function getActivityAmount(
     return {
       amount: transfer.amount,
       token: 'base' in transfer.token ? 'base' : 'quote',
-    };
-  }
-
-  if ('penalty' in details) {
-    const penalty = details.penalty;
-    return {
-      amount: penalty.penalty_amount,
-      token: 'base' in penalty.token ? 'base' : 'quote',
     };
   }
 
@@ -289,16 +268,9 @@ export function computeActivityUsdValue(activity: ActivityView, tokens: TokenCon
 
   if ('transfer' in details) {
     const transfer = details.transfer;
-    if ('quote' in transfer.token) return quoteToUsd(transfer.amount);
-    // Base transfer — no tick available, can't convert
-    return 0;
-  }
-
-  if ('penalty' in details) {
-    const penalty = details.penalty;
-    if ('quote' in penalty.token) return quoteToUsd(penalty.penalty_amount);
-    // Base penalty — use tick_before as reference price
-    return baseToUsd(penalty.penalty_amount, penalty.tick_before);
+    const tokenDecimals = 'base' in transfer.token ? tokens.baseDecimals : tokens.quoteDecimals;
+    const scale = 10 ** tokenDecimals;
+    return Number(transfer.amount) * Number(transfer.token_price_usd_e12) / (scale * E12);
   }
 
   return 0;
@@ -371,16 +343,6 @@ export function getLiquidityDetails(activity: ActivityView): LiquidityActivityDe
 export function getTransferDetails(activity: ActivityView): TransferActivityDetails | null {
   if ('transfer' in activity.details) {
     return activity.details.transfer;
-  }
-  return null;
-}
-
-/**
- * Extracts penalty details from activity
- */
-export function getPenaltyDetails(activity: ActivityView): PenaltyActivityDetails | null {
-  if ('penalty' in activity.details) {
-    return activity.details.penalty;
   }
   return null;
 }

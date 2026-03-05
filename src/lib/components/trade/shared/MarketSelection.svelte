@@ -10,6 +10,7 @@
    * - Uses entityStore for token lookups (symbols and logos)
    */
 
+  import { browser } from "$app/environment";
   import Logo from "$lib/components/ui/Logo.svelte";
   import TokenPairLogo from "$lib/components/ui/TokenPairLogo.svelte";
   import { TableCell, HeaderCell } from "$lib/components/ui/table";
@@ -30,13 +31,27 @@
   import { bpsToPercent } from "$lib/domain/markets/utils/math";
   import { ticker } from "$lib/domain/orchestration/ticker-action";
   import { createSearchState } from "$lib/domain/search";
+  import ResponsiveDrawer from "$lib/components/portal/drawers/shared/ResponsiveDrawer.svelte";
 
   // ============================================
   // UI State
   // ============================================
 
-  // Dropdown visibility
+  // Mobile detection
+  const MOBILE_BREAKPOINT = 768;
+  let innerWidth = $state(browser ? window.innerWidth : 1024);
+  let isMobile = $derived(innerWidth < MOBILE_BREAKPOINT);
+
+  $effect(() => {
+    if (!browser) return;
+    const onResize = () => { innerWidth = window.innerWidth; };
+    window.addEventListener("resize", onResize);
+    return () => window.removeEventListener("resize", onResize);
+  });
+
+  // Dropdown visibility (desktop) / Drawer visibility (mobile)
   let showMarketDropdown = $state(false);
+  let drawerOpen = $state(false);
   let buttonRef = $state<HTMLButtonElement | null>(null);
   let dropdownPosition = $state({ top: 0, left: 0, width: 0 });
 
@@ -332,6 +347,7 @@
       await goto(url);
 
       showMarketDropdown = false;
+      drawerOpen = false;
       search.reset();
       marketDataPrefetched = false;
       unlockScroll();
@@ -380,6 +396,15 @@
   // ============================================
 
   function toggleDropdown() {
+    if (isMobile) {
+      drawerOpen = !drawerOpen;
+      if (!drawerOpen) {
+        search.reset();
+        marketDataPrefetched = false;
+      }
+      return;
+    }
+
     if (!showMarketDropdown) {
       updateDropdownPosition();
       lockScroll();
@@ -393,6 +418,12 @@
       search.reset();
       marketDataPrefetched = false;
     }
+  }
+
+  function closeDrawer() {
+    drawerOpen = false;
+    search.reset();
+    marketDataPrefetched = false;
   }
 
   function updateDropdownPosition() {
@@ -495,8 +526,8 @@
   </div>
 {/if}
 
-<!-- Dropdown portal - rendered at body level to escape overflow constraints -->
-{#if showMarketDropdown}
+<!-- Desktop: Dropdown portal -->
+{#if showMarketDropdown && !isMobile}
   <div
     class="market-dropdown"
     style="position: fixed;
@@ -641,6 +672,102 @@
     </div>
   </div>
 {/if}
+
+<!-- Mobile: Market selection drawer (bottom sheet) -->
+<ResponsiveDrawer open={drawerOpen} onClose={closeDrawer} bottomSheetMaxHeight="85dvh">
+  <div class="drawer-market-list">
+    <!-- Search -->
+    <div class="search-section">
+      <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="search-icon">
+        <circle cx="11" cy="11" r="8"></circle>
+        <path d="m21 21-4.35-4.35"></path>
+      </svg>
+      <input
+        bind:value={search.query}
+        type="text"
+        class="search-input"
+        placeholder="Search markets..."
+      />
+      {#if search.query}
+        <button class="clear-button" onclick={() => (search.query = "")} aria-label="Clear search">
+          <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+        </button>
+      {/if}
+    </div>
+
+    <!-- Mobile market rows -->
+    <div class="drawer-results">
+      {#if isLoadingMarkets}
+        <div class="loading-state">
+          <p>Loading markets...</p>
+        </div>
+      {:else if filteredMarkets.length === 0}
+        <div class="empty-state">
+          {#if search.query}
+            <p>No results found for "{search.query}"</p>
+            <p class="hint">Try a different search term</p>
+          {:else}
+            <p>No markets available</p>
+          {/if}
+        </div>
+      {:else}
+        {#each filteredMarkets as market}
+          {@const isPositive = market.priceChange24h >= 0}
+          {@const isFavorite = userPreferences.isFavoriteMarket(market.tradingCanisterId, market.quoteToken)}
+          {@const isActive = marketSelection.getActiveMarket()?.canister_id === market.tradingCanisterId}
+          <div
+            role="button"
+            tabindex="0"
+            class="mobile-market-row"
+            class:active={isActive}
+            use:ticker={market.tradingCanisterId}
+            onclick={() => selectMarket(market.tradingCanisterId, market.baseSymbol, market.quoteSymbol)}
+            onkeydown={(e) => e.key === 'Enter' && selectMarket(market.tradingCanisterId, market.baseSymbol, market.quoteSymbol)}
+          >
+            <div class="mobile-market-left">
+              <TokenPairLogo
+                baseLogo={market.baseLogo}
+                quoteLogo={market.quoteLogo}
+                baseSymbol={market.baseSymbol}
+                quoteSymbol={market.quoteSymbol}
+                size="xxs"
+              />
+              <div class="mobile-market-info">
+                <span class="pair-symbol">{market.pairSymbol}</span>
+                <span class="mobile-market-vol">{formatMarketVolume(market.volume24h)}</span>
+              </div>
+            </div>
+            <div class="mobile-market-right">
+              <span class="mobile-market-price">{formatMarketPrice(market.priceUsd)}</span>
+              <span class="price-change {isPositive ? 'positive' : 'negative'}">
+                {formatSignedPercent(market.priceChange24h)}
+              </span>
+            </div>
+            <button
+              class="fav-btn"
+              class:active={isFavorite}
+              onclick={(e) => toggleFavorite(market.tradingCanisterId, market.quoteToken, e)}
+              aria-label={isFavorite ? "Remove from favorites" : "Add to favorites"}
+            >
+              {#if isFavorite}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              {:else}
+                <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                  <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+                </svg>
+              {/if}
+            </button>
+          </div>
+        {/each}
+      {/if}
+    </div>
+  </div>
+</ResponsiveDrawer>
 
 <style>
   /* ============================================
@@ -938,5 +1065,84 @@
       opacity: 1;
       transform: translateY(0);
     }
+  }
+
+  /* ============================================
+     Mobile Drawer Market List
+     ============================================ */
+
+  .drawer-market-list {
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+  }
+
+  .drawer-results {
+    flex: 1;
+    min-height: 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .mobile-market-row {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+    padding: 12px 16px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid oklch(from var(--border) l c h / 0.3);
+    cursor: pointer;
+    text-align: left;
+    font-family: var(--font-sans);
+    transition: background-color 0ms;
+  }
+
+  .mobile-market-row:last-child {
+    border-bottom: none;
+  }
+
+  .mobile-market-row:active {
+    background: var(--hover-overlay-strong);
+  }
+
+  .mobile-market-row.active {
+    background: var(--hover-overlay-strong);
+    border-left: 2px solid var(--primary);
+  }
+
+  .mobile-market-left {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex: 1;
+    min-width: 0;
+  }
+
+  .mobile-market-info {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    min-width: 0;
+  }
+
+  .mobile-market-vol {
+    font-size: 11px;
+    color: var(--muted-foreground);
+  }
+
+  .mobile-market-right {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    gap: 2px;
+    flex-shrink: 0;
+  }
+
+  .mobile-market-price {
+    font-size: 13px;
+    font-weight: 600;
+    color: var(--foreground);
   }
 </style>

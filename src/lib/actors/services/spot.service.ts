@@ -87,7 +87,6 @@ import type {
   TriggerActivityDetails,
   LiquidityActivityDetails,
   TransferActivityDetails,
-  PenaltyActivityDetails,
   PositionTransferActivityDetails,
 } from 'declarations/spot/spot.did';
 
@@ -193,7 +192,6 @@ export type {
   TriggerActivityDetails,
   LiquidityActivityDetails,
   TransferActivityDetails,
-  PenaltyActivityDetails,
   PositionTransferActivityDetails,
 
   // Config types

@@ -2,7 +2,7 @@
   import { goto } from "$app/navigation";
   import ButtonV2 from "$lib/components/ui/ButtonV2.svelte";
   import { tokenCreation } from "$lib/domain/tokens";
-  import { validateImageFile, validateImageDimensions } from "$lib/utils/image.utils";
+  import { validateImageFile, validateImageDimensions, cropToSquare } from "$lib/utils/image.utils";
   import { toastState } from "$lib/state/portal/toast.state.svelte";
 
   interface Props {
@@ -32,7 +32,7 @@
       return;
     }
 
-    // Validate square and size range (48–256px)
+    // Validate near-square and size range (48–256px)
     const dimValidation = await validateImageDimensions(file);
     if (!dimValidation.valid) {
       imageError = dimValidation.error || "Invalid dimensions";
@@ -41,13 +41,8 @@
     }
 
     try {
-      // Convert to base64 directly (no resize needed — dimensions are validated)
-      const reader = new FileReader();
-      const base64 = await new Promise<string>((resolve, reject) => {
-        reader.onload = (e) => resolve(e.target?.result as string);
-        reader.onerror = () => reject(new Error("Failed to read file"));
-        reader.readAsDataURL(file);
-      });
+      // Center-crop to square and convert to base64
+      const base64 = await cropToSquare(file);
 
       tokenCreation.logoBase64 = base64;
     } catch (error) {
@@ -104,7 +99,7 @@
         {#if imageError}
           <p class="text-xs text-red-500 mt-1">{imageError}</p>
         {:else}
-          <p class="text-xs text-[color:var(--muted-foreground)] mt-1">PNG, square, 48–256px, max 100KB</p>
+          <p class="text-xs text-[color:var(--muted-foreground)] mt-1">PNG, near-square, 48–256px, max 100KB</p>
         {/if}
       </div>
 

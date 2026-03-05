@@ -587,12 +587,12 @@
   .tokens-grid {
     display: flex;
     flex-direction: column;
-    min-width: 360px;
+    min-width: 480px;
   }
 
   .tokens-row {
     display: grid;
-    grid-template-columns: minmax(6rem, 1fr) minmax(7rem, 1fr) minmax(7rem, 1fr);
+    grid-template-columns: minmax(7rem, 1fr) minmax(9rem, 1fr) minmax(9rem, 1fr);
     gap: 0.75rem;
     padding: 0.375rem 0.75rem;
     font-size: 0.75rem;
@@ -606,14 +606,6 @@
 
   .tokens-row:not(:last-child) {
     border-bottom: 1px solid var(--border);
-  }
-
-  .tokens-row:nth-child(even):not(.tokens-header-row):not(.bs-section-row) {
-    background: oklch(1 0 0 / 0.03);
-  }
-
-  :global(.dark) .tokens-row:nth-child(even):not(.tokens-header-row):not(.bs-section-row) {
-    background: oklch(1 0 0 / 0.02);
   }
 
   .tokens-header-row {

@@ -825,6 +825,7 @@ export const idlFactory = ({ IDL }) => {
   const ActivityType = IDL.Variant({
     'trigger_fired' : IDL.Null,
     'transfer_out' : IDL.Null,
+    'swap' : IDL.Null,
     'trigger_cancelled' : IDL.Null,
     'order_cancelled' : IDL.Null,
     'transfer_in' : IDL.Null,
@@ -884,6 +885,7 @@ export const idlFactory = ({ IDL }) => {
   const TransferActivityDetails = IDL.Record({
     'direction' : IDL.Variant({ 'inbound' : IDL.Null, 'outbound' : IDL.Null }),
     'token' : IDL.Variant({ 'base' : IDL.Null, 'quote' : IDL.Null }),
+    'token_price_usd_e12' : IDL.Nat64,
     'block_index' : IDL.Opt(IDL.Nat64),
     'ledger_principal' : IDL.Principal,
     'ledger_fee' : IDL.Nat,
@@ -950,7 +952,6 @@ export const idlFactory = ({ IDL }) => {
   const QuoteResult = IDL.Record({
     'input_amount' : IDL.Nat,
     'reference_tick' : Tick,
-    'price_impact_bps' : IDL.Nat,
     'output_amount' : IDL.Nat,
     'total_fees' : IDL.Nat,
     'pool_swaps' : IDL.Vec(PoolSwapSpec),
