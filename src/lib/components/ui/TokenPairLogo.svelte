@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { browser } from "$app/environment";
   import Logo from "./Logo.svelte";
   import type { LogoSize } from "$lib/types/components";
 
@@ -13,6 +14,8 @@
 
   let { baseLogo, quoteLogo, baseSymbol, quoteSymbol, size = "xs", ring = false }: Props = $props();
 
+  const isMobile = browser && window.innerWidth < 768;
+
   // Size mapping for proper overlap
   const sizeConfig = {
     xxxs: { container: 24, logo: 16, offset: 10 },
@@ -24,7 +27,17 @@
     xl: { container: 92, logo: 72, offset: 44 }
   };
 
-  const config = $derived(sizeConfig[size]);
+  const sizeConfigMobile = {
+    xxxs: { container: 24, logo: 16, offset: 10 },
+    xxs: { container: 28, logo: 20, offset: 12 },
+    xs: { container: 33, logo: 22, offset: 15 },
+    sm: { container: 39, logo: 28, offset: 18 },
+    md: { container: 50, logo: 34, offset: 24 },
+    lg: { container: 64, logo: 46, offset: 30 },
+    xl: { container: 78, logo: 60, offset: 38 }
+  };
+
+  const config = $derived(isMobile ? sizeConfigMobile[size] : sizeConfig[size]);
 </script>
 
 <div

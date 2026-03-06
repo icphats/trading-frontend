@@ -19,6 +19,7 @@
    * ```
    */
 
+  import { browser } from "$app/environment";
   import { fly } from "svelte/transition";
   import { cubicOut, quintOut } from "svelte/easing";
 
@@ -62,6 +63,24 @@
 
   // Calculate drag offset (only allow dragging down, not up)
   let dragOffset = $derived(isDragging ? Math.max(0, dragCurrentY - dragStartY) : 0);
+
+  // Track visual viewport height to adjust for virtual keyboard
+  let viewportHeight = $state(browser ? (window.visualViewport?.height ?? window.innerHeight) : 0);
+
+  $effect(() => {
+    if (!browser || !open) return;
+    const vv = window.visualViewport;
+    if (!vv) return;
+
+    const update = () => { viewportHeight = vv.height; };
+    update();
+    vv.addEventListener('resize', update);
+    return () => vv.removeEventListener('resize', update);
+  });
+
+  let effectiveMaxHeight = $derived(
+    viewportHeight > 0 ? `${viewportHeight * 0.9}px` : maxHeight
+  );
 
   // ============================================
   // Drag-to-dismiss handlers
@@ -139,7 +158,7 @@
     bind:this={sheetEl}
     class="bottom-sheet {className}"
     class:dragging={isDragging}
-    style:max-height={maxHeight}
+    style:max-height={effectiveMaxHeight}
     style:transform={dragOffset > 0 ? `translateY(${dragOffset}px)` : undefined}
     role="dialog"
     aria-modal="true"

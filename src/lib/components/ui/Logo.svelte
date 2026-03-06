@@ -1,8 +1,9 @@
 <script lang="ts">
   import { isNullish, nonNullish } from "@dfinity/utils";
+  import { browser } from "$app/environment";
   import IconRandom from "$lib/components/ui/IconRandom.svelte";
   import Img from "$lib/components/ui/Img.svelte";
-  import { logoSizes } from "$lib/constants/components.constants";
+  import { logoSizes, logoSizesMobile } from "$lib/constants/components.constants";
   import type { LogoSize } from "$lib/types/components";
 
   interface Props {
@@ -17,7 +18,8 @@
 
   let { src, alt = "", size = "xxs", color = "off-white", ring = false, circle = false, testId }: Props = $props();
 
-  let sizePx = $derived(logoSizes[size]);
+  const isMobile = browser && window.innerWidth < 768;
+  let sizePx = $derived(isMobile ? logoSizesMobile[size] : logoSizes[size]);
 
   let loadingError: boolean | undefined = $state();
   let isReady = $derived((nonNullish(src) && nonNullish(loadingError)) || isNullish(src));
