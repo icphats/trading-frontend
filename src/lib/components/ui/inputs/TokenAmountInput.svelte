@@ -37,7 +37,9 @@
     showUsdValue?: boolean;
     /** User's balance for this token (from userPortfolio) */
     balance?: bigint;
-    /** Transfer fee to deduct from max/presets (ICRC-1 ledger fee) */
+    /** Transfer fee to deduct from max/presets (ICRC-1 ledger fee).
+     *  Defaults to token.fee when not provided. Pass 0n to skip fee deduction
+     *  (e.g. when the canister handles the fee internally). */
     fee?: bigint;
     /** Callback when token badge is clicked (enables clickable token pill) */
     onTokenClick?: () => void;
@@ -63,11 +65,14 @@
     showPresets,
     showUsdValue,
     balance = 0n,
-    fee = 0n,
+    fee: feeProp,
     onTokenClick,
     onDepositClick,
     usdOverride,
   }: Props = $props();
+
+  // Fee: use explicit prop if provided, otherwise default to token's ledger fee
+  let fee = $derived(feeProp !== undefined ? feeProp : (token?.fee ?? 0n));
 
   // Smart defaults based on size and readonly
   let shouldShowBalance = $derived(showBalance ?? (size !== 'sm'));
