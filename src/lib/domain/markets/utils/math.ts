@@ -633,3 +633,40 @@ export function calculateSqrtPriceLimit(
 
     return limitPrice;
 }
+
+// ============================================================================
+// USD MINIMUM VALIDATION
+// ============================================================================
+
+/** Minimum order value in USD */
+export const MIN_ORDER_USD = 1;
+
+/**
+ * Compute the USD value of a token amount string using the token's oracle price.
+ *
+ * @param amount - Human-readable amount string (e.g. "0.5")
+ * @param priceUsd - Token oracle price in E12 precision (from NormalizedToken.priceUsd)
+ * @returns USD value as number, or null if price data unavailable / amount invalid
+ */
+export function amountToUsd(amount: string, priceUsd: bigint | null | undefined): number | null {
+    if (!priceUsd || priceUsd === 0n) return null;
+    const parsed = parseFloat(amount);
+    if (!parsed || parsed <= 0) return null;
+    return parsed * (Number(priceUsd) / 1e12);
+}
+
+/**
+ * Check whether an amount is below the minimum USD threshold.
+ * Returns an error string if below, or undefined if valid / not checkable.
+ */
+export function belowMinUsdError(
+    amount: string,
+    priceUsd: bigint | null | undefined,
+    minUsd: number = MIN_ORDER_USD,
+): string | undefined {
+    if (!amount || amount.trim() === '') return undefined; // no input yet
+    const usd = amountToUsd(amount, priceUsd);
+    if (usd === null) return undefined; // can't validate without price
+    if (usd < minUsd) return `Minimum order $${minUsd.toFixed(2)}`;
+    return undefined;
+}

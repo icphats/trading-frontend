@@ -2,7 +2,7 @@
   import type { SpotMarket } from "$lib/domain/markets/state/spot-market.svelte";
   import type { OrderView, Side, QuoteResult } from "$lib/actors/services/spot.service";
   import type { VenueBreakdown } from "declarations/spot/spot.did";
-  import { tickToPrice, priceToTick, bigIntToString, tickImpactPercent } from "$lib/domain/markets/utils";
+  import { tickToPrice, priceToTick, bigIntToString, tickImpactPercent, showFailedItemToasts } from "$lib/domain/markets/utils";
   import { formatToken, formatSigFig, formatTimestamp } from "$lib/utils/format.utils";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
   import { userPreferences } from "$lib/domain/user";
@@ -286,7 +286,7 @@
         promise: buildCreateOrdersFromQuote(quote, order.order_id),
         messages: {
           loading: `Converting order #${order.order_id} to market...`,
-          success: () => `Order #${order.order_id} executed at market`,
+          success: (result) => { showFailedItemToasts(result); return `Order #${order.order_id} executed at market`; },
           error: (err: unknown) => err instanceof Error ? err.message : 'Failed to execute order',
         },
         data: {
@@ -467,7 +467,7 @@
     onSuccess={handleSubModalSuccess}
     toastMessages={{
       loading: `Converting order #${selectedOrder!.order_id} to market...`,
-      success: () => `Order #${selectedOrder!.order_id} executed at market`,
+      success: (result) => { showFailedItemToasts(result); return `Order #${selectedOrder!.order_id} executed at market`; },
       error: (err) => err instanceof Error ? err.message : 'Failed to execute order',
     }}
   />

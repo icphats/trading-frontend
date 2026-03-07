@@ -14,6 +14,8 @@
     bigIntToString,
     computeOutputUsd,
     usdImpactPercent,
+    belowMinUsdError,
+    orderResultSuccessMessage,
   } from "$lib/domain/markets/utils";
   import { toastState } from "$lib/state/portal/toast.state.svelte";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
@@ -267,16 +269,17 @@
     return tickToPrice(limitTick, spot.baseTokenDecimals, spot.quoteTokenDecimals);
   });
 
-  // Input USD: input amount × input token's oracle price
+  // Input USD: actual consumed input from quote × input token's oracle price
+  // Uses quoteResult.input_amount (filled portion only) to avoid false price impact on partial fills
   let inputUsdValue = $derived.by(() => {
-    if (!base || !quote) return null;
+    if (!base || !quote || !quoteResult) return null;
     const inputToken = side === "Buy" ? quote : base;
     const inputPriceUsd = inputToken.priceUsd;
     if (!inputPriceUsd || inputPriceUsd === 0n) return null;
     const oracleUsd = Number(inputPriceUsd) / 1e12;
-    const inputValue = side === "Buy" ? localTotal : localAmount;
-    const inputFloat = parseFloat(inputValue);
-    if (!inputFloat || inputFloat <= 0) return null;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
+    const inputFloat = Number(quoteResult.input_amount) / (10 ** inputDecimals);
+    if (inputFloat <= 0) return null;
     return inputFloat * oracleUsd;
   });
 
@@ -290,6 +293,13 @@
     const oracleUsd = Number(inputPriceUsd) / 1e12;
     const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
     return computeOutputUsd(quoteResult.output_amount, outputDecimals, quoteResult.reference_tick, base.decimals, quote.decimals, side, oracleUsd);
+  });
+
+  // Minimum USD validation
+  let minUsdError = $derived.by(() => {
+    const inputValue = side === "Buy" ? localTotal : localAmount;
+    const inputToken = side === "Buy" ? quote : base;
+    return belowMinUsdError(inputValue, inputToken?.priceUsd);
   });
 
   // Calculate total from amount when amount changes (only when editing amount)
@@ -463,17 +473,11 @@
     // Step 3: Create order via unified endpoint
     const result = await spot.createOrders([], bookOrders, poolSwaps);
 
-    // Extract order_id from first order result for toast
-    const firstOrder = result.order_results[0];
-    const order_id = firstOrder && 'ok' in firstOrder.result
-      ? firstOrder.result.ok.order_id
-      : 0n;
-
     // Reset form on success only (per canon anti-pattern: don't clear on failure)
     localAmount = "";
     localTotal = "";
 
-    return { order_id };
+    return result;
   }
 
   async function executeLimitOrderWithToast() {
@@ -485,7 +489,7 @@
         promise: executeLimitOrder(),
         messages: {
           loading: `Placing ${side.toLowerCase()} limit order...`,
-          success: (result) => `Order #${result.order_id} placed`,
+          success: (result) => orderResultSuccessMessage(result, 'limit'),
           error: (err: any) => err?.message || 'Failed to place order'
         },
         data: {
@@ -601,6 +605,7 @@
         value={localAmount}
         onValueChange={handleAmountChange}
         disabled={isSubmitting}
+        error={side === "Sell" ? minUsdError : undefined}
         size="sm"
         showBalance
         onDepositClick={side === "Sell" ? openDepositBase : undefined}
@@ -614,6 +619,7 @@
         value={localTotal}
         onValueChange={handleTotalChange}
         disabled={isSubmitting}
+        error={side === "Buy" ? minUsdError : undefined}
         showPresets={false}
         size="sm"
         showBalance
@@ -667,7 +673,8 @@
           limitTick === null ||
           !localAmount ||
           localAmount.trim() === "" ||
-          (side === "Buy" && (!localTotal || localTotal.trim() === ""))
+          (side === "Buy" && (!localTotal || localTotal.trim() === "")) ||
+          !!minUsdError
         }
         onclick={handleSubmitClick}
       >
@@ -687,7 +694,7 @@
       onConfirm={executeLimitOrder}
       toastMessages={{
         loading: `Placing ${side.toLowerCase()} limit order...`,
-        success: (result) => `Order #${result.order_id} placed`,
+        success: (result) => orderResultSuccessMessage(result, 'limit'),
         error: (err) => err instanceof Error ? err.message : "Failed to place order"
       }}
     />

@@ -4,22 +4,48 @@
   }
 
   let { text }: Props = $props();
+
+  let visible = $state(false);
+  let bubbleStyle = $state('');
+  let iconEl: HTMLButtonElement | undefined = $state();
+
+  function show() {
+    if (!iconEl) return;
+    const rect = iconEl.getBoundingClientRect();
+    const x = rect.left + rect.width / 2;
+    const y = rect.top - 8;
+    bubbleStyle = `left:${x}px;top:${y}px;`;
+    visible = true;
+  }
+
+  function hide() {
+    visible = false;
+  }
 </script>
 
 <span class="info-tip">
-  <button class="info-icon" aria-label="Info">
+  <button
+    class="info-icon"
+    aria-label="Info"
+    bind:this={iconEl}
+    onmouseenter={show}
+    onmouseleave={hide}
+    onfocus={show}
+    onblur={hide}
+  >
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
       <circle cx="12" cy="12" r="10" />
       <path d="M12 16v-4" />
       <path d="M12 8h.01" />
     </svg>
   </button>
-  <span class="info-bubble" role="tooltip">{text}</span>
+  {#if visible}
+    <span class="info-bubble" role="tooltip" style={bubbleStyle}>{text}</span>
+  {/if}
 </span>
 
 <style>
   .info-tip {
-    position: relative;
     display: inline-flex;
     align-items: center;
   }
@@ -43,11 +69,8 @@
   }
 
   .info-bubble {
-    display: none;
-    position: absolute;
-    left: 50%;
-    bottom: calc(100% + 8px);
-    transform: translateX(-50%);
+    position: fixed;
+    transform: translate(-50%, -100%);
     padding: 8px 12px;
     border-radius: 10px;
     background: var(--foreground);
@@ -59,7 +82,7 @@
     white-space: normal;
     width: max-content;
     max-width: 240px;
-    z-index: 50;
+    z-index: 9999;
     pointer-events: none;
     box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
   }
@@ -72,10 +95,5 @@
     transform: translateX(-50%);
     border: 5px solid transparent;
     border-top-color: var(--foreground);
-  }
-
-  .info-icon:hover + .info-bubble,
-  .info-icon:focus-visible + .info-bubble {
-    display: block;
   }
 </style>

@@ -11,10 +11,11 @@
     spot: SpotMarket;
     open?: boolean;
     onClose: () => void;
+    onBack?: () => void;
     onSuccess?: () => void;
   }
 
-  let { positionId, spot, open = $bindable(false), onClose, onSuccess }: Props = $props();
+  let { positionId, spot, open = $bindable(false), onClose, onBack, onSuccess }: Props = $props();
 
   let recipientText = $state('');
   let confirmModalOpen = $state(false);
@@ -80,6 +81,12 @@
     open = false;
     onClose();
   }
+
+  function handleBack() {
+    recipientText = '';
+    open = false;
+    onBack?.();
+  }
 </script>
 
 <Modal
@@ -88,6 +95,8 @@
   title="Transfer Position"
   compactHeader={true}
   size="sm"
+  showBack={!!onBack}
+  onBack={handleBack}
 >
   {#snippet children()}
     <div class="modal-body">
@@ -133,16 +142,28 @@
           This will transfer ownership of the position. Accrued fees will go to the new owner.
         </div>
 
-        <!-- Transfer Button -->
-        <ButtonV2
-          variant="danger"
-          size="xl"
-          fullWidth
-          onclick={handleTransferClick}
-          disabled={!isValidPrincipal}
-        >
-          Transfer Position
-        </ButtonV2>
+        <!-- Action Buttons -->
+        <div class="modal-actions">
+          {#if onBack}
+            <ButtonV2
+              variant="secondary"
+              size="xl"
+              fullWidth
+              onclick={handleBack}
+            >
+              Back
+            </ButtonV2>
+          {/if}
+          <ButtonV2
+            variant="primary"
+            size="xl"
+            fullWidth
+            onclick={handleTransferClick}
+            disabled={!isValidPrincipal}
+          >
+            Transfer Position
+          </ButtonV2>
+        </div>
       {:else}
         <div class="modal-state">
           <p class="modal-state-text">Position not found</p>

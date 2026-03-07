@@ -174,6 +174,22 @@ export class SpotMarket implements ISpotMarket {
    */
   initialized = $state<boolean>(false);
 
+  // ============================================
+  // Control / Routing Configuration (from get_control)
+  // ============================================
+
+  /**
+   * Minimum quote liquidity (USD E6) for a pool to be routable.
+   * Backend default: 0. Fetched from get_control().
+   */
+  minPoolQuoteLiquidityE6 = $state<bigint>(0n);
+
+  /**
+   * Maximum number of pools used in routing (top N by quote liquidity).
+   * Backend default: 3. Fetched from get_control().
+   */
+  maxRoutePoolInputs = $state<bigint>(3n);
+
   /**
    * Token addresses [base, quote]
    */
@@ -897,6 +913,16 @@ export class SpotMarket implements ISpotMarket {
       ensureTokenRegistered(basePrincipal),
       ensureTokenRegistered(quotePrincipal),
     ]);
+
+    // Fetch control config (routing params) — fire-and-forget, non-blocking
+    marketRepository.fetchControl(this.canister_id).then(controlResult => {
+      if ('ok' in controlResult) {
+        this.minPoolQuoteLiquidityE6 = controlResult.ok.min_pool_quote_liquidity_e6;
+        this.maxRoutePoolInputs = controlResult.ok.max_route_pool_inputs;
+      }
+    }).catch(err => {
+      console.warn(`[SpotMarket] Failed to fetch control for ${this.canister_id}:`, err);
+    });
 
     // Fetch totalSupply for base token (needed for market cap calculation)
     tokenRepository.fetchTotalSupply(marketData.baseToken).then(supplyResult => {

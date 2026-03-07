@@ -13,6 +13,8 @@
     tickToPrice,
     computeOutputUsd,
     usdImpactPercent,
+    belowMinUsdError,
+    orderResultSuccessMessage,
   } from "$lib/domain/markets/utils";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
   import { userPreferences } from "$lib/domain/user";
@@ -216,15 +218,17 @@
     return bigIntToString(quoteResult.output_amount, outputDecimals);
   });
 
-  // Input USD: input amount × input token's oracle price
+  // Input USD: actual consumed input from quote × input token's oracle price
+  // Uses quoteResult.input_amount (filled portion only) to avoid false price impact on partial fills
   let inputUsdValue = $derived.by(() => {
-    if (!base || !quote || !amount) return null;
+    if (!base || !quote || !quoteResult) return null;
     const inputToken = side === "Buy" ? quote : base;
     const inputPriceUsd = inputToken.priceUsd;
     if (!inputPriceUsd || inputPriceUsd === 0n) return null;
     const oracleUsd = Number(inputPriceUsd) / 1e12;
-    const inputFloat = parseFloat(amount);
-    if (!inputFloat || inputFloat <= 0) return null;
+    const inputDecimals = side === "Buy" ? quote.decimals : base.decimals;
+    const inputFloat = Number(quoteResult.input_amount) / (10 ** inputDecimals);
+    if (inputFloat <= 0) return null;
     return inputFloat * oracleUsd;
   });
 
@@ -242,6 +246,12 @@
     const oracleUsd = Number(inputPriceUsd) / 1e12;
     const outputDecimals = side === "Buy" ? base.decimals : quote.decimals;
     return computeOutputUsd(quoteResult.output_amount, outputDecimals, quoteResult.reference_tick, base.decimals, quote.decimals, side, oracleUsd);
+  });
+
+  // Minimum USD validation
+  let minUsdError = $derived.by(() => {
+    const inputToken = side === "Buy" ? quote : base;
+    return belowMinUsdError(amount, inputToken?.priceUsd);
   });
 
   // ============================================
@@ -330,7 +340,7 @@
         promise: handleSubmitMarketOrder(),
         messages: {
           loading: `${side === 'Buy' ? 'Buying' : 'Selling'} ${baseSymbol}...`,
-          success: (result) => `Order #${result.order_id} filled`,
+          success: (result) => orderResultSuccessMessage(result, 'market'),
           error: (err: unknown) => err instanceof Error ? err.message : "Failed to execute market order"
         },
         data: {
@@ -393,18 +403,12 @@
       // Execute via unified create_orders (market = IOC book order + pool swaps)
       const result = await spot.createOrders([], bookOrders, poolSwaps);
 
-      // Extract order_id from first order result for toast
-      const firstOrder = result.order_results[0];
-      const order_id = firstOrder && 'ok' in firstOrder.result
-        ? firstOrder.result.ok.order_id
-        : 0n;
-
       // Reset form on success only (per canon anti-pattern: don't clear on failure)
       amount = "";
       quoteResult = null;
       quoteTimestamp = 0;
 
-      return { order_id };
+      return result;
     } catch (error) {
       console.error("SpotMarketOrder: Error submitting market order:", error);
       throw error; // Let ConfirmationModal handle the toast
@@ -514,7 +518,7 @@
         onValueChange={(val) => amount = val}
         disabled={isSubmitting}
         loading={isCalculating}
-        error={quoteError ?? undefined}
+        error={minUsdError ?? quoteError ?? undefined}
         size="sm"
         showBalance
         onDepositClick={side === "Buy" ? openDepositQuote : openDepositBase}
@@ -591,7 +595,8 @@
             !amount ||
             amount.trim() === "" ||
             quoteResult === null ||
-            !!quoteError
+            !!quoteError ||
+            !!minUsdError
           }
         >
           {isSubmitting ? "Submitting..." : `${side} ${base.displaySymbol}`}
@@ -611,7 +616,7 @@
       onConfirm={() => handleSubmitMarketOrder()}
       toastMessages={{
         loading: `${side === 'Buy' ? 'Buying' : 'Selling'} ${base.displaySymbol}...`,
-        success: (result) => `Order #${result.order_id} filled`,
+        success: (result) => orderResultSuccessMessage(result, 'market'),
         error: (err) => err instanceof Error ? err.message : "Failed to execute market order"
       }}
     />

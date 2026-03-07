@@ -17,13 +17,12 @@
     bigIntToString,
   } from "$lib/domain/markets/utils";
   import { formatSigFig } from "$lib/utils/format.utils";
-  import { userPortfolio } from "$lib/domain/user";
-
   interface Props {
     positionId: bigint;
     spot: SpotMarket;
     open?: boolean;
     onClose: () => void;
+    onBack?: () => void;
     onSuccess?: () => void;
   }
 
@@ -32,6 +31,7 @@
     spot,
     open = $bindable(false),
     onClose,
+    onBack,
     onSuccess
   }: Props = $props();
 
@@ -51,12 +51,8 @@
   const baseDecimals = $derived(base?.decimals ?? 8);
   const quoteDecimals = $derived(quote?.decimals ?? 8);
 
-  const baseBalance = $derived<bigint>(
-    baseLedgerCanisterId ? userPortfolio.getToken(baseLedgerCanisterId)?.balance ?? 0n : 0n
-  );
-  const quoteBalance = $derived<bigint>(
-    quoteLedgerCanisterId ? userPortfolio.getToken(quoteLedgerCanisterId)?.balance ?? 0n : 0n
-  );
+  const baseBalance = $derived<bigint>(spot.availableBase);
+  const quoteBalance = $derived<bigint>(spot.availableQuote);
 
   // ============================================
   // Pool Price Polling
@@ -263,6 +259,11 @@
     onClose();
   }
 
+  function handleBack() {
+    open = false;
+    onBack?.();
+  }
+
   const positionInfo = $derived.by(() => {
     if (!position || !base || !quote) return null;
     return {
@@ -280,6 +281,8 @@
   title="Add Liquidity"
   compactHeader={true}
   size="md"
+  showBack={!!onBack}
+  onBack={handleBack}
 >
   {#snippet children()}
     <div class="modal-body">
@@ -360,14 +363,16 @@
 
         <!-- Action Buttons -->
         <div class="modal-actions">
-          <ButtonV2
-            variant="secondary"
-            size="xl"
-            fullWidth
-            onclick={handleClose}
-          >
-            Back
-          </ButtonV2>
+          {#if onBack}
+            <ButtonV2
+              variant="secondary"
+              size="xl"
+              fullWidth
+              onclick={handleBack}
+            >
+              Back
+            </ButtonV2>
+          {/if}
           <ButtonV2
             variant="primary"
             size="xl"

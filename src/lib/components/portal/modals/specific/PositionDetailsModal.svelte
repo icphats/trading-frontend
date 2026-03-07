@@ -135,6 +135,15 @@
     open = true;
   }
 
+  function handleSubModalClose() {
+    increaseModalOpen = false;
+    decreaseModalOpen = false;
+    collectModalOpen = false;
+    lockModalOpen = false;
+    transferModalOpen = false;
+    onClose?.();
+  }
+
   function handleSuccess() {
     increaseModalOpen = false;
     decreaseModalOpen = false;
@@ -283,7 +292,8 @@
     positionId={position.position_id}
     {spot}
     bind:open={increaseModalOpen}
-    onClose={handleBackToDetails}
+    onClose={handleSubModalClose}
+    onBack={handleBackToDetails}
     onSuccess={handleSuccess}
   />
 
@@ -291,7 +301,8 @@
     positionId={position.position_id}
     {spot}
     bind:open={decreaseModalOpen}
-    onClose={handleBackToDetails}
+    onClose={handleSubModalClose}
+    onBack={handleBackToDetails}
     onSuccess={handleSuccess}
   />
 
@@ -299,7 +310,8 @@
     positionId={position.position_id}
     {spot}
     bind:open={collectModalOpen}
-    onClose={handleBackToDetails}
+    onClose={handleSubModalClose}
+    onBack={handleBackToDetails}
     onSuccess={handleSuccess}
   />
 
@@ -307,7 +319,8 @@
     positionId={position.position_id}
     {spot}
     bind:open={lockModalOpen}
-    onClose={handleBackToDetails}
+    onClose={handleSubModalClose}
+    onBack={handleBackToDetails}
     onSuccess={handleSuccess}
   />
 
@@ -315,7 +328,8 @@
     positionId={position.position_id}
     {spot}
     bind:open={transferModalOpen}
-    onClose={handleBackToDetails}
+    onClose={handleSubModalClose}
+    onBack={handleBackToDetails}
     onSuccess={handleSuccess}
   />
 {/if}

@@ -89,6 +89,7 @@ import type {
   TransferActivityDetails,
   PositionTransferActivityDetails,
   BatchActivityDetails,
+  FrozenControl,
 } from 'declarations/spot/spot.did';
 
 // Amount type alias (was removed from declarations, now all amounts are nat64/bigint)
@@ -211,6 +212,9 @@ export type {
   ClaimTokenId,
   DepositResult,
   WithdrawResult,
+
+  // Control types
+  FrozenControl,
 
   // Service interface
   _SERVICE as SpotMarketService,

@@ -21,10 +21,11 @@
     spot: SpotMarket;
     open?: boolean;
     onClose: () => void;
+    onBack?: () => void;
     onSuccess?: () => void;
   }
 
-  let { positionId, spot, open = $bindable(false), onClose, onSuccess }: Props = $props();
+  let { positionId, spot, open = $bindable(false), onClose, onBack, onSuccess }: Props = $props();
 
   // ============================================
   // Position & Token Data
@@ -191,6 +192,11 @@
     onClose();
   }
 
+  function handleBack() {
+    open = false;
+    onBack?.();
+  }
+
   const positionInfo = $derived.by(() => {
     if (!position || !base || !quote) return null;
     return {
@@ -208,6 +214,8 @@
   title="Remove Liquidity"
   compactHeader={true}
   size="md"
+  showBack={!!onBack}
+  onBack={handleBack}
 >
   {#snippet children()}
     <div class="modal-body">
@@ -300,14 +308,16 @@
 
         <!-- Action Buttons -->
         <div class="modal-actions">
-          <ButtonV2
-            variant="secondary"
-            size="xl"
-            fullWidth
-            onclick={handleClose}
-          >
-            Back
-          </ButtonV2>
+          {#if onBack}
+            <ButtonV2
+              variant="secondary"
+              size="xl"
+              fullWidth
+              onclick={handleBack}
+            >
+              Back
+            </ButtonV2>
+          {/if}
           <ButtonV2
             variant="danger"
             size="xl"

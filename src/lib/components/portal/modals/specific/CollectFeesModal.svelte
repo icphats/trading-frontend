@@ -14,10 +14,11 @@
     spot: SpotMarket;
     open?: boolean;
     onClose: () => void;
+    onBack?: () => void;
     onSuccess?: () => void;
   }
 
-  let { positionId, spot, open = $bindable(false), onClose, onSuccess }: Props = $props();
+  let { positionId, spot, open = $bindable(false), onClose, onBack, onSuccess }: Props = $props();
 
   // Position data
   let position = $state<PositionView | null>(null);
@@ -86,6 +87,11 @@
     open = false;
     onClose();
   }
+
+  function handleBack() {
+    open = false;
+    onBack?.();
+  }
 </script>
 
 <Modal
@@ -94,6 +100,8 @@
   title="Collect Fees"
   compactHeader={true}
   size="sm"
+  showBack={!!onBack}
+  onBack={handleBack}
 >
   {#snippet children()}
     <div class="modal-body">
@@ -151,16 +159,28 @@
           </div>
         {/if}
 
-        <!-- Collect Button -->
-        <ButtonV2
-          variant="primary"
-          size="xl"
-          fullWidth
-          onclick={handleCollect}
-          disabled={!hasFees}
-        >
-          Collect
-        </ButtonV2>
+        <!-- Action Buttons -->
+        <div class="modal-actions">
+          {#if onBack}
+            <ButtonV2
+              variant="secondary"
+              size="xl"
+              fullWidth
+              onclick={handleBack}
+            >
+              Back
+            </ButtonV2>
+          {/if}
+          <ButtonV2
+            variant="primary"
+            size="xl"
+            fullWidth
+            onclick={handleCollect}
+            disabled={!hasFees}
+          >
+            Collect
+          </ButtonV2>
+        </div>
       {/if}
     </div>
   {/snippet}

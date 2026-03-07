@@ -283,9 +283,8 @@
                   </div>
                   {#if poolsOverview.length > 0}
                     {#each poolsOverview as pool, i}
-                      {@const totalUsd = pool.base_usd_e6 + pool.quote_usd_e6}
                       {@const quoteRank = poolsOverview.filter(p => p.quote_usd_e6 > pool.quote_usd_e6).length}
-                      {@const isActive = totalUsd >= 1_000_000_000n && quoteRank < 3}
+                      {@const isActive = pool.quote_usd_e6 >= spot.minPoolQuoteLiquidityE6 && quoteRank < Number(spot.maxRoutePoolInputs)}
                       <div class="pool-row">
                         <span class="pool-col"><span class="pool-indicator" class:active={isActive}></span></span>
                         <span class="pool-col right mono">{pool.positions.toString()}</span>

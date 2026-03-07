@@ -64,6 +64,7 @@ import type {
   GetUserActivityResult,
   ChainCursor,
   LiquidityLockSummary,
+  FrozenControl,
 } from 'declarations/spot/spot.did';
 
 // Re-export for consumers
@@ -112,6 +113,23 @@ export class MarketRepository {
       return { ok: result };
     } catch (error) {
       return { err: error instanceof Error ? error.message : 'Failed to poll versions' };
+    }
+  }
+
+  // ============================================
+  // Control / Configuration
+  // ============================================
+
+  /**
+   * Fetch canister control configuration (routing params, fee config, limits)
+   */
+  async fetchControl(canisterId: string): Promise<Result<FrozenControl>> {
+    try {
+      const actor = this.getSpotActor(canisterId);
+      const result = await actor.get_control();
+      return { ok: result };
+    } catch (error) {
+      return { err: error instanceof Error ? error.message : 'Failed to fetch control' };
     }
   }
 

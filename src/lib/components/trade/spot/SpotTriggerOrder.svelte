@@ -11,6 +11,7 @@
     tickToPrice,
     stringToBigInt,
     alignTickToSpacing,
+    belowMinUsdError,
   } from "$lib/domain/markets/utils";
   import { formatSigFig } from "$lib/utils/format.utils";
   import { toastState } from "$lib/state/portal/toast.state.svelte";
@@ -110,6 +111,12 @@
   const limitPrice = $derived.by(() => {
     if (limitTick === null) return null;
     return tickToPrice(limitTick, spot.baseTokenDecimals, spot.quoteTokenDecimals);
+  });
+
+  // Minimum USD validation
+  let minUsdError = $derived.by(() => {
+    const inputToken = side === "Buy" ? quote : base;
+    return belowMinUsdError(amount, inputToken?.priceUsd);
   });
 
   // ============================================
@@ -345,6 +352,7 @@
         value={amount}
         onValueChange={(val) => amount = val}
         disabled={isSubmitting}
+        error={minUsdError}
         size="sm"
         showBalance
         onDepositClick={side === "Buy" ? openDepositQuote : openDepositBase}
@@ -357,7 +365,7 @@
           variant={side === "Buy" ? "green" : "red"}
           size="md"
           fullWidth
-          disabled={isSubmitting || !amount || parseFloat(amount) <= 0 || triggerTick === null || limitTick === null}
+          disabled={isSubmitting || !amount || parseFloat(amount) <= 0 || triggerTick === null || limitTick === null || !!minUsdError}
           onclick={handleSubmitClick}
         >
           {isSubmitting ? "Submitting..." : `Place ${side} Trigger`}
