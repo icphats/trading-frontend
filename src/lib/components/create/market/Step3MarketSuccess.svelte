@@ -81,6 +81,6 @@
   <!-- Action Buttons -->
   <div class="flex flex-col sm:flex-row gap-3">
     <ButtonV2 variant="primary" onclick={() => goto("/")} class="flex-1">Go to Home</ButtonV2>
-    <ButtonV2 variant="secondary" onclick={() => goto("/create/market")} class="flex-1">Create Another Market</ButtonV2>
+    <ButtonV2 variant="secondary" onclick={() => goto("/create/market/new")} class="flex-1">Create Another Market</ButtonV2>
   </div>
 </div>

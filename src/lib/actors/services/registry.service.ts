@@ -14,4 +14,7 @@ export type {
   CreationFees,
   LedgerInitArgs,
   SpotInitArgs,
+  FrozenCreationEntry,
+  CreationPhase,
+  CreationType,
 } from 'declarations/registry/registry.did';

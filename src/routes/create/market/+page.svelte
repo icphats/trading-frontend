@@ -1,98 +1,50 @@
 <script lang="ts">
   import { goto } from "$app/navigation";
   import Breadcrumb from "$lib/components/ui/Breadcrumb.svelte";
-  import CreationLayout from "$lib/components/ui/wizard/CreationLayout.svelte";
-  import StepIndicator from "$lib/components/ui/wizard/StepIndicator.svelte";
-  import Step1MarketPair from "$lib/components/create/market/Step1MarketPair.svelte";
-  import Step2MarketConfirmation from "$lib/components/create/market/Step2MarketConfirmation.svelte";
-  import Step3MarketSuccess from "$lib/components/create/market/Step3MarketSuccess.svelte";
-  import { marketCreation } from "$lib/domain/markets";
-  import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
+  import ButtonV2 from "$lib/components/ui/ButtonV2.svelte";
+  import EmptyState from "$lib/components/ui/list/EmptyState.svelte";
+  import CreatedMarketsList from "$lib/components/create/market/CreatedMarketsList.svelte";
+  import { createdMarkets } from "$lib/domain/markets";
+  import { user } from "$lib/domain/user/auth.svelte";
+  import { api } from "$lib/actors/api.svelte";
 
-  // Current step tracking
-  let currentStep = $state(1);
-
-  // Creation state
-  let isCreating = $state(false);
-  let creationError = $state<string>("");
-
-  // Initialize quote token to ICP on mount (once only)
-  let quoteTokenInitialized = false;
   $effect(() => {
-    if (quoteTokenInitialized) return;
-    const icpToken = entityStore.getTokenBySymbol("ICP");
-    if (icpToken) {
-      quoteTokenInitialized = true;
-      // Convert NormalizedToken to TokenMetadata format
-      marketCreation.selectedQuoteToken = {
-        canisterId: icpToken.canisterId,
-        name: icpToken.name,
-        displayName: icpToken.displayName,
-        symbol: icpToken.symbol,
-        displaySymbol: icpToken.displaySymbol,
-        decimals: icpToken.decimals,
-        fee: icpToken.fee,
-        logo: icpToken.logo ?? undefined,
-      };
+    if (user.principal && api.registry) {
+      createdMarkets.load();
     }
   });
 
-  function handleNext() {
-    if (currentStep === 1 && marketCreation.step1Valid) {
-      currentStep = 2;
-    }
-  }
-
-  function handleBack() {
-    if (currentStep === 2) {
-      currentStep = 1;
-    }
-  }
-
-  function handleCreate() {
-    // Move to success step after creation
-    currentStep = 3;
-  }
-
   const breadcrumbItems = [
     { label: "Home", href: "/" },
-    { label: "Market", active: true },
-  ];
-
-  const stepsList = [
-    { number: 1, label: "Select Token Pair", description: "Choose base and quote tokens" },
-    { number: 2, label: "Confirm", description: "Review and create market" },
-    { number: 3, label: "Success", description: "Market created" },
+    { label: "Markets", active: true },
   ];
 </script>
 
-<CreationLayout>
-  {#snippet breadcrumb()}
-    <Breadcrumb items={breadcrumbItems} />
-  {/snippet}
+<div class="mx-auto max-w-5xl px-4 py-8 space-y-6">
+  <Breadcrumb items={breadcrumbItems} />
 
-  {#snippet header()}
-    <h1 class="text-3xl font-bold">Create Spot Market</h1>
-  {/snippet}
+  <div class="flex items-center justify-between">
+    <h1 class="text-3xl font-bold">Your Markets</h1>
+    <ButtonV2 variant="primary" size="md" onclick={() => goto("/create/market/new")}>
+      Create Market
+    </ButtonV2>
+  </div>
 
-  {#snippet steps()}
-    <StepIndicator steps={stepsList} {currentStep} />
-  {/snippet}
-
-  {#snippet content()}
-    {#if currentStep === 1}
-      <Step1MarketPair onNext={handleNext} onCancel={() => goto("/")} />
-    {:else if currentStep === 2}
-      <Step2MarketConfirmation
-        onBack={handleBack}
-        onCreate={handleCreate}
-        {isCreating}
-        {creationError}
-        onCreatingChange={(value) => (isCreating = value)}
-        onErrorChange={(value) => (creationError = value)}
-      />
-    {:else if currentStep === 3}
-      <Step3MarketSuccess marketCanisterId={marketCreation.marketCanisterId} />
-    {/if}
-  {/snippet}
-</CreationLayout>
+  {#if !user.isAuthenticated}
+    <EmptyState
+      message="Connect your wallet"
+      hint="Sign in to view markets you've created"
+    />
+  {:else if createdMarkets.isLoading && !createdMarkets.hasFetched}
+    <EmptyState variant="loading" message="Loading your markets..." />
+  {:else if createdMarkets.error}
+    <EmptyState variant="error" message="Failed to load markets" hint={createdMarkets.error} />
+  {:else if createdMarkets.isEmpty}
+    <EmptyState
+      message="No markets yet"
+      hint="Create your first spot market on the Internet Computer"
+    />
+  {:else}
+    <CreatedMarketsList markets={createdMarkets.markets} />
+  {/if}
+</div>

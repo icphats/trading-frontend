@@ -56,7 +56,7 @@
     return raw.toLocaleString();
   });
 
-  // Fetch chart data for ExploreChart
+  // Fetch chart data for ExploreChart, converting prices to USD
   async function fetchChartData(interval: TimeInterval): Promise<RawCandle[]> {
     const marketCanisterId = spotCanisterId;
     if (!marketCanisterId) {
@@ -76,7 +76,45 @@
       console.error('[TokenDetail] Failed to fetch chart:', result.err);
       return [];
     }
-    return result.ok;
+
+    const candles = result.ok;
+    if (candles.length === 0) return candles;
+
+    // Determine quote token and its USD rate for price conversion
+    const market = entityStore.getMarket(marketCanisterId);
+    if (!market) return candles;
+    const quoteToken = entityStore.getToken(market.quoteToken);
+    if (!quoteToken) return candles;
+
+    const qSymbol = quoteToken.symbol.toLowerCase();
+    const isStableQuote = STABLECOIN_SYMBOLS.has(qSymbol);
+
+    if (isStableQuote) return candles; // Already USD-denominated
+
+    // Fetch oracle prices for the quote token across the candle time range
+    const firstTs = candles[0][0];
+    const lastTs = candles[candles.length - 1][0];
+    const stepMs = BigInt(config.backend === '1h' ? 3_600_000 : config.backend === '4h' ? 14_400_000 : 86_400_000);
+
+    const oracleResult = await oracleRepository.fetchPriceArchive(qSymbol, firstTs, lastTs, stepMs);
+    if ('err' in oracleResult || oracleResult.ok.length === 0) return candles;
+
+    const oraclePrices = oracleResult.ok;
+
+    // Multiply each candle's OHLC by the quote token's USD rate
+    return candles.map((c) => {
+      const usdRate = findNearestRate(oraclePrices, Number(c[0]));
+      if (usdRate === 0) return c;
+      // OHLC are E12-encoded; multiply by USD rate (decimal), re-encode as E12 bigint
+      return [
+        c[0],
+        BigInt(Math.round(Number(c[1]) * usdRate)),
+        BigInt(Math.round(Number(c[2]) * usdRate)),
+        BigInt(Math.round(Number(c[3]) * usdRate)),
+        BigInt(Math.round(Number(c[4]) * usdRate)),
+        c[5], // volume unchanged
+      ] as RawCandle;
+    });
   }
 
   // Whether this token is a quote token (appears as quote in 1+ markets).
@@ -144,7 +182,7 @@
     const baseMarkets = token!.baseMarkets ?? [];
     const quoteMarkets = token!.quoteMarkets ?? [];
 
-    const marketsToFetch: { canisterId: string; role: 'base' | 'quote' }[] = [
+    const marketsToFetch = [
       ...baseMarkets.map((id) => ({ canisterId: id, role: 'base' as const })),
       ...quoteMarkets.map((id) => ({ canisterId: id, role: 'quote' as const })),
     ];
@@ -159,9 +197,9 @@
       const result = await marketRepository.fetchMarketSnapshots(canisterId, undefined, config.limit, config.intervalHours);
       if ('err' in result) {
         console.error(`[TokenDetail] Failed to fetch market snapshots for ${canisterId}:`, result.err);
-        return { data: [] as any[], role, market };
+        return { data: [] as any[], market, role };
       }
-      return { data: result.ok.data, role, market };
+      return { data: result.ok.data, market, role };
     });
 
     const results = await Promise.all(fetches);
@@ -195,8 +233,11 @@
     const oraclePricesBySymbol = new Map<string, PriceEntry[]>();
     if (quoteSymbolsNeeded.size > 0 && minTs < Infinity) {
       const stepMs = BigInt(config.intervalHours) * 3_600_000n;
+      // Extend range backward by one step so findNearestRate always has data
+      // (critical when there's only 1 snapshot, i.e. minTs === maxTs)
+      const fromMs = BigInt(minTs) - stepMs;
       const oracleFetches = [...quoteSymbolsNeeded].map(async (symbol) => {
-        const result = await oracleRepository.fetchPriceArchive(symbol, BigInt(minTs), BigInt(maxTs), stepMs);
+        const result = await oracleRepository.fetchPriceArchive(symbol, fromMs, BigInt(maxTs), stepMs);
         if ('ok' in result) {
           oraclePricesBySymbol.set(symbol, result.ok);
         }
@@ -206,15 +247,20 @@
 
     // Aggregate by timestamp across all markets
     const byTimestamp = new Map<number, { fees: number; volume: number; tvl: number }>();
-    const tokenDecimals = token!.decimals;
 
-    for (const { data, role, market } of results) {
+    for (const { data, market, role } of results) {
       if (!market) continue;
       const quoteInfo = marketQuoteInfo.get(market.canisterId);
       if (!quoteInfo) continue;
 
       const isStableQuote = STABLECOIN_SYMBOLS.has(quoteInfo.symbol);
       const quoteOraclePrices = isStableQuote ? [] : (oraclePricesBySymbol.get(quoteInfo.symbol) ?? []);
+
+      // Decimal scale for this token's side of the market
+      const tokenEntity = role === 'base'
+        ? entityStore.getToken(market.baseToken)
+        : entityStore.getToken(market.quoteToken);
+      const decimalScale = Math.pow(10, tokenEntity?.decimals ?? 8);
 
       for (const snapshot of data) {
         const ts = Math.floor(Number(snapshot.timestamp) / 1000);
@@ -224,17 +270,17 @@
         existing.fees += (Number(snapshot.pool_fees_usd_e6) + Number(snapshot.book_fees_usd_e6)) / 1e6;
         existing.volume += (Number(snapshot.pool_volume_usd_e6) + Number(snapshot.book_volume_usd_e6)) / 1e6;
 
-        // TVL: convert native custody to USD
+        // TVL: only count THIS token's custody side (matches indexer aggregation)
         const quoteUsdRate = isStableQuote ? 1.0 : findNearestRate(quoteOraclePrices, Number(snapshot.timestamp));
 
         if (role === 'base') {
-          // base_custody (native) → quote via reference_price → USD via oracle
-          const baseCustodyNative = Number(snapshot.base_custody) / Math.pow(10, tokenDecimals);
+          // base_custody → quote via reference_price → USD via oracle
           const refPrice = Number(snapshot.reference_price_e12) / 1e12;
+          const baseCustodyNative = Number(snapshot.base_custody) / decimalScale;
           existing.tvl += baseCustodyNative * refPrice * quoteUsdRate;
         } else {
-          // quote_custody (native) → USD via oracle
-          const quoteCustodyNative = Number(snapshot.quote_custody) / Math.pow(10, tokenDecimals);
+          // quote_custody → USD via oracle
+          const quoteCustodyNative = Number(snapshot.quote_custody) / decimalScale;
           existing.tvl += quoteCustodyNative * quoteUsdRate;
         }
 
@@ -366,12 +412,12 @@
         </div>
       </div>
 
-      <!-- Recent Activity Section -->
+      <!-- Recent Activity Section (disabled until market selector or aggregate activity is implemented)
       <div class="activity-section">
         <h2 class="section-title">Recent Activity</h2>
-        <!-- TODO: Token appears in multiple markets, need market selector or aggregate activity -->
         <ActivityTable spotCanisterId={null} baseLedger={ledger} />
       </div>
+      -->
     </div>
   </div>
 

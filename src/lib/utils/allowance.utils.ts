@@ -18,6 +18,7 @@
 import { Principal } from '@dfinity/principal';
 import { tokenRepository } from '$lib/repositories/token.repository';
 import { user } from '$lib/domain/user/auth.svelte';
+import { userPortfolio } from '$lib/domain/user';
 
 // ============================================
 // Constants
@@ -106,6 +107,8 @@ export async function checkAndApprove(
     );
 
     if ('ok' in approveResult) {
+      // Refresh wallet balance to reflect the ledger fee deducted by approve
+      userPortfolio.checkBalance(ledgerCanisterId, owner as any).catch(() => {});
     } else {
       console.error('[Allowance] ✗ Approval failed:', approveResult.err);
     }

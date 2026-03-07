@@ -27,7 +27,10 @@ export type CanisterRole = {
   { 'cycles_only' : null };
 export interface CanisterSettings {
   'freezing_threshold' : [] | [bigint],
+  'wasm_memory_threshold' : [] | [bigint],
   'controllers' : [] | [Array<Principal>],
+  'reserved_cycles_limit' : [] | [bigint],
+  'wasm_memory_limit' : [] | [bigint],
   'memory_allocation' : [] | [bigint],
   'compute_allocation' : [] | [bigint],
 }

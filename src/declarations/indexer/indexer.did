@@ -153,6 +153,7 @@ type PlatformSnapshotView =
 type MarketMetricsUpdate = 
  record {
    base_tvl_usd_e6: nat;
+   book_fees_24h_usd_e6: nat;
    book_fees_cumulative_usd_e6: nat;
    book_open_interest_usd_e6: nat;
    book_volume_cumulative_usd_e6: nat;
@@ -308,6 +309,8 @@ service : {
   admin_stop_timer: () -> (ApiResult);
   /// Update runtime configuration (admin_principals, etc).
   admin_upgrade_config: (upgrade_args: UpgradeArgs) -> (ApiResult);
+  /// Deregister a spot market. Preserves cumulative metrics (admin only).
+  deregister_spot_market: (market_canister: principal) -> (ApiResult);
   /// Untrack user from a market (called by spot canister on full withdrawal).
   /// Caller must be a registered market canister.
   deregister_user_from_market: (user: principal) -> (ApiResult);

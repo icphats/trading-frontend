@@ -281,6 +281,9 @@ type CanisterSettings =
    controllers: opt vec principal;
    freezing_threshold: opt nat;
    memory_allocation: opt nat;
+   reserved_cycles_limit: opt nat;
+   wasm_memory_limit: opt nat;
+   wasm_memory_threshold: opt nat;
  };
 type CanisterRole = 
  variant {

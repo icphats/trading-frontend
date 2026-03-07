@@ -205,6 +205,7 @@ export const idlFactory = ({ IDL }) => {
   const MarketMetricsUpdate = IDL.Record({
     'triggers_live' : IDL.Nat32,
     'base_tvl_usd_e6' : IDL.Nat,
+    'book_fees_24h_usd_e6' : IDL.Nat,
     'book_fees_cumulative_usd_e6' : IDL.Nat,
     'total_transactions' : IDL.Nat64,
     'book_volume_cumulative_usd_e6' : IDL.Nat,
@@ -253,6 +254,7 @@ export const idlFactory = ({ IDL }) => {
     'admin_start_timer' : IDL.Func([], [ApiResult], []),
     'admin_stop_timer' : IDL.Func([], [ApiResult], []),
     'admin_upgrade_config' : IDL.Func([UpgradeArgs], [ApiResult], []),
+    'deregister_spot_market' : IDL.Func([IDL.Principal], [ApiResult], []),
     'deregister_user_from_market' : IDL.Func([IDL.Principal], [ApiResult], []),
     'get_control' : IDL.Func([], [FrozenControl], ['query']),
     'get_hydration' : IDL.Func([], [IDL.Vec(FrozenTokenEntry)], ['query']),

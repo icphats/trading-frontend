@@ -338,22 +338,11 @@ class QuoteExplorerStateManager {
   // ============================================
 
   autoPopulateInput(): void {
-    const inputToken = this.inputToken;
-    if (!inputToken) return;
-
-    const TARGET_USD = 100;
-    const priceUsd = inputToken.priceUsd;
-
-    if (priceUsd && priceUsd > 0n) {
-      const priceNum = Number(priceUsd) / 1e12;
-      const amount = TARGET_USD / priceNum;
-      const decimals = Math.min(inputToken.decimals, 4);
-      this.inputAmount = amount.toFixed(decimals);
-    } else {
-      this.inputAmount = '100';
-    }
-
-    this.scheduleQuoteCalculation();
+    // Leave input blank — user enters amount or uses presets
+    this.inputAmount = '';
+    this.quote = null;
+    this.quoteTimestamp = 0;
+    this.isQuoting = false;
   }
 
   // ============================================

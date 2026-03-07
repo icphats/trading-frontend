@@ -451,6 +451,9 @@ export class SpotMarket implements ISpotMarket {
   poolDepthQuoteUsdE6 = $state<bigint>(0n);
   bookDepthBaseUsdE6 = $state<bigint>(0n);
   bookDepthQuoteUsdE6 = $state<bigint>(0n);
+  makerFeePips = $state<number>(0);
+  takerFeePips = $state<number>(0);
+  makerRebatePips = $state<number>(0);
 
   // ============================================
   // User Position State (DERIVED from entityStore)
@@ -721,6 +724,9 @@ export class SpotMarket implements ISpotMarket {
       this.poolDepthQuoteUsdE6 = platform.pool_depth_quote_usd_e6;
       this.bookDepthBaseUsdE6 = platform.book_depth_base_usd_e6;
       this.bookDepthQuoteUsdE6 = platform.book_depth_quote_usd_e6;
+      this.makerFeePips = platform.maker_fee_pips;
+      this.takerFeePips = platform.taker_fee_pips;
+      this.makerRebatePips = platform.maker_rebate_pips;
 
       // Process user data from hydrate response - PUSH to entityStore (single source of truth)
       if (hydrateResponse.user && hydrateResponse.user.length > 0) {
@@ -844,6 +850,9 @@ export class SpotMarket implements ISpotMarket {
       this.poolDepthQuoteUsdE6 = platform.pool_depth_quote_usd_e6;
       this.bookDepthBaseUsdE6 = platform.book_depth_base_usd_e6;
       this.bookDepthQuoteUsdE6 = platform.book_depth_quote_usd_e6;
+      this.makerFeePips = platform.maker_fee_pips;
+      this.takerFeePips = platform.taker_fee_pips;
+      this.makerRebatePips = platform.maker_rebate_pips;
 
       // Push updated data to entityStore (token + market)
       this.pushPriceToEntityStore();
@@ -1750,19 +1759,12 @@ export class SpotMarket implements ISpotMarket {
     const baseCanisterId = this.tokens[0].toString();
     const existing = entityStore.getToken(baseCanisterId);
 
-    // Quote tokens (ckUSDT, ICP, ckUSDC): indexer is source of truth for TVL/volume.
-    // A single spot market only has its own slice — pushing it would overwrite
-    // the correct cross-market aggregate from the indexer.
-    const isQuote = existing?.isQuoteToken === true;
-
     entityStore.upsertToken({
       canisterId: baseCanisterId,
-      // NOTE: priceUsd intentionally NOT set here - indexer is source of truth
+      // NOTE: priceUsd, tvl, volume intentionally NOT set here.
+      // Polling coordinator is source of truth for these via get_indexer_data
+      // (base_tvl_usd_e6 = full token custody, not just pool depth).
       priceChange24h: this.priceChange24h,
-      ...(!isQuote && {
-        volume24h: this.volume24hUsd,
-        tvl: this.poolDepthBaseUsdE6 + this.poolDepthQuoteUsdE6,
-      }),
       source: 'canister',
     });
   }

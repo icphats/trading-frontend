@@ -105,6 +105,7 @@ export interface MarketListResponse {
 export interface MarketMetricsUpdate {
   'triggers_live' : number,
   'base_tvl_usd_e6' : bigint,
+  'book_fees_24h_usd_e6' : bigint,
   'book_fees_cumulative_usd_e6' : bigint,
   'total_transactions' : bigint,
   'book_volume_cumulative_usd_e6' : bigint,
@@ -258,6 +259,10 @@ export interface _SERVICE {
    * / Update runtime configuration (admin_principals, etc).
    */
   'admin_upgrade_config' : ActorMethod<[UpgradeArgs], ApiResult>,
+  /**
+   * / Deregister a spot market. Preserves cumulative metrics (admin only).
+   */
+  'deregister_spot_market' : ActorMethod<[Principal], ApiResult>,
   /**
    * / Untrack user from a market (called by spot canister on full withdrawal).
    * / Caller must be a registered market canister.

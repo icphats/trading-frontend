@@ -265,8 +265,9 @@
   });
 
   // Display values (hover or current)
-  const displayPrice = $derived(hoverPrice ?? currentPrice ?? calculatedPrice);
-  const displayChange = $derived(hoverChange ?? priceChange ?? calculatedChange);
+  // External currentPrice/priceChange only apply to price view — not volume/TVL
+  const displayPrice = $derived(hoverPrice ?? (dataType === 'price' ? currentPrice : undefined) ?? calculatedPrice);
+  const displayChange = $derived(hoverChange ?? (dataType === 'price' ? priceChange : undefined) ?? calculatedChange);
 
   // Price overlay mode
   // Maps data types to display formats:

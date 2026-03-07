@@ -51,11 +51,14 @@ export const idlFactory = ({ IDL }) => {
     'set_icp_ledger_creation_fee' : IDL.Opt(IDL.Nat),
     'set_oracle_principal' : IDL.Opt(IDL.Principal),
     'set_cycles_threshold' : IDL.Opt(IDL.Nat),
+    'set_wasm_memory_threshold' : IDL.Opt(IDL.Nat),
     'set_ledger_creation_cycles' : IDL.Opt(IDL.Nat),
     'reset_topup_backoff' : IDL.Opt(IDL.Bool),
     'set_indexer_principal' : IDL.Opt(IDL.Principal),
+    'set_wasm_memory_limit' : IDL.Opt(IDL.Nat),
     'set_icp_spot_creation_fee' : IDL.Opt(IDL.Nat),
     'add_admins' : IDL.Opt(IDL.Vec(IDL.Principal)),
+    'set_reserved_cycles_limit' : IDL.Opt(IDL.Nat),
     'set_spot_creation_cycles' : IDL.Opt(IDL.Nat),
   });
   const WasmUploadResult = IDL.Variant({ 'ok' : IDL.Bool, 'err' : ApiError });
@@ -129,8 +132,10 @@ export const idlFactory = ({ IDL }) => {
     'err' : ApiError,
   });
   const FrozenControl = IDL.Record({
+    'wasm_memory_threshold' : IDL.Nat,
     'system_state' : SystemState,
     'icp_spot_creation_fee' : IDL.Nat,
+    'reserved_cycles_limit' : IDL.Nat,
     'icp_ledger_creation_fee' : IDL.Nat,
     'treasury_allowance_set' : IDL.Bool,
     'timer_running' : IDL.Bool,
@@ -140,11 +145,33 @@ export const idlFactory = ({ IDL }) => {
     'icp_transfer_fee' : IDL.Nat,
     'treasury_principal' : IDL.Opt(IDL.Principal),
     'indexer_principal' : IDL.Opt(IDL.Principal),
+    'wasm_memory_limit' : IDL.Nat,
     'this_principal' : IDL.Principal,
     'ledger_creation_cycles' : IDL.Nat,
     'admin_principals' : IDL.Vec(IDL.Principal),
   });
   const CreationFees = IDL.Record({ 'spot' : IDL.Nat, 'ledger' : IDL.Nat });
+  const CreationType = IDL.Variant({
+    'spot_market' : IDL.Null,
+    'ledger' : IDL.Null,
+  });
+  const CreationPhase = IDL.Variant({
+    'creating_canister' : IDL.Null,
+    'completed' : IDL.Null,
+    'notifying_indexer' : IDL.Null,
+    'installing_wasm' : IDL.Null,
+    'querying_metadata' : IDL.Null,
+    'failed' : IDL.Null,
+  });
+  const FrozenCreationEntry = IDL.Record({
+    'id' : IDL.Nat64,
+    'creation_type' : CreationType,
+    'result' : IDL.Opt(IDL.Variant({ 'ok' : IDL.Principal, 'err' : IDL.Text })),
+    'updated_at' : IDL.Nat64,
+    'phase' : CreationPhase,
+    'symbol' : IDL.Text,
+    'started_at' : IDL.Nat64,
+  });
   return IDL.Service({
     'admin_delete_wasm' : IDL.Func([IDL.Text], [ApiResult], []),
     'admin_get_event_logs' : IDL.Func(
@@ -181,11 +208,7 @@ export const idlFactory = ({ IDL }) => {
     'get_all_markets' : IDL.Func([], [IDL.Vec(SpotMarketMetadata)], ['query']),
     'get_control' : IDL.Func([], [FrozenControl], ['query']),
     'get_creation_fees' : IDL.Func([], [CreationFees], ['query']),
-    'get_ledgers_by_creator' : IDL.Func(
-        [IDL.Principal],
-        [IDL.Vec(IDL.Principal)],
-        ['query'],
-      ),
+    'get_creations' : IDL.Func([], [IDL.Vec(FrozenCreationEntry)], ['query']),
     'get_spot_market' : IDL.Func(
         [IDL.Principal, IDL.Principal],
         [IDL.Opt(SpotMarketMetadata)],

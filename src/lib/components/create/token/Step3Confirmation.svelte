@@ -6,6 +6,7 @@
   import { api } from "$lib/actors/api.svelte";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
   import { userPortfolio } from "$lib/domain/user";
+  import CreationProgress from "$lib/components/create/CreationProgress.svelte";
 
   interface Props {
     onBack: () => void;
@@ -152,6 +153,9 @@
         <p class="text-sm font-semibold text-red-500">Insufficient ICP balance to cover the creation fee.</p>
       </div>
     {/if}
+
+    <!-- Creation Progress -->
+    <CreationProgress isActive={isCreating} creationType="ledger" />
 
     <!-- Footer -->
     <div class="flex items-center justify-between gap-4 mt-6">

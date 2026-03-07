@@ -19,8 +19,11 @@ type UpgradeArgs =
    set_indexer_principal: opt principal;
    set_ledger_creation_cycles: opt nat;
    set_oracle_principal: opt principal;
+   set_reserved_cycles_limit: opt nat;
    set_spot_creation_cycles: opt nat;
    set_treasury_principal: opt principal;
+   set_wasm_memory_limit: opt nat;
+   set_wasm_memory_threshold: opt nat;
  };
 type SystemState = 
  variant {
@@ -115,6 +118,19 @@ type InternalCanisterMetadata =
    created_by: principal;
    version: text;
  };
+type FrozenCreationEntry = 
+ record {
+   creation_type: CreationType;
+   id: nat64;
+   phase: CreationPhase;
+   result: opt variant {
+                 err: text;
+                 ok: principal;
+               };
+   started_at: nat64;
+   symbol: text;
+   updated_at: nat64;
+ };
 type FrozenControl = 
  record {
    admin_principals: vec principal;
@@ -125,12 +141,15 @@ type FrozenControl =
    indexer_principal: opt principal;
    ledger_creation_cycles: nat;
    oracle_principal: principal;
+   reserved_cycles_limit: nat;
    spot_creation_cycles: nat;
    system_state: SystemState;
    this_principal: principal;
    timer_running: bool;
    treasury_allowance_set: bool;
    treasury_principal: opt principal;
+   wasm_memory_limit: nat;
+   wasm_memory_threshold: nat;
  };
 type FeatureFlags = record {icrc2: bool;};
 type EventLogPage = 
@@ -149,6 +168,20 @@ type ErrorCategory =
    resource;
    state;
    validation;
+ };
+type CreationType = 
+ variant {
+   ledger;
+   spot_market;
+ };
+type CreationPhase = 
+ variant {
+   completed;
+   creating_canister;
+   failed;
+   installing_wasm;
+   notifying_indexer;
+   querying_metadata;
  };
 type CreationFees = 
  record {
@@ -243,8 +276,8 @@ service : {
   get_control: () -> (FrozenControl) query;
   /// Get creation fees in ICP e8s.
   get_creation_fees: () -> (CreationFees) query;
-  /// Get ledger principals created by a specific principal.
-  get_ledgers_by_creator: (creator: principal) -> (vec principal) query;
+  /// Get creation entries for the caller (ledger + spot market creation progress/history).
+  get_creations: () -> (vec FrozenCreationEntry) query;
   /// Get a spot market by its base and quote ledger principals.
   get_spot_market: (base: principal, quote: principal) ->
    (opt SpotMarketMetadata) query;

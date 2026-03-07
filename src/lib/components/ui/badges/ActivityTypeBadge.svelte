@@ -4,7 +4,7 @@
    *
    * Category Colors:
    * - Orders (blue): swap, order_filled, order_partial, order_cancelled, order_modified
-   * - Triggers (purple): trigger_fired, trigger_cancelled, trigger_failed
+   * - Triggers (purple): trigger_fired, trigger_cancelled
    * - LP (green): lp_opened, lp_increased, lp_decreased, lp_closed, lp_fees_collected, lp_locked, lp_transferred
    * - Transfers (gray): transfer_in, transfer_out
    */

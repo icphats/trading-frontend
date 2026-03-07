@@ -671,6 +671,7 @@ export const idlFactory = ({ IDL }) => {
     'triggers_live' : IDL.Nat32,
     'base_tvl_usd_e6' : IDL.Nat,
     'pool_data' : IDL.Vec(IndexerPoolData),
+    'book_fees_24h_usd_e6' : IDL.Nat,
     'book_fees_cumulative_usd_e6' : IDL.Nat,
     'total_transactions' : IDL.Nat64,
     'book_volume_cumulative_usd_e6' : IDL.Nat,
@@ -831,12 +832,13 @@ export const idlFactory = ({ IDL }) => {
     'transfer_in' : IDL.Null,
     'lp_fees_collected' : IDL.Null,
     'lp_transferred' : IDL.Null,
-    'trigger_failed' : IDL.Null,
     'lp_closed' : IDL.Null,
     'lp_decreased' : IDL.Null,
     'lp_opened' : IDL.Null,
     'lp_increased' : IDL.Null,
+    'order_batch' : IDL.Null,
     'order_filled' : IDL.Null,
+    'trigger_batch' : IDL.Null,
     'lp_locked' : IDL.Null,
     'order_partial' : IDL.Null,
     'order_modified' : IDL.Null,
@@ -882,6 +884,16 @@ export const idlFactory = ({ IDL }) => {
     'tick_upper' : IDL.Int32,
     'position_id' : IDL.Nat64,
   });
+  const BatchActivityDetails = IDL.Record({
+    'total_quote_locked' : IDL.Nat,
+    'total_base_locked' : IDL.Nat,
+    'op_fee_token' : IDL.Variant({ 'base' : IDL.Null, 'quote' : IDL.Null }),
+    'base_price_usd_e12' : IDL.Nat64,
+    'op_fee_amount' : IDL.Nat,
+    'swap_count' : IDL.Nat8,
+    'quote_price_usd_e12' : IDL.Nat64,
+    'item_count' : IDL.Nat16,
+  });
   const TransferActivityDetails = IDL.Record({
     'direction' : IDL.Variant({ 'inbound' : IDL.Null, 'outbound' : IDL.Null }),
     'token' : IDL.Variant({ 'base' : IDL.Null, 'quote' : IDL.Null }),
@@ -896,6 +908,7 @@ export const idlFactory = ({ IDL }) => {
     'order' : OrderActivityDetails,
     'liquidity' : LiquidityActivityDetails,
     'position_transfer' : PositionTransferActivityDetails,
+    'batch' : BatchActivityDetails,
     'transfer' : TransferActivityDetails,
   });
   const ActivityView = IDL.Record({

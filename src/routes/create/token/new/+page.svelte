@@ -10,7 +10,6 @@
   import { checkAndApprove } from "$lib/utils/allowance.utils";
   import { canisterIds } from "$lib/constants/app.constants";
   import { discoverToken } from "$lib/domain/orchestration/token-discovery";
-  import { toastState } from "$lib/state/portal/toast.state.svelte";
   import Step1TokenDetails from "$lib/components/create/token/Step1TokenDetails.svelte";
   import Step2InitialSupply from "$lib/components/create/token/Step2InitialSupply.svelte";
   import Step3Confirmation from "$lib/components/create/token/Step3Confirmation.svelte";
@@ -66,34 +65,21 @@
         init_args: ledgerInitArgs
       };
 
-      const symbol = tokenCreation.tokenSymbol;
+      const result = await api.registry!.create_ledger(args);
 
-      await toastState.show({
-        async: true,
-        maxTimeout: 60_000,
-        promise: api.registry!.create_ledger(args).then(async (result) => {
-          if ("err" in result) throw new Error(result.err.message || "Failed to create token");
+      if ("err" in result) {
+        creationError = result.err.message || "Failed to create token";
+        return;
+      }
 
-          createdTokenCanisterId = result.ok.canister_id.toText();
+      createdTokenCanisterId = result.ok.canister_id.toText();
 
-          const discovered = await discoverToken(createdTokenCanisterId);
-          if (discovered) {
-            createdTokens.addToken(discovered);
-          }
+      const discovered = await discoverToken(createdTokenCanisterId);
+      if (discovered) {
+        createdTokens.addToken(discovered);
+      }
 
-          currentStep = 4;
-          return result;
-        }),
-        messages: {
-          loading: `Launching ${symbol} ledger — this may take up to a minute...`,
-          success: `${symbol} token created successfully!`,
-          error: (error) => {
-            const errorMsg = error instanceof Error ? error.message : "Failed to create token";
-            creationError = errorMsg;
-            return errorMsg;
-          },
-        },
-      });
+      currentStep = 4;
     } catch (error) {
       creationError = error instanceof Error ? error.message : "An unexpected error occurred";
     } finally {

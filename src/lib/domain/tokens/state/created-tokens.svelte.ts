@@ -1,13 +1,13 @@
 /**
  * Created Tokens State Management
  *
- * Tracks tokens created by the current user via the registry.
+ * Tracks tokens created by the current user via the registry's creations endpoint.
  * Singleton state — load() fetches from registry, addToken() for optimistic updates.
  */
 
 import { api } from '$lib/actors/api.svelte';
-import { user } from '$lib/domain/user/auth.svelte';
 import { discoverTokens, discoverToken } from '$lib/domain/orchestration/token-discovery';
+import type { FrozenCreationEntry } from 'declarations/registry/registry.did';
 import type { NormalizedToken } from '$lib/types/entity.types';
 
 class CreatedTokensState {
@@ -21,17 +21,28 @@ class CreatedTokensState {
 
   /**
    * Load tokens created by the current user from the registry.
-   * Calls get_ledgers_by_creator then discovers each token's metadata.
+   * Fetches creations, filters to completed ledger entries, then discovers metadata.
    */
   async load(): Promise<void> {
-    if (!user.principal || !api.registry) return;
+    if (!api.registry) return;
 
     this.isLoading = true;
     this.error = '';
 
     try {
-      const ledgerPrincipals = await api.registry.get_ledgers_by_creator(user.principal as any);
-      const canisterIds = ledgerPrincipals.map((p) => p.toText());
+      const entries: FrozenCreationEntry[] = await api.registry.get_creations();
+
+      const canisterIds = entries
+        .filter(
+          (entry) =>
+            'ledger' in entry.creation_type && 'completed' in entry.phase
+        )
+        .map((entry) => {
+          const result = entry.result[0];
+          if (result && 'ok' in result) return result.ok.toText();
+          return '';
+        })
+        .filter((id) => id !== '');
 
       if (canisterIds.length > 0) {
         this.tokens = await discoverTokens(canisterIds);

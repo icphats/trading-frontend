@@ -6,6 +6,7 @@ export type ActivityDetails = { 'trigger' : TriggerActivityDetails } |
   { 'order' : OrderActivityDetails } |
   { 'liquidity' : LiquidityActivityDetails } |
   { 'position_transfer' : PositionTransferActivityDetails } |
+  { 'batch' : BatchActivityDetails } |
   { 'transfer' : TransferActivityDetails };
 export type ActivityType = { 'trigger_fired' : null } |
   { 'transfer_out' : null } |
@@ -15,12 +16,13 @@ export type ActivityType = { 'trigger_fired' : null } |
   { 'transfer_in' : null } |
   { 'lp_fees_collected' : null } |
   { 'lp_transferred' : null } |
-  { 'trigger_failed' : null } |
   { 'lp_closed' : null } |
   { 'lp_decreased' : null } |
   { 'lp_opened' : null } |
   { 'lp_increased' : null } |
+  { 'order_batch' : null } |
   { 'order_filled' : null } |
+  { 'trigger_batch' : null } |
   { 'lp_locked' : null } |
   { 'order_partial' : null } |
   { 'order_modified' : null };
@@ -102,6 +104,17 @@ export interface BalanceSheet {
   'is_balanced' : boolean,
   'equity' : EquityBreakdown,
   'protocol_equity' : ProtocolEquitySummary,
+}
+export interface BatchActivityDetails {
+  'total_quote_locked' : bigint,
+  'total_base_locked' : bigint,
+  'op_fee_token' : { 'base' : null } |
+    { 'quote' : null },
+  'base_price_usd_e12' : bigint,
+  'op_fee_amount' : bigint,
+  'swap_count' : number,
+  'quote_price_usd_e12' : bigint,
+  'item_count' : number,
 }
 export interface BatchSummary { 'failed' : number, 'succeeded' : number }
 export interface BookLevelAggregated {
@@ -338,6 +351,7 @@ export interface IndexerData {
   'triggers_live' : number,
   'base_tvl_usd_e6' : bigint,
   'pool_data' : Array<IndexerPoolData>,
+  'book_fees_24h_usd_e6' : bigint,
   'book_fees_cumulative_usd_e6' : bigint,
   'total_transactions' : bigint,
   'book_volume_cumulative_usd_e6' : bigint,

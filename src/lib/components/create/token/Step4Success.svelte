@@ -17,7 +17,7 @@
 
   function handleCreateMarket() {
     tokenCreation.reset();
-    goto("/create/market");
+    goto("/create/market/new");
   }
 </script>
 

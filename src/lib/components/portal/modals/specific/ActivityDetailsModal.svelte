@@ -24,6 +24,7 @@
     getLiquidityDetails,
     getTransferDetails,
     getPositionTransferDetails,
+    getBatchDetails,
     computeActivityUsdValue,
   } from "$lib/utils/activity.utils";
   import ActivityTypeBadge from "$lib/components/ui/badges/ActivityTypeBadge.svelte";
@@ -82,10 +83,12 @@
   const liquidityDetails = $derived(activity ? getLiquidityDetails(activity) : null);
   const transferDetails = $derived(activity ? getTransferDetails(activity) : null);
   const positionTransferDetails = $derived(activity ? getPositionTransferDetails(activity) : null);
+  const batchDetails = $derived(activity ? getBatchDetails(activity) : null);
 
   // Detect swap and order_modified variants
   const isSwap = $derived(activity ? 'swap' in activity.activity_type : false);
   const isOrderModified = $derived(activity ? 'order_modified' in activity.activity_type : false);
+  const isOrderBatch = $derived(activity ? 'order_batch' in activity.activity_type : false);
 
   // Handlers
   function handleClose() {
@@ -138,7 +141,6 @@
     if ('order_modified' in t) return 'Modified';
     if ('trigger_fired' in t) return 'Triggered';
     if ('trigger_cancelled' in t) return 'Cancelled';
-    if ('trigger_failed' in t) return 'Failed';
     return '';
   });
 
@@ -381,6 +383,38 @@
               <span class="modal-detail-label">Price Range</span>
               <span class="modal-detail-value">
                 {formatTickPrice(positionTransferDetails.tick_lower)} — {formatTickPrice(positionTransferDetails.tick_upper)}
+              </span>
+            </div>
+
+          {:else if batchDetails}
+            <!-- Batch Activity Panel -->
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">Type</span>
+              <span class="modal-detail-value">{isOrderBatch ? 'Order Batch' : 'Trigger Batch'}</span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">{isOrderBatch ? 'Orders' : 'Triggers'}</span>
+              <span class="modal-detail-value">{batchDetails.item_count}</span>
+            </div>
+            {#if isOrderBatch && batchDetails.swap_count > 0}
+              <div class="modal-detail-row">
+                <span class="modal-detail-label">Swaps</span>
+                <span class="modal-detail-value">{batchDetails.swap_count}</span>
+              </div>
+            {/if}
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">{base?.displaySymbol ?? 'Base'} Locked</span>
+              <span class="modal-detail-value">{formatAmount(batchDetails.total_base_locked, true)}</span>
+            </div>
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">{quote?.displaySymbol ?? 'Quote'} Locked</span>
+              <span class="modal-detail-value">{formatAmount(batchDetails.total_quote_locked, false)}</span>
+            </div>
+            {@const isBaseFee = 'base' in batchDetails.op_fee_token}
+            <div class="modal-detail-row">
+              <span class="modal-detail-label">Operation Fee</span>
+              <span class="modal-detail-value">
+                {formatAmount(batchDetails.op_fee_amount, isBaseFee)} {getTokenSymbol(isBaseFee)}
               </span>
             </div>
           {/if}

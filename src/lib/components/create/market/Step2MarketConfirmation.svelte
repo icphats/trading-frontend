@@ -5,9 +5,9 @@
   import { createMarket, isRegistryAvailable, type SpotMarketMetadata } from "$lib/domain/orchestration";
   import { entityStore } from "$lib/domain/orchestration/entity-store.svelte";
   import { userPortfolio } from "$lib/domain/user";
-  import { toastState } from "$lib/state/portal/toast.state.svelte";
   import { Principal } from "@dfinity/principal";
   import { api } from "$lib/actors/api.svelte";
+  import CreationProgress from "$lib/components/create/CreationProgress.svelte";
 
   interface Props {
     onBack: () => void;
@@ -54,38 +54,22 @@
     onErrorChange("");
 
     try {
-      // Create spot market with token principals
       const ledgerPrincipal = Principal.fromText(marketCreation.selectedToken.canisterId);
       const quotePrincipal = Principal.fromText(marketCreation.selectedQuoteToken.canisterId);
-      const tokenSymbol = marketCreation.selectedToken.symbol;
-      const quoteSymbol = marketCreation.selectedQuoteToken.symbol;
 
-      await toastState.show({
-        async: true,
-        maxTimeout: 300_000,
-        promise: createMarket({
-          base: ledgerPrincipal,
-          quote: quotePrincipal,
-        }).then((r) => {
-          if ("err" in r) throw new Error(r.err);
-          return r;
-        }),
-        messages: {
-          loading: `Setting up ${tokenSymbol}/${quoteSymbol} market — this may take a few minutes...`,
-          success: (result) => {
-            const metadata: SpotMarketMetadata = result.ok;
-            marketCreation.marketCanisterId = metadata.canister_id.toString();
-            onCreate();
-            return `${tokenSymbol}/${quoteSymbol} market created successfully!`;
-          },
-          error: (error) => {
-            const errorMsg = error instanceof Error ? error.message : "Failed to create market";
-            console.error("Error creating market:", errorMsg);
-            onErrorChange(errorMsg);
-            return errorMsg;
-          },
-        },
+      const result = await createMarket({
+        base: ledgerPrincipal,
+        quote: quotePrincipal,
       });
+
+      if ("err" in result) {
+        onErrorChange(result.err);
+        return;
+      }
+
+      const metadata: SpotMarketMetadata = result.ok;
+      marketCreation.marketCanisterId = metadata.canister_id.toString();
+      onCreate();
     } catch (error) {
       console.error("Error creating market:", error);
       onErrorChange(error instanceof Error ? error.message : "Failed to create market");
@@ -176,6 +160,9 @@
         <p class="text-sm font-semibold text-red-500">Insufficient ICP balance to cover the creation fee.</p>
       </div>
     {/if}
+
+    <!-- Creation Progress -->
+    <CreationProgress isActive={isCreating} creationType="spot_market" />
 
     <!-- Footer: Action Buttons -->
     <div class="flex items-center justify-between gap-4 mt-6">

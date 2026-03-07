@@ -330,23 +330,11 @@
           <tr class="spacer"><td colspan="2"></td></tr>
 
           <tr class="detail-row">
-            <td class="line-item indent">Cycles</td>
-            <td class="amount">{formatCycles(cyclesBalance)}</td>
-          </tr>
-          <tr class="detail-row sub-detail">
-            <td class="line-item indent-2 muted">Cost Basis</td>
-            <td class="amount muted">{formatUsd(cyclesCostBasisUsd)}</td>
-          </tr>
-
-          <!-- Spacer -->
-          <tr class="spacer"><td colspan="2"></td></tr>
-
-          <tr class="detail-row">
             <td class="line-item indent">USDT</td>
             <td class="amount">
               <span class="token-label">
                 {formatStablecoin(ckusdtBalance)}
-                <Logo src="/tokens/ckusdt.svg" alt="ckUSDT" size="xxs" circle />
+                <Logo src="/tokens/usdt.svg" alt="ckUSDT" size="xxs" circle />
               </span>
             </td>
           </tr>
@@ -359,9 +347,21 @@
             <td class="amount">
               <span class="token-label">
                 {formatStablecoin(ckusdcBalance)}
-                <Logo src="/tokens/ckusdc.svg" alt="ckUSDC" size="xxs" circle />
+                <Logo src="/tokens/usdc.svg" alt="ckUSDC" size="xxs" circle />
               </span>
             </td>
+          </tr>
+
+          <!-- Spacer -->
+          <tr class="spacer"><td colspan="2"></td></tr>
+
+          <tr class="detail-row">
+            <td class="line-item indent">Cycles</td>
+            <td class="amount">{formatCycles(cyclesBalance)}</td>
+          </tr>
+          <tr class="detail-row sub-detail">
+            <td class="line-item indent-2 muted">Cost Basis</td>
+            <td class="amount muted">{formatUsd(cyclesCostBasisUsd)}</td>
           </tr>
 
           <!-- Spacer -->

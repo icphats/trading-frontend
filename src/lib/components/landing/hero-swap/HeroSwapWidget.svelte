@@ -15,6 +15,7 @@
   import { bigIntToString, computeOutputUsd, usdImpactPercent } from '$lib/domain/markets/utils';
   import { checkAndApprove } from '$lib/utils/allowance.utils';
   import { user } from '$lib/domain/user/auth.svelte';
+  import { userPortfolio } from '$lib/domain/user';
   import type { VenueBreakdown } from 'declarations/spot/spot.did';
   import { api } from '$lib/actors/api.svelte';
   import { onDestroy } from 'svelte';
@@ -103,6 +104,13 @@
     if (!inputToken) return;
     checkAndApprove(inputToken.canisterId, quoteExplorerState.market.canister_id);
   });
+
+  // User's wallet balance for the input token
+  let inputBalance = $derived(
+    quoteExplorerState.inputToken
+      ? (userPortfolio.getToken(quoteExplorerState.inputToken.canisterId)?.balance ?? 0n)
+      : 0n
+  );
 
   let confirmSide = $derived(quoteExplorerState.side === 'buy' ? 'Buy' as const : 'Sell' as const);
 
@@ -210,8 +218,7 @@
           onValueChange={handleInputChange}
           onTokenClick={() => marketModalOpen = true}
           disabled={quoteExplorerState.isMarketLoading}
-          showPresets={false}
-          showBalance={false}
+          balance={inputBalance}
         />
 
         <!-- Arrow divider (click to flip direction) -->
@@ -240,40 +247,38 @@
           />
         {/if}
 
-        <!-- Quote result + action button -->
-        {#if quoteExplorerState.quote || quoteExplorerState.isQuoting}
-          <div class="bottom-section">
-            <div class="quote-result-wrapper">
-              <QuoteResult
-                compact
-                isCalculating={quoteExplorerState.isQuoting}
-                quote={quoteExplorerState.quote}
-                baseSymbol={quoteExplorerState.baseToken?.displaySymbol ?? ''}
-                quoteSymbol={quoteExplorerState.quoteToken?.displaySymbol ?? ''}
-                baseDecimals={quoteExplorerState.baseToken?.decimals ?? 8}
-                quoteDecimals={quoteExplorerState.quoteToken?.decimals ?? 8}
-                baseLogo={quoteExplorerState.baseToken?.logo ?? undefined}
-                quoteLogo={quoteExplorerState.quoteToken?.logo ?? undefined}
-                side={quoteExplorerState.side === 'buy' ? 'Buy' : 'Sell'}
-                {inputUsdValue}
-                {outputUsdValue}
-                inputAmount={quoteExplorerState.quote?.input_amount}
-              />
-            </div>
-            <button
-              type="button"
-              class="action-btn"
-              aria-label="Confirm swap"
-              disabled={!quoteExplorerState.quote || quoteExplorerState.isQuoting || !user.principal}
-              onclick={() => swapModalOpen = true}
-            >
-              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
-                <path d="M5 12h14" />
-                <path d="M12 5l7 7-7 7" />
-              </svg>
-            </button>
+        <!-- Quote result + action button (always visible, button disabled when no quote) -->
+        <div class="bottom-section">
+          <div class="quote-result-wrapper">
+            <QuoteResult
+              compact
+              isCalculating={quoteExplorerState.isQuoting}
+              quote={quoteExplorerState.quote}
+              baseSymbol={quoteExplorerState.baseToken?.displaySymbol ?? ''}
+              quoteSymbol={quoteExplorerState.quoteToken?.displaySymbol ?? ''}
+              baseDecimals={quoteExplorerState.baseToken?.decimals ?? 8}
+              quoteDecimals={quoteExplorerState.quoteToken?.decimals ?? 8}
+              baseLogo={quoteExplorerState.baseToken?.logo ?? undefined}
+              quoteLogo={quoteExplorerState.quoteToken?.logo ?? undefined}
+              side={quoteExplorerState.side === 'buy' ? 'Buy' : 'Sell'}
+              {inputUsdValue}
+              {outputUsdValue}
+              inputAmount={quoteExplorerState.quote?.input_amount}
+            />
           </div>
-        {/if}
+          <button
+            type="button"
+            class="action-btn"
+            aria-label="Confirm swap"
+            disabled={!quoteExplorerState.quote || quoteExplorerState.isQuoting || !user.principal}
+            onclick={() => swapModalOpen = true}
+          >
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M5 12h14" />
+              <path d="M12 5l7 7-7 7" />
+            </svg>
+          </button>
+        </div>
       {/if}
     </div>
   </div>

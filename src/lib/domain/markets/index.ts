@@ -22,6 +22,8 @@ export {
 export { SpotMarket } from './state/spot-market.svelte';
 export { marketCreation } from './state/market-creation.svelte';
 export { marketSelection } from './state/market-selection.svelte';
+export { creationJournal, phaseLabel, phaseIndex, type FrozenCreationEntry, type CreationPhase } from './state/creation-journal.svelte';
+export { createdMarkets, type CreatedMarketEntry } from './state/created-markets.svelte';
 
 // ============================================
 // Types

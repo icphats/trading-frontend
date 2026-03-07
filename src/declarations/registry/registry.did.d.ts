@@ -35,6 +35,14 @@ export interface CreateLedgerArgs {
   'init_args' : LedgerInitArgs,
 }
 export interface CreationFees { 'spot' : bigint, 'ledger' : bigint }
+export type CreationPhase = { 'creating_canister' : null } |
+  { 'completed' : null } |
+  { 'notifying_indexer' : null } |
+  { 'installing_wasm' : null } |
+  { 'querying_metadata' : null } |
+  { 'failed' : null };
+export type CreationType = { 'spot_market' : null } |
+  { 'ledger' : null };
 export type ErrorCategory = { 'resource' : null } |
   { 'admin' : null } |
   { 'other' : null } |
@@ -50,8 +58,10 @@ export interface EventLogPage {
 }
 export interface FeatureFlags { 'icrc2' : boolean }
 export interface FrozenControl {
+  'wasm_memory_threshold' : bigint,
   'system_state' : SystemState,
   'icp_spot_creation_fee' : bigint,
+  'reserved_cycles_limit' : bigint,
   'icp_ledger_creation_fee' : bigint,
   'treasury_allowance_set' : boolean,
   'timer_running' : boolean,
@@ -61,9 +71,19 @@ export interface FrozenControl {
   'icp_transfer_fee' : bigint,
   'treasury_principal' : [] | [Principal],
   'indexer_principal' : [] | [Principal],
+  'wasm_memory_limit' : bigint,
   'this_principal' : Principal,
   'ledger_creation_cycles' : bigint,
   'admin_principals' : Array<Principal>,
+}
+export interface FrozenCreationEntry {
+  'id' : bigint,
+  'creation_type' : CreationType,
+  'result' : [] | [{ 'ok' : Principal } | { 'err' : string }],
+  'updated_at' : bigint,
+  'phase' : CreationPhase,
+  'symbol' : string,
+  'started_at' : bigint,
 }
 export interface InternalCanisterMetadata {
   'created_at' : bigint,
@@ -131,11 +151,14 @@ export interface UpgradeArgs {
   'set_icp_ledger_creation_fee' : [] | [bigint],
   'set_oracle_principal' : [] | [Principal],
   'set_cycles_threshold' : [] | [bigint],
+  'set_wasm_memory_threshold' : [] | [bigint],
   'set_ledger_creation_cycles' : [] | [bigint],
   'reset_topup_backoff' : [] | [boolean],
   'set_indexer_principal' : [] | [Principal],
+  'set_wasm_memory_limit' : [] | [bigint],
   'set_icp_spot_creation_fee' : [] | [bigint],
   'add_admins' : [] | [Array<Principal>],
+  'set_reserved_cycles_limit' : [] | [bigint],
   'set_spot_creation_cycles' : [] | [bigint],
 }
 export type WasmType = { 'spot' : null } |
@@ -209,9 +232,9 @@ export interface _SERVICE {
    */
   'get_creation_fees' : ActorMethod<[], CreationFees>,
   /**
-   * / Get ledger principals created by a specific principal.
+   * / Get creation entries for the caller (ledger + spot market creation progress/history).
    */
-  'get_ledgers_by_creator' : ActorMethod<[Principal], Array<Principal>>,
+  'get_creations' : ActorMethod<[], Array<FrozenCreationEntry>>,
   /**
    * / Get a spot market by its base and quote ledger principals.
    */

@@ -900,6 +900,7 @@ type IndexerPoolData =
 type IndexerData = 
  record {
    base_tvl_usd_e6: nat;
+   book_fees_24h_usd_e6: nat;
    book_fees_cumulative_usd_e6: nat;
    book_open_interest_usd_e6: nat;
    book_volume_cumulative_usd_e6: nat;
@@ -1215,6 +1216,20 @@ type BatchSummary =
    failed: nat32;
    succeeded: nat32;
  };
+type BatchActivityDetails = 
+ record {
+   base_price_usd_e12: nat64;
+   item_count: nat16;
+   op_fee_amount: nat;
+   op_fee_token: variant {
+                   base;
+                   quote;
+                 };
+   quote_price_usd_e12: nat64;
+   swap_count: nat8;
+   total_base_locked: nat;
+   total_quote_locked: nat;
+ };
 type BalanceSheet = 
  record {
    assets: AssetsBreakdown;
@@ -1344,6 +1359,7 @@ type ActivityType =
    lp_locked;
    lp_opened;
    lp_transferred;
+   order_batch;
    order_cancelled;
    order_filled;
    order_modified;
@@ -1351,12 +1367,13 @@ type ActivityType =
    swap;
    transfer_in;
    transfer_out;
+   trigger_batch;
    trigger_cancelled;
-   trigger_failed;
    trigger_fired;
  };
 type ActivityDetails = 
  variant {
+   batch: BatchActivityDetails;
    liquidity: LiquidityActivityDetails;
    order: OrderActivityDetails;
    position_transfer: PositionTransferActivityDetails;

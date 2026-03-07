@@ -88,6 +88,7 @@ import type {
   LiquidityActivityDetails,
   TransferActivityDetails,
   PositionTransferActivityDetails,
+  BatchActivityDetails,
 } from 'declarations/spot/spot.did';
 
 // Amount type alias (was removed from declarations, now all amounts are nat64/bigint)
@@ -193,6 +194,7 @@ export type {
   LiquidityActivityDetails,
   TransferActivityDetails,
   PositionTransferActivityDetails,
+  BatchActivityDetails,
 
   // Config types
   UpgradeArgs,

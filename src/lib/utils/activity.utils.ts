@@ -14,6 +14,7 @@ import type {
   LiquidityActivityDetails,
   TransferActivityDetails,
   PositionTransferActivityDetails,
+  BatchActivityDetails,
 } from '$lib/actors/services/spot.service';
 import { getTriggerLabel } from '$lib/utils/trigger.utils';
 import { tickToPrice } from '$lib/domain/markets/utils/math';
@@ -59,7 +60,8 @@ export function getActivityTypeLabel(type: ActivityType): string {
   if ('order_modified' in type) return 'Modified';
   if ('trigger_fired' in type) return 'Triggered';
   if ('trigger_cancelled' in type) return 'Cancelled';
-  if ('trigger_failed' in type) return 'Failed';
+  if ('order_batch' in type) return 'Batch Order';
+  if ('trigger_batch' in type) return 'Batch Trigger';
   if ('lp_opened' in type) return 'LP Open';
   if ('lp_increased' in type) return 'LP Increase';
   if ('lp_decreased' in type) return 'LP Decrease';
@@ -87,7 +89,8 @@ export function getActivityCategory(type: ActivityType): ActivityCategory {
   if ('order_modified' in type) return 'order';
   if ('trigger_fired' in type) return 'trigger';
   if ('trigger_cancelled' in type) return 'trigger';
-  if ('trigger_failed' in type) return 'trigger';
+  if ('order_batch' in type) return 'order';
+  if ('trigger_batch' in type) return 'trigger';
   if ('lp_opened' in type) return 'lp';
   if ('lp_increased' in type) return 'lp';
   if ('lp_decreased' in type) return 'lp';
@@ -149,6 +152,17 @@ export function getActivityDescription(
     return `${dir} #${pt.position_id}`;
   }
 
+  // Batch activities
+  if ('batch' in details) {
+    const batch = details.batch;
+    const count = batch.item_count;
+    if ('order_batch' in activity.activity_type) {
+      const swaps = batch.swap_count;
+      return swaps > 0 ? `${count} orders + ${swaps} swaps` : `${count} orders`;
+    }
+    return `${count} triggers`;
+  }
+
   return '';
 }
 
@@ -204,6 +218,13 @@ export function getActivityAmount(
     return {
       amount: details.position_transfer.liquidity,
       token: 'base' as const,
+    };
+  }
+
+  if ('batch' in details) {
+    return {
+      amount: details.batch.op_fee_amount,
+      token: 'base' in details.batch.op_fee_token ? 'base' : 'quote',
     };
   }
 
@@ -271,6 +292,13 @@ export function computeActivityUsdValue(activity: ActivityView, tokens: TokenCon
     const tokenDecimals = 'base' in transfer.token ? tokens.baseDecimals : tokens.quoteDecimals;
     const scale = 10 ** tokenDecimals;
     return Number(transfer.amount) * Number(transfer.token_price_usd_e12) / (scale * E12);
+  }
+
+  if ('batch' in details) {
+    const batch = details.batch;
+    const baseUsd = Number(batch.total_base_locked) * Number(batch.base_price_usd_e12) / (10 ** tokens.baseDecimals * E12);
+    const quoteUsd = Number(batch.total_quote_locked) * Number(batch.quote_price_usd_e12) / (10 ** tokens.quoteDecimals * E12);
+    return baseUsd + quoteUsd;
   }
 
   return 0;
@@ -353,6 +381,16 @@ export function getTransferDetails(activity: ActivityView): TransferActivityDeta
 export function getPositionTransferDetails(activity: ActivityView): PositionTransferActivityDetails | null {
   if ('position_transfer' in activity.details) {
     return activity.details.position_transfer;
+  }
+  return null;
+}
+
+/**
+ * Extracts batch details from activity
+ */
+export function getBatchDetails(activity: ActivityView): BatchActivityDetails | null {
+  if ('batch' in activity.details) {
+    return activity.details.batch;
   }
   return null;
 }

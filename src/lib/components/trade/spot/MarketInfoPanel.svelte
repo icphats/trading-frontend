@@ -178,6 +178,14 @@
                   <span class="info-label">Total Transactions</span>
                   <span class="info-value mono">{spot.totalTransactions.toLocaleString()}</span>
                 </div>
+                <div class="info-row">
+                  <span class="info-label">Taker Fee</span>
+                  <span class="info-value mono">{(spot.takerFeePips / 10000).toFixed(2)}%</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">{spot.makerRebatePips > 0 ? 'Maker Rebate' : 'Maker Fee'}</span>
+                  <span class="info-value mono">{spot.makerRebatePips > 0 ? (spot.makerRebatePips / 10000).toFixed(2) : (spot.makerFeePips / 10000).toFixed(2)}%</span>
+                </div>
               </div>
             </div>
 
@@ -258,7 +266,7 @@
                 <p class="placeholder-text error">{poolsError}</p>
                 <button class="retry-btn" onclick={() => { poolsOverview = []; fetchPools(); }}>Retry</button>
               </div>
-            {:else if poolsOverview.length > 0}
+            {:else}
               <!-- Active Pools -->
               <div class="info-section">
                 <h3 class="section-heading">Active Pools</h3>
@@ -273,26 +281,28 @@
                     <span class="pool-col right">Volume 24h</span>
                     <span class="pool-col right">APR</span>
                   </div>
-                  {#each poolsOverview as pool, i}
-                    {@const totalUsd = pool.base_usd_e6 + pool.quote_usd_e6}
-                    {@const quoteRank = poolsOverview.filter(p => p.quote_usd_e6 > pool.quote_usd_e6).length}
-                    {@const isActive = totalUsd >= 1_000_000_000n && quoteRank < 3}
-                    <div class="pool-row">
-                      <span class="pool-col"><span class="pool-indicator" class:active={isActive}></span></span>
-                      <span class="pool-col right mono">{pool.positions.toString()}</span>
-                      <span class="pool-col right mono">{formatSigFig(tickToPrice(pool.tick, baseDecimals, quoteDecimals), 5, { subscriptZeros: true })}</span>
-                      <span class="pool-col right mono">{(pool.fee_pips / 10000).toFixed(2)}%</span>
-                      <span class="pool-col right mono">${formatToken({ value: pool.base_usd_e6, unitName: 6, short: true })}</span>
-                      <span class="pool-col right mono">${formatToken({ value: pool.quote_usd_e6, unitName: 6, short: true })}</span>
-                      <span class="pool-col right mono">${formatToken({ value: pool.volume_24h_usd_e6, unitName: 6, short: true })}</span>
-                      <span class="pool-col right mono">{(Number(pool.apr_bps) / 100).toFixed(2)}%</span>
+                  {#if poolsOverview.length > 0}
+                    {#each poolsOverview as pool, i}
+                      {@const totalUsd = pool.base_usd_e6 + pool.quote_usd_e6}
+                      {@const quoteRank = poolsOverview.filter(p => p.quote_usd_e6 > pool.quote_usd_e6).length}
+                      {@const isActive = totalUsd >= 1_000_000_000n && quoteRank < 3}
+                      <div class="pool-row">
+                        <span class="pool-col"><span class="pool-indicator" class:active={isActive}></span></span>
+                        <span class="pool-col right mono">{pool.positions.toString()}</span>
+                        <span class="pool-col right mono">{formatSigFig(tickToPrice(pool.tick, baseDecimals, quoteDecimals), 5, { subscriptZeros: true })}</span>
+                        <span class="pool-col right mono">{(pool.fee_pips / 10000).toFixed(2)}%</span>
+                        <span class="pool-col right mono">${formatToken({ value: pool.base_usd_e6, unitName: 6, short: true })}</span>
+                        <span class="pool-col right mono">${formatToken({ value: pool.quote_usd_e6, unitName: 6, short: true })}</span>
+                        <span class="pool-col right mono">${formatToken({ value: pool.volume_24h_usd_e6, unitName: 6, short: true })}</span>
+                        <span class="pool-col right mono">{(Number(pool.apr_bps) / 100).toFixed(2)}%</span>
+                      </div>
+                    {/each}
+                  {:else}
+                    <div class="pool-row-empty">
+                      <span class="placeholder-text">No active pools</span>
                     </div>
-                  {/each}
+                  {/if}
                 </div>
-              </div>
-            {:else}
-              <div class="tab-placeholder">
-                <p class="placeholder-text">No active pools</p>
               </div>
             {/if}
 
@@ -698,6 +708,11 @@
 
   .pool-indicator.active {
     background: var(--color-bullish);
+  }
+
+  .pool-row-empty {
+    padding: 1.5rem 0.75rem;
+    text-align: center;
   }
 
   /* ── Lock Schedule ── */
